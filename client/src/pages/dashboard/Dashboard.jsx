@@ -1,17 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 
-import {
-  Card,
-  Empty,
-  Spin,
-  Tag,
-  message,
-} from "antd";
+import { Card, Empty, Image, Spin, Tag, message } from "antd";
 
 import {
   CalendarOutlined,
   MessageOutlined,
-  RightOutlined,
   ShopOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -19,10 +12,11 @@ import {
 import dayjs from "dayjs";
 
 import { getDashboardStats } from "../../services/dashboardService";
+import { getWorkSchedule } from "../../services/workSchedule.service";
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
-
+  const [workSchedule, setWorkSchedule] = useState(null);
   const [stats, setStats] = useState({
     users: {
       total: 0,
@@ -54,13 +48,9 @@ const Dashboard = () => {
   const currentUser = getCurrentUser();
 
   const isAdmin =
-    currentUser?.role === "admin" ||
-    currentUser?.role === "ADMIN";
+    currentUser?.role === "admin" || currentUser?.role === "ADMIN";
 
-  const userName =
-    currentUser?.fullName ||
-    currentUser?.username ||
-    "bạn";
+  const userName = currentUser?.fullName || currentUser?.username || "bạn";
 
   // =========================
   // LOAD DASHBOARD
@@ -70,12 +60,16 @@ const Dashboard = () => {
     try {
       setLoading(true);
 
-      const response = await getDashboardStats();
+      const [dashboardResponse, scheduleResponse] = await Promise.all([
+        getDashboardStats(),
+        getWorkSchedule(),
+      ]);
 
-      const data =
-        response.data?.data ??
-        response.data ??
-        {};
+      // =========================
+      // DASHBOARD
+      // =========================
+
+      const data = dashboardResponse.data?.data ?? dashboardResponse.data ?? {};
 
       setStats({
         users: {
@@ -87,21 +81,24 @@ const Dashboard = () => {
           total: data.feedbacks?.total ?? 0,
         },
 
-        recentFeedbacks: Array.isArray(
-          data.recentFeedbacks
-        )
+        recentFeedbacks: Array.isArray(data.recentFeedbacks)
           ? data.recentFeedbacks
           : [],
       });
+
+      // =========================
+      // WORK SCHEDULE
+      // =========================
+
+      const scheduleData =
+        scheduleResponse.data?.data ?? scheduleResponse.data ?? null;
+
+      setWorkSchedule(scheduleData);
     } catch (error) {
-      console.error(
-        "Load dashboard failed:",
-        error
-      );
+      console.error("Load dashboard failed:", error);
 
       message.error(
-        error.response?.data?.message ||
-          "Không thể tải dữ liệu dashboard"
+        error.response?.data?.message || "Không thể tải dữ liệu dashboard",
       );
     } finally {
       setLoading(false);
@@ -117,29 +114,19 @@ const Dashboard = () => {
   // =========================
 
   const formatDate = (value) => {
-    if (
-      !value ||
-      !dayjs(value).isValid()
-    ) {
+    if (!value || !dayjs(value).isValid()) {
       return "—";
     }
 
-    return dayjs(value).format(
-      "DD/MM/YYYY"
-    );
+    return dayjs(value).format("DD/MM/YYYY");
   };
 
   const formatTime = (value) => {
-    if (
-      !value ||
-      !dayjs(value).isValid()
-    ) {
+    if (!value || !dayjs(value).isValid()) {
       return "—";
     }
 
-    return dayjs(value).format(
-      "HH:mm"
-    );
+    return dayjs(value).format("HH:mm");
   };
 
   // =========================
@@ -175,9 +162,7 @@ const Dashboard = () => {
 
             <span>Yakiuo ERP</span>
 
-            <span className="opacity-50">
-              /
-            </span>
+            <span className="opacity-50">/</span>
 
             <span>Dashboard</span>
           </div>
@@ -200,14 +185,11 @@ const Dashboard = () => {
             <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs backdrop-blur-md">
               <CalendarOutlined />
 
-              {dayjs().format(
-                "DD/MM/YYYY"
-              )}
+              {dayjs().format("DD/MM/YYYY")}
             </div>
 
             <div className="flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-2 text-xs text-emerald-100 backdrop-blur-md">
               <span className="h-2 w-2 rounded-full bg-emerald-300" />
-
               Hệ thống đang hoạt động
             </div>
           </div>
@@ -220,9 +202,7 @@ const Dashboard = () => {
 
       <div
         className={`mb-6 grid grid-cols-1 gap-4 ${
-          isAdmin
-            ? "md:grid-cols-2"
-            : "md:grid-cols-1"
+          isAdmin ? "md:grid-cols-2" : "md:grid-cols-1"
         }`}
       >
         {/* ==================================================
@@ -289,195 +269,102 @@ const Dashboard = () => {
               <div className="mt-5 flex items-center gap-2 text-xs text-slate-400">
                 <span className="h-2 w-2 rounded-full bg-violet-500" />
 
-                <span>
-                  {stats.users.active} nhân viên đang hoạt động
-                </span>
+                <span>{stats.users.active} nhân viên đang hoạt động</span>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* ==================================================
-          RECENT FEEDBACK
-      ================================================== */}
+ {/* ==================================================
+    WORK SCHEDULE
+================================================== */}
 
-      <Card
-        bordered={false}
-        className="overflow-hidden rounded-[24px] shadow-sm"
-        styles={{
-          body: {
-            padding: 0,
-          },
-        }}
-      >
-        {/* HEADER */}
+<Card
+  bordered={false}
+  className="overflow-hidden rounded-[24px] shadow-sm"
+  styles={{
+    body: {
+      padding: 0,
+    },
+  }}
+>
+  {/* HEADER */}
 
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-5 md:px-6">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-slate-800">
-                Feedback gần đây
-              </h2>
+  <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-6">
+    <div className="flex items-center gap-3">
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-50 text-lg text-purple-600">
+        <CalendarOutlined />
+      </div>
 
-              <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-blue-600">
-                LIVE
-              </span>
-            </div>
+      <div>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-bold text-slate-800">
+            Lịch làm việc tuần này
+          </h2>
 
-            <p className="mt-1 text-xs text-slate-400">
-              Các phản hồi mới nhất từ khách hàng
-            </p>
-          </div>
-
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
-            <RightOutlined />
-          </div>
+          <span className="rounded-full bg-purple-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-purple-600">
+            MỚI NHẤT
+          </span>
         </div>
 
-        {/* EMPTY */}
+        <p className="mt-1 text-xs text-slate-400">
+          Lịch làm việc hiện tại của nhân viên
+        </p>
+      </div>
+    </div>
 
-        {stats.recentFeedbacks.length ===
-        0 ? (
-          <div className="px-6 py-16">
-            <Empty
-              description="Chưa có feedback nào"
-            />
+    {workSchedule?.updatedAt && (
+      <div className="text-xs text-slate-400">
+        Cập nhật:{" "}
+        <span className="font-medium text-slate-600">
+          {dayjs(workSchedule.updatedAt).format(
+            "DD/MM/YYYY HH:mm"
+          )}
+        </span>
+      </div>
+    )}
+  </div>
+
+  {/* CONTENT */}
+
+  {workSchedule?.imageUrl ? (
+    <div className="bg-slate-50 p-4 md:p-6">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <Image
+          src={workSchedule.imageUrl}
+          alt="Lịch làm việc tuần này"
+          width="100%"
+          className="block"
+          preview={{
+            mask: (
+              <div className="text-sm font-medium">
+                Xem lịch lớn
+              </div>
+            ),
+          }}
+        />
+      </div>
+    </div>
+  ) : (
+    <div className="px-6 py-16">
+      <Empty
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+        description={
+          <div>
+            <div className="font-medium text-slate-600">
+              Chưa có lịch làm việc
+            </div>
+
+            <div className="mt-1 text-xs text-slate-400">
+              Quản trị viên chưa cập nhật lịch làm việc.
+            </div>
           </div>
-        ) : (
-          /* ==================================================
-             FEEDBACK LIST
-          ================================================== */
-
-          <div className="divide-y divide-slate-100">
-            {stats.recentFeedbacks.map(
-              (feedback, index) => (
-                <div
-                  key={feedback._id}
-                  className="group relative px-5 py-5 transition hover:bg-slate-50/70 md:px-6"
-                >
-                  <div className="flex gap-4">
-                    {/* AVATAR */}
-
-                    <div className="relative shrink-0">
-                      <div
-                        className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
-                          index === 0
-                            ? "bg-blue-600 text-white shadow-lg shadow-blue-200"
-                            : "bg-slate-100 text-slate-500"
-                        }`}
-                      >
-                        <UserOutlined />
-                      </div>
-
-                      {index ===
-                        0 && (
-                        <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-emerald-400" />
-                      )}
-                    </div>
-
-                    {/* CONTENT */}
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-col justify-between gap-2 sm:flex-row">
-                        <div>
-                          <h3 className="font-semibold text-slate-800">
-                            {feedback.customerName ||
-                              "Khách vãng lai"}
-                          </h3>
-
-                          <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-500">
-                            {feedback.content ||
-                              "Không có nội dung feedback"}
-                          </p>
-                        </div>
-
-                        {/* DATE */}
-
-                        <div className="shrink-0 text-left sm:text-right">
-                          <div className="text-xs font-semibold text-slate-600">
-                            {formatDate(
-                              feedback.dateTime ||
-                                feedback.createdAt
-                            )}
-                          </div>
-
-                          <div className="mt-1 text-xs text-slate-400">
-                            {formatTime(
-                              feedback.createdAt
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* META */}
-
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        {feedback.meal && (
-                          <Tag
-                            bordered={false}
-                            color="blue"
-                            className="m-0 rounded-lg px-2.5 py-1"
-                          >
-                            {feedback.meal}
-                          </Tag>
-                        )}
-
-                        {feedback.tableNumber && (
-                          <span className="flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-xs text-slate-500">
-                            <ShopOutlined />
-
-                            Bàn{" "}
-                            {
-                              feedback.tableNumber
-                            }
-                          </span>
-                        )}
-
-                        {feedback.createdBy && (
-                          <span className="flex items-center gap-1 text-xs text-slate-400">
-                            <UserOutlined />
-
-                            {feedback
-                              .createdBy
-                              .fullName ||
-                              feedback
-                                .createdBy
-                                .username ||
-                              "—"}
-                          </span>
-                        )}
-
-                        {feedback.tags
-                          ?.slice(0, 2)
-                          .map(
-                            (
-                              tag,
-                              tagIndex
-                            ) => (
-                              <span
-                                key={`${tag}-${tagIndex}`}
-                                className="rounded-lg bg-slate-50 px-2 py-1 text-xs text-slate-400"
-                              >
-                                #{tag}
-                              </span>
-                            )
-                          )}
-                      </div>
-                    </div>
-
-                    {/* ARROW */}
-
-                    <div className="hidden items-center text-slate-300 transition group-hover:text-blue-500 sm:flex">
-                      <RightOutlined />
-                    </div>
-                  </div>
-                </div>
-              )
-            )}
-          </div>
-        )}
-      </Card>
+        }
+      />
+    </div>
+  )}
+</Card>
 
       {/* ==================================================
           FOOTER

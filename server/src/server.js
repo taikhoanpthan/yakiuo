@@ -26,7 +26,7 @@ const notificationRoutes = require("./routes/notification.routes");
 const uploadRoutes = require("./routes/upload.routes");
 const todoRoutes = require("./routes/todo.routes");
 const commissionRoutes = require("./routes/commission.routes");
-
+const workScheduleRoutes = require("./routes/workSchedule.routes");
 
 // =========================
 // APP
@@ -88,7 +88,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/todos", todoRoutes);
 app.use("/api/commissions", commissionRoutes);
-
+app.use("/api/work-schedule", workScheduleRoutes);
 // =========================
 // CLOUDINARY TEST
 // =========================

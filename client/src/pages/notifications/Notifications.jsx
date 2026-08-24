@@ -4,6 +4,7 @@ import {
   Card,
   Empty,
   Form,
+  Image,
   Input,
   Modal,
   Popconfirm,
@@ -12,12 +13,15 @@ import {
   Table,
   Tag,
   Tooltip,
+  Upload,
   message,
 } from "antd";
 
 import {
   BellOutlined,
+  CalendarOutlined,
   CheckCircleOutlined,
+  CloudUploadOutlined,
   DeleteOutlined,
   EditOutlined,
   ExclamationCircleOutlined,
@@ -35,7 +39,10 @@ import {
   updateNotification,
   deleteNotification,
 } from "../../services/notificationService";
-
+import {
+  getWorkSchedule,
+  updateWorkSchedule,
+} from "../../services/workSchedule.service";
 const Notifications = () => {
   const [form] = Form.useForm();
 
@@ -48,6 +55,9 @@ const Notifications = () => {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
+  const [workSchedule, setWorkSchedule] = useState(null);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleUploading, setScheduleUploading] = useState(false);
   // =========================
   // LOAD DATA
   // =========================
@@ -74,10 +84,125 @@ const Notifications = () => {
       setLoading(false);
     }
   }, []);
+  const loadWorkSchedule = useCallback(async () => {
+    try {
+      setScheduleLoading(true);
+
+      const response = await getWorkSchedule();
+
+      console.log("WORK SCHEDULE RESPONSE:", response);
+
+      const data = response?.data?.data ?? response?.data ?? null;
+
+      setWorkSchedule(data);
+    } catch (error) {
+      console.error("Load work schedule error:", error);
+
+      message.error(
+        error.response?.data?.message || "Không thể tải lịch làm việc",
+      );
+    } finally {
+      setScheduleLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     void loadNotifications();
-  }, [loadNotifications]);
+    void loadWorkSchedule();
+  }, [loadNotifications, loadWorkSchedule]);
+
+  const uploadScheduleToCloudinary = async (file) => {
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+    if (!cloudName || !uploadPreset) {
+      throw new Error("Thiếu cấu hình Cloudinary");
+    }
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.error?.message || "Upload Cloudinary thất bại");
+    }
+
+    return data;
+  };
+  const handleScheduleUpload = async ({ file, onSuccess, onError }) => {
+    try {
+      setScheduleUploading(true);
+
+      // Upload ảnh mới lên Cloudinary
+      const cloudinaryData = await uploadScheduleToCloudinary(file);
+
+      // Update record hiện tại
+      const response = await updateWorkSchedule({
+        imageUrl: cloudinaryData.secure_url,
+        publicId: cloudinaryData.public_id,
+      });
+
+      const updatedSchedule = response.data?.data ?? null;
+
+      setWorkSchedule(updatedSchedule);
+
+      message.success("Đã cập nhật lịch làm việc");
+
+      onSuccess?.();
+    } catch (error) {
+      console.error("Upload work schedule error:", error);
+
+      message.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể cập nhật lịch làm việc",
+      );
+
+      onError?.(error);
+    } finally {
+      setScheduleUploading(false);
+    }
+  };
+  const handleScheduleRequest = ({ file, onSuccess, onError }) => {
+    if (!workSchedule?.imageUrl) {
+      void handleScheduleUpload({
+        file,
+        onSuccess,
+        onError,
+      });
+
+      return;
+    }
+
+    Modal.confirm({
+      title: "Thay thế lịch làm việc?",
+      icon: <ExclamationCircleOutlined />,
+      content:
+        "Lịch làm việc hiện tại sẽ được thay bằng ảnh mới. Bạn có chắc chắn muốn tiếp tục?",
+      okText: "Thay thế",
+      cancelText: "Hủy",
+      okButtonProps: {
+        danger: true,
+      },
+      onOk: () =>
+        handleScheduleUpload({
+          file,
+          onSuccess,
+          onError,
+        }),
+    });
+  };
 
   // =========================
   // STATISTICS
@@ -448,7 +573,10 @@ const Notifications = () => {
             icon={<ReloadOutlined />}
             size="large"
             loading={loading}
-            onClick={loadNotifications}
+            onClick={() => {
+              void loadNotifications();
+              void loadWorkSchedule();
+            }}
           >
             Làm mới
           </Button>
@@ -463,88 +591,112 @@ const Notifications = () => {
           </Button>
         </Space>
       </div>
+      {/* ================= WORK SCHEDULE ================= */}
 
+      <Card
+        className="erp-section-card overflow-hidden"
+        styles={{
+          body: {
+            padding: 0,
+          },
+        }}
+      >
+        <div className="border-b border-slate-100 px-5 py-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-xl text-purple-600">
+                <CalendarOutlined />
+              </div>
+
+              <div>
+                <h2 className="text-base font-semibold text-slate-800">
+                  Lịch làm việc
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-400">
+                  Lịch làm việc hiện tại của nhân viên.
+                </p>
+              </div>
+            </div>
+
+            <Upload
+              accept="image/*"
+              showUploadList={false}
+              customRequest={handleScheduleRequest}
+              disabled={scheduleUploading}
+            >
+              <Button
+                type="primary"
+                icon={<CloudUploadOutlined />}
+                loading={scheduleUploading}
+              >
+                {workSchedule ? "Cập nhật lịch" : "Thêm lịch"}
+              </Button>
+            </Upload>
+          </div>
+        </div>
+
+        <div className="p-5">
+          {scheduleLoading ? (
+            <div className="flex min-h-[250px] items-center justify-center">
+              <div className="text-sm text-slate-400">
+                Đang tải lịch làm việc...
+              </div>
+            </div>
+          ) : workSchedule?.imageUrl ? (
+            <div>
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                <Image
+                  src={workSchedule.imageUrl}
+                  alt="Lịch làm việc"
+                  className="block w-full"
+                  preview={{
+                    mask: "Xem lịch",
+                  }}
+                />
+              </div>
+
+              <div className="mt-4 flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-slate-400">
+                  Cập nhật lần cuối:
+                  <span className="ml-1 font-medium text-slate-600">
+                    {workSchedule.updatedAt
+                      ? dayjs(workSchedule.updatedAt).format("DD/MM/YYYY HH:mm")
+                      : "—"}
+                  </span>
+                </div>
+
+                <Tag color="success" className="w-fit rounded-full px-3">
+                  Lịch hiện tại
+                </Tag>
+              </div>
+            </div>
+          ) : (
+            <div className="flex min-h-[250px] items-center justify-center">
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="Chưa có lịch làm việc"
+              >
+                <Upload
+                  accept="image/*"
+                  showUploadList={false}
+                  customRequest={handleScheduleRequest}
+                  disabled={scheduleUploading}
+                >
+                  <Button
+                    type="primary"
+                    icon={<CloudUploadOutlined />}
+                    loading={scheduleUploading}
+                  >
+                    Thêm lịch làm việc
+                  </Button>
+                </Upload>
+              </Empty>
+            </div>
+          )}
+        </div>
+      </Card>
       {/* ================= STATS ================= */}
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="erp-section-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-slate-500">Tổng thông báo</div>
-
-              <div className="mt-1 text-2xl font-bold text-slate-800">
-                {statistics.total}
-              </div>
-
-              <div className="mt-1 text-xs text-slate-400">
-                Tất cả thông báo
-              </div>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-xl text-blue-600">
-              <BellOutlined />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="erp-section-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-slate-500">Đang hiển thị</div>
-
-              <div className="mt-1 text-2xl font-bold text-slate-800">
-                {statistics.active}
-              </div>
-
-              <div className="mt-1 text-xs text-emerald-500">
-                Đang hoạt động
-              </div>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-xl text-emerald-600">
-              <CheckCircleOutlined />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="erp-section-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-slate-500">Cảnh báo</div>
-
-              <div className="mt-1 text-2xl font-bold text-slate-800">
-                {statistics.warning}
-              </div>
-
-              <div className="mt-1 text-xs text-amber-500">Cần chú ý</div>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-xl text-amber-600">
-              <WarningOutlined />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="erp-section-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-slate-500">Thành công</div>
-
-              <div className="mt-1 text-2xl font-bold text-slate-800">
-                {statistics.success}
-              </div>
-
-              <div className="mt-1 text-xs text-blue-500">
-                Thông báo tích cực
-              </div>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-xl text-purple-600">
-              <CheckCircleOutlined />
-            </div>
-          </div>
-        </Card>
-      </div>
 
       {/* ================= TABLE ================= */}
 

@@ -416,8 +416,7 @@ const Layout = ({ children }) => {
   const notificationContent = (
     <div
       style={{
-        width: 360,
-        maxWidth: "calc(100vw - 40px)",
+        width: "min(360px, calc(100vw - 56px))",
       }}
     >
       {/* HEADER */}
@@ -794,6 +793,14 @@ const Layout = ({ children }) => {
                 placement="bottomRight"
                 arrow={false}
                 content={notificationContent}
+                align={{
+                  offset: [40, 8],
+                }}
+                styles={{
+                  root: {
+                    maxWidth: "calc(100vw - 24px)",
+                  },
+                }}
               >
                 <Tooltip title="Thông báo">
                   <Badge

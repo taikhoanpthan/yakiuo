@@ -5,10 +5,13 @@ import Dashboard from "../pages/dashboard/Dashboard";
 import Users from "../pages/users/Users";
 import Feedback from "../pages/feedback/Feedback";
 import Notifications from "../pages/notifications/Notifications";
-import Layout from "../components/layout/Layout";
-import ProtectedRoute from "./ProtectedRoute";
 import Profile from "../pages/profile/Profile";
 import Todos from "../pages/todos/Todos";
+
+import Layout from "../components/layout/Layout";
+import ProtectedRoute from "./ProtectedRoute";
+import ChatPage from "../pages/chat/ChatPage";
+
 const AppRouter = () => {
   return (
     <Routes>
@@ -53,6 +56,8 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* NOTIFICATIONS */}
       <Route
         path="/notifications"
         element={
@@ -63,6 +68,8 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* PROFILE */}
       <Route
         path="/profile"
         element={
@@ -73,6 +80,8 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* TODOS */}
       <Route
         path="/todos"
         element={
@@ -83,6 +92,30 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* CHAT */}
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ChatPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ChatPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
       {/* 404 */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

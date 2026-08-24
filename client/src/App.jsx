@@ -15,7 +15,16 @@ function App() {
           colorBorder: "#e5eaf2",
           fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
         },
-        components: { Card: { paddingLG: 20 }, Table: { headerBg: "#f8faff" } },
+
+        components: {
+          Card: {
+            paddingLG: 20,
+          },
+
+          Table: {
+            headerBg: "#f8faff",
+          },
+        },
       }}
     >
       <BrowserRouter>

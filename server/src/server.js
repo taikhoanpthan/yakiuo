@@ -15,9 +15,16 @@ dns.setServers(["8.8.8.8", "1.1.1.1"]);
 // =========================
 
 const express = require("express");
+const http = require("http");
 const cors = require("cors");
+const { Server } = require("socket.io");
 
 const connectDB = require("./config/db");
+
+// =========================
+// ROUTES
+// =========================
+
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
 const feedbackRoutes = require("./routes/feedback.routes");
@@ -27,12 +34,25 @@ const uploadRoutes = require("./routes/upload.routes");
 const todoRoutes = require("./routes/todo.routes");
 const commissionRoutes = require("./routes/commission.routes");
 const workScheduleRoutes = require("./routes/workSchedule.routes");
+const conversationRoutes = require("./routes/conversation.routes");
+const messageRoutes = require("./routes/message.routes");
+// =========================
+// SOCKET
+// =========================
+
+// File:
+// server/src/sockets/chat.socket.js
+const setupChatSocket = require("./sockets/chat.socket");
 
 // =========================
 // APP
 // =========================
 
 const app = express();
+
+// Tạo HTTP server từ Express
+// Socket.IO sẽ chạy trên server này
+const server = http.createServer(app);
 
 // =========================
 // CORS
@@ -45,16 +65,22 @@ const allowedOrigins = [
 
 console.log("Allowed CORS origins:", allowedOrigins);
 
+// =========================
+// EXPRESS CORS
+// =========================
+
 app.use(
   cors({
     origin: (origin, callback) => {
       // Cho phép request không có Origin
-      // Ví dụ: Postman, server-to-server
+      // Ví dụ:
+      // Postman
+      // Server-to-server
       if (!origin) {
         return callback(null, true);
       }
 
-      // Cho phép frontend nằm trong danh sách
+      // Cho phép frontend trong whitelist
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
@@ -69,6 +95,35 @@ app.use(
 );
 
 // =========================
+// SOCKET.IO
+// =========================
+
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+  },
+
+  // Ưu tiên WebSocket
+  // Nếu không được thì fallback polling
+  transports: ["websocket", "polling"],
+
+  // Tự động reconnect phía client
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    skipMiddlewares: true,
+  },
+});
+
+// =========================
+// SETUP SOCKET
+// =========================
+
+// Toàn bộ socket event nằm trong:
+// src/sockets/chat.socket.js
+setupChatSocket(io);
+
+// =========================
 // BODY PARSER
 // =========================
 
@@ -81,14 +136,26 @@ app.use(express.urlencoded({ extended: true }));
 // =========================
 
 app.use("/api/auth", authRoutes);
+
 app.use("/api/users", userRoutes);
+
 app.use("/api/feedback", feedbackRoutes);
+
 app.use("/api/dashboard", dashboardRoutes);
+
 app.use("/api/notifications", notificationRoutes);
+
 app.use("/api/upload", uploadRoutes);
+
 app.use("/api/todos", todoRoutes);
+
 app.use("/api/commissions", commissionRoutes);
+
 app.use("/api/work-schedule", workScheduleRoutes);
+
+app.use("/api/conversations", conversationRoutes);
+
+app.use("/api/messages", messageRoutes);
 // =========================
 // CLOUDINARY TEST
 // =========================
@@ -112,8 +179,25 @@ app.get("/api/cloudinary", (req, res) => {
 app.get("/api", (req, res) => {
   res.json({
     success: true,
+
     message: "Yakiuo ERP API is running 🚀",
+
     environment: process.env.NODE_ENV || "development",
+
+    socket: "enabled",
+
+    socketTransport: ["websocket", "polling"],
+  });
+});
+
+// =========================
+// SOCKET HEALTH CHECK
+// =========================
+
+app.get("/api/socket", (req, res) => {
+  res.json({
+    success: true,
+    message: "Socket.IO server is running 🔌",
   });
 });
 
@@ -124,6 +208,7 @@ app.get("/api", (req, res) => {
 app.use((req, res) => {
   res.status(404).json({
     success: false,
+
     message: `Route not found: ${req.method} ${req.originalUrl}`,
   });
 });
@@ -145,6 +230,7 @@ app.use((err, req, res, next) => {
 
   return res.status(err.status || 500).json({
     success: false,
+
     message: err.message || "Internal server error",
   });
 });
@@ -161,12 +247,29 @@ const PORT = process.env.PORT || 4000;
 
 const startServer = async () => {
   try {
+    // =========================
+    // DATABASE
+    // =========================
+
     await connectDB();
 
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`🚀 Yakiuo ERP API running on port ${PORT}`);
+    // =========================
+    // HTTP + SOCKET SERVER
+    // =========================
 
-      console.log(`🌐 Environment: ${process.env.NODE_ENV || "development"}`);
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log("");
+      console.log("====================================");
+      console.log("🚀 YAKIUO ERP SERVER");
+      console.log("====================================");
+
+      console.log(`🌐 API: http://localhost:${PORT}`);
+
+      console.log(`🔌 Socket.IO: enabled`);
+
+      console.log(`🔗 Socket URL: http://localhost:${PORT}`);
+
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
 
       console.log(
         `☁️ Cloudinary: ${
@@ -180,9 +283,14 @@ const startServer = async () => {
         }`,
       );
 
+      console.log(`🗄️ MongoDB: connected`);
+
       console.log(
         `🌍 Frontend: ${process.env.FRONTEND_URL || "http://localhost:5173"}`,
       );
+
+      console.log("====================================");
+      console.log("");
     });
   } catch (error) {
     console.error("❌ MongoDB connection failed:", error.message);
@@ -190,5 +298,9 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+// =========================
+// START
+// =========================
 
 startServer();

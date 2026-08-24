@@ -18,7 +18,6 @@ const express = require("express");
 const cors = require("cors");
 
 const connectDB = require("./config/db");
-
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
 const feedbackRoutes = require("./routes/feedback.routes");
@@ -26,6 +25,8 @@ const dashboardRoutes = require("./routes/dashboard.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const uploadRoutes = require("./routes/upload.routes");
 const todoRoutes = require("./routes/todo.routes");
+const commissionRoutes = require("./routes/commission.routes");
+
 
 // =========================
 // APP
@@ -60,10 +61,7 @@ app.use(
 
       console.warn(`CORS blocked: ${origin}`);
 
-      return callback(
-        new Error(`CORS blocked for origin: ${origin}`),
-        false,
-      );
+      return callback(new Error(`CORS blocked for origin: ${origin}`), false);
     },
 
     credentials: true,
@@ -83,18 +81,13 @@ app.use(express.urlencoded({ extended: true }));
 // =========================
 
 app.use("/api/auth", authRoutes);
-
 app.use("/api/users", userRoutes);
-
 app.use("/api/feedback", feedbackRoutes);
-
 app.use("/api/dashboard", dashboardRoutes);
-
 app.use("/api/notifications", notificationRoutes);
-
 app.use("/api/upload", uploadRoutes);
-
 app.use("/api/todos", todoRoutes);
+app.use("/api/commissions", commissionRoutes);
 
 // =========================
 // CLOUDINARY TEST
@@ -104,14 +97,11 @@ app.get("/api/cloudinary", (req, res) => {
   res.json({
     success: true,
 
-    cloudName:
-      process.env.CLOUDINARY_CLOUD_NAME || null,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || null,
 
-    apiKeyConfigured:
-      !!process.env.CLOUDINARY_API_KEY,
+    apiKeyConfigured: !!process.env.CLOUDINARY_API_KEY,
 
-    apiSecretConfigured:
-      !!process.env.CLOUDINARY_API_SECRET,
+    apiSecretConfigured: !!process.env.CLOUDINARY_API_SECRET,
   });
 });
 
@@ -123,8 +113,7 @@ app.get("/api", (req, res) => {
   res.json({
     success: true,
     message: "Yakiuo ERP API is running 🚀",
-    environment:
-      process.env.NODE_ENV || "development",
+    environment: process.env.NODE_ENV || "development",
   });
 });
 
@@ -156,8 +145,7 @@ app.use((err, req, res, next) => {
 
   return res.status(err.status || 500).json({
     success: false,
-    message:
-      err.message || "Internal server error",
+    message: err.message || "Internal server error",
   });
 });
 
@@ -176,44 +164,28 @@ const startServer = async () => {
     await connectDB();
 
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(
-        `🚀 Yakiuo ERP API running on port ${PORT}`,
-      );
+      console.log(`🚀 Yakiuo ERP API running on port ${PORT}`);
 
-      console.log(
-        `🌐 Environment: ${
-          process.env.NODE_ENV || "development"
-        }`,
-      );
+      console.log(`🌐 Environment: ${process.env.NODE_ENV || "development"}`);
 
       console.log(
         `☁️ Cloudinary: ${
-          process.env.CLOUDINARY_CLOUD_NAME
-            ? "configured"
-            : "not configured"
+          process.env.CLOUDINARY_CLOUD_NAME ? "configured" : "not configured"
         }`,
       );
 
       console.log(
         `🔐 JWT: ${
-          process.env.JWT_ACCESS_SECRET
-            ? "configured"
-            : "not configured"
+          process.env.JWT_ACCESS_SECRET ? "configured" : "not configured"
         }`,
       );
 
       console.log(
-        `🌍 Frontend: ${
-          process.env.FRONTEND_URL ||
-          "http://localhost:5173"
-        }`,
+        `🌍 Frontend: ${process.env.FRONTEND_URL || "http://localhost:5173"}`,
       );
     });
   } catch (error) {
-    console.error(
-      "❌ MongoDB connection failed:",
-      error.message,
-    );
+    console.error("❌ MongoDB connection failed:", error.message);
 
     process.exit(1);
   }

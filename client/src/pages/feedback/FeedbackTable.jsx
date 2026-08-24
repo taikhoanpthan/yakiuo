@@ -115,7 +115,7 @@ const FeedbackTable = ({
     {
       title: "Người tạo",
       key: "createdBy",
-      width: 190,
+      width: 220,
 
       render: (_, record) => {
         const user = record.createdBy;
@@ -124,22 +124,37 @@ const FeedbackTable = ({
           return <span className="text-slate-400">—</span>;
         }
 
-        return (
-          <div>
-            <div className="font-medium text-slate-700">
-              {user.fullName || user.username || "—"}
-            </div>
+        const name = user.fullName || user.username || "—";
 
-            {user.role && (
-              <div className="text-xs text-slate-400 mt-1 capitalize">
-                {user.role}
+        return (
+          <div className="flex items-center gap-3">
+            {/* Avatar */}
+            {user.avatar ? (
+              <img
+                src={user.avatar}
+                alt={name}
+                className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-200"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center font-semibold text-sm shrink-0">
+                {name.charAt(0).toUpperCase()}
               </div>
             )}
+
+            {/* Tên + role */}
+            <div className="min-w-0">
+              <div className="font-medium text-slate-700 truncate">{name}</div>
+
+              {user.role && (
+                <div className="text-xs text-slate-400 mt-1 capitalize">
+                  {user.role}
+                </div>
+              )}
+            </div>
           </div>
         );
       },
     },
-
     // =========================
     // NGÀY
     // =========================

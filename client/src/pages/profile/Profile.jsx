@@ -18,10 +18,15 @@ import {
   MailOutlined,
   PhoneOutlined,
   SafetyOutlined,
+  EditOutlined,
+  CloseOutlined,
+  DollarOutlined,
+  GoogleOutlined,
 } from "@ant-design/icons";
 
 import api from "../../services/api";
 import { getMe, updateUser } from "../../services/user.service";
+import Commission from "../commission/Commission";
 
 const Profile = () => {
   const [form] = Form.useForm();
@@ -30,6 +35,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
 
   // =========================
   // GET CURRENT USER
@@ -223,47 +229,65 @@ const Profile = () => {
   // =========================
 
   return (
-    <div className="space-y-6">
-      {/* =========================
-          PAGE HEADER
-      ========================= */}
-
+    <div className="mx-auto max-w-5xl space-y-4 pb-6">
+      {/* PAGE HEADER */}
       <div className="erp-page-header">
         <div>
-          <div className="erp-page-eyebrow">
-            Tài khoản
-          </div>
-
-          <h1 className="erp-page-title">
-            Hồ sơ cá nhân
-          </h1>
-
+          <div className="erp-page-eyebrow">Tài khoản</div>
+          <h1 className="erp-page-title">Hồ sơ cá nhân</h1>
           <p className="erp-page-description">
-            Quản lý thông tin cá nhân và ảnh đại diện của bạn.
+            Quản lý thông tin tài khoản, ảnh đại diện và hoa hồng.
           </p>
         </div>
       </div>
 
-      {/* =========================
-          PROFILE OVERVIEW
-      ========================= */}
+      {/* PROFILE CARD */}
+      <Card className="erp-section-card overflow-hidden !p-0">
+        <div className="bg-gradient-to-r from-slate-100 via-white to-slate-50 px-5 pb-5 pt-7 sm:px-8">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-end">
+            <div className="relative shrink-0">
+              <Avatar
+                size={112}
+                src={user?.avatar || undefined}
+                icon={!user?.avatar && <UserOutlined />}
+                className="border-4 border-white shadow-md"
+              >
+                {!user?.avatar && user?.fullName?.charAt(0)?.toUpperCase()}
+              </Avatar>
 
-      <Card className="erp-section-card">
-        <div className="flex flex-col gap-8 lg:flex-row">
-          {/* AVATAR */}
+              <Upload
+                showUploadList={false}
+                accept="image/png,image/jpeg,image/webp"
+                customRequest={handleUploadAvatar}
+              >
+                <Button
+                  type="primary"
+                  shape="circle"
+                  size="small"
+                  icon={<CameraOutlined />}
+                  loading={uploading}
+                  className="absolute bottom-1 right-1"
+                  title="Đổi ảnh đại diện"
+                />
+              </Upload>
+            </div>
 
-          <div className="flex flex-col items-center lg:w-56 lg:border-r lg:border-slate-100 lg:pr-8">
-            <Avatar
-              size={128}
-              src={user?.avatar || undefined}
-              icon={!user?.avatar && <UserOutlined />}
-              className="border-4 border-slate-100 shadow-sm"
-            >
-              {!user?.avatar &&
-                user?.fullName
-                  ?.charAt(0)
-                  ?.toUpperCase()}
-            </Avatar>
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <h2 className="mb-1 truncate text-2xl font-bold text-slate-800">
+                {user?.fullName || "Chưa cập nhật"}
+              </h2>
+
+              <div className="mb-3 text-sm text-slate-500">
+                @{user?.username}
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+                <Tag color={role.color}>{role.label}</Tag>
+                <Tag color={user?.status === "active" ? "success" : "error"}>
+                  {user?.status === "active" ? "Đang hoạt động" : "Đã khóa"}
+                </Tag>
+              </div>
+            </div>
 
             <Upload
               showUploadList={false}
@@ -271,192 +295,198 @@ const Profile = () => {
               customRequest={handleUploadAvatar}
             >
               <Button
-                className="mt-4"
                 icon={<CameraOutlined />}
                 loading={uploading}
+                className="shrink-0"
               >
-                {uploading
-                  ? "Đang tải..."
-                  : "Đổi ảnh đại diện"}
+                Đổi ảnh
               </Button>
             </Upload>
+          </div>
+        </div>
 
-            <div className="mt-3 text-center text-xs leading-5 text-slate-400">
-              JPG, PNG hoặc WEBP
-              <br />
-              Tối đa 5MB
+        <div className="grid grid-cols-1 divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <div className="px-5 py-4">
+            <div className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+              Username
+            </div>
+            <div className="truncate font-medium text-slate-700">
+              @{user?.username || "—"}
             </div>
           </div>
 
-          {/* USER INFO */}
-
-          <div className="flex-1">
-            <div className="flex flex-col gap-2">
-              <h2 className="m-0 text-2xl font-semibold text-slate-800">
-                {user?.fullName}
-              </h2>
-
-              <div className="text-sm text-slate-500">
-                @{user?.username}
-              </div>
-
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Tag color={role.color}>
-                  {role.label}
-                </Tag>
-
-                <Tag
-                  color={
-                    user?.status === "active"
-                      ? "success"
-                      : "error"
-                  }
-                >
-                  {user?.status === "active"
-                    ? "Đang hoạt động"
-                    : "Đã khóa"}
-                </Tag>
-              </div>
+          <div className="px-5 py-4">
+            <div className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+              Email
             </div>
+            <div className="truncate font-medium text-slate-700">
+              {user?.email || "Chưa có"}
+            </div>
+          </div>
 
-            <Divider />
-
-            {/* SUMMARY */}
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="rounded-xl bg-slate-50 p-4">
-                <div className="mb-1 text-xs text-slate-400">
-                  Username
-                </div>
-
-                <div className="font-medium text-slate-700">
-                  @{user?.username}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-4">
-                <div className="mb-1 text-xs text-slate-400">
-                  Email
-                </div>
-
-                <div className="break-all font-medium text-slate-700">
-                  {user?.email || "Chưa có"}
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-slate-50 p-4">
-                <div className="mb-1 text-xs text-slate-400">
-                  Vai trò
-                </div>
-
-                <div className="font-medium text-slate-700">
-                  {role.label}
-                </div>
-              </div>
+          <div className="px-5 py-4">
+            <div className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+              Số điện thoại
+            </div>
+            <div className="font-medium text-slate-700">
+              {user?.phone || "Chưa cập nhật"}
             </div>
           </div>
         </div>
       </Card>
 
-      {/* =========================
-          PERSONAL INFORMATION
-      ========================= */}
-
-      <Card
-        className="erp-section-card"
-        title={
-          <div className="flex items-center gap-2">
-            <UserOutlined />
-
-            <span>Thông tin cá nhân</span>
-          </div>
-        }
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSave}
-          requiredMark={false}
-        >
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {/* FULL NAME */}
-
-            <Form.Item
-              label="Họ và tên"
-              name="fullName"
-              rules={[
-                {
-                  required: true,
-                  message: "Vui lòng nhập họ và tên",
-                },
-                {
-                  min: 2,
-                  message: "Họ và tên phải có ít nhất 2 ký tự",
-                },
-              ]}
-            >
-              <Input
-                size="large"
-                prefix={<UserOutlined />}
-                placeholder="Nhập họ và tên"
-              />
-            </Form.Item>
-
-            {/* EMAIL */}
-
-            <Form.Item
-              label="Email"
-              name="email"
-            >
-              <Input
-                size="large"
-                prefix={<MailOutlined />}
-                disabled
-              />
-            </Form.Item>
-
-            {/* PHONE */}
-
-            <Form.Item
-              label="Số điện thoại"
-              name="phone"
-            >
-              <Input
-                size="large"
-                prefix={<PhoneOutlined />}
-                placeholder="Nhập số điện thoại"
-              />
-            </Form.Item>
-
-            {/* ROLE */}
-
-            <Form.Item label="Quyền tài khoản">
-              <Input
-                size="large"
-                prefix={<SafetyOutlined />}
-                value={role.label}
-                disabled
-              />
-            </Form.Item>
+      {/* ACCOUNT INFORMATION */}
+      <Card className="erp-section-card">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="m-0 text-base font-semibold text-slate-800">
+              Thông tin tài khoản
+            </h3>
+            <p className="mt-1 mb-0 text-sm text-slate-500">
+              Chỉnh sửa họ tên và số điện thoại khi cần.
+            </p>
           </div>
 
-          {/* SAVE */}
+          <Button
+            type={showEditForm ? "default" : "primary"}
+            icon={showEditForm ? <CloseOutlined /> : <EditOutlined />}
+            onClick={() => setShowEditForm((prev) => !prev)}
+          >
+            {showEditForm ? "Đóng" : "Cập nhật thông tin"}
+          </Button>
+        </div>
 
-          <div className="flex justify-end">
-            <Button
-              type="primary"
-              size="large"
-              htmlType="submit"
-              icon={<SaveOutlined />}
-              loading={saving}
+        {showEditForm && (
+          <>
+            <Divider className="my-5" />
+
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleSave}
+              requiredMark={false}
             >
-              Lưu thay đổi
-            </Button>
-          </div>
-        </Form>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Form.Item
+                  label="Họ và tên"
+                  name="fullName"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Vui lòng nhập họ và tên",
+                    },
+                    {
+                      min: 2,
+                      message: "Họ và tên phải có ít nhất 2 ký tự",
+                    },
+                  ]}
+                >
+                  <Input
+                    size="large"
+                    prefix={<UserOutlined />}
+                    placeholder="Nhập họ và tên"
+                  />
+                </Form.Item>
+
+                <Form.Item label="Email" name="email">
+                  <Input
+                    size="large"
+                    prefix={<MailOutlined />}
+                    disabled
+                  />
+                </Form.Item>
+
+                <Form.Item label="Số điện thoại" name="phone">
+                  <Input
+                    size="large"
+                    prefix={<PhoneOutlined />}
+                    placeholder="Nhập số điện thoại"
+                  />
+                </Form.Item>
+
+                <Form.Item label="Quyền tài khoản">
+                  <Input
+                    size="large"
+                    prefix={<SafetyOutlined />}
+                    value={role.label}
+                    disabled
+                  />
+                </Form.Item>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  type="primary"
+                  size="large"
+                  htmlType="submit"
+                  icon={<SaveOutlined />}
+                  loading={saving}
+                >
+                  Lưu thay đổi
+                </Button>
+              </div>
+            </Form>
+          </>
+        )}
       </Card>
+
+      {/* COMMISSION - READY FOR BACKEND */}
+      <div>
+        <div className="mb-3">
+          <h3 className="m-0 text-base font-semibold text-slate-800">
+            Hoa hồng
+          </h3>
+          <p className="mt-1 mb-0 text-sm text-slate-500">
+            Khu vực đã chuẩn bị sẵn để kết nối dữ liệu backend sau này.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* COMMISSION GG */}
+         <Commission />
+
+          {/* NORMAL COMMISSION */}
+          <Card className="erp-section-card">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100">
+                  <DollarOutlined className="text-xl text-slate-600" />
+                </div>
+
+                <div>
+                  <h4 className="m-0 text-base font-semibold text-slate-800">
+                    Commission
+                  </h4>
+                  <p className="mt-1 mb-0 text-xs text-slate-400">
+                    Hoa hồng thông thường
+                  </p>
+                </div>
+              </div>
+
+              <Tag color="default">Chờ backend</Tag>
+            </div>
+
+            <Divider className="my-4" />
+
+            <div className="flex items-end justify-between">
+              <div>
+                <div className="text-xs text-slate-400">Tổng hoa hồng</div>
+                <div className="mt-1 text-2xl font-bold text-slate-300">—</div>
+              </div>
+
+              <div className="text-right">
+                <div className="text-xs text-slate-400">Trạng thái</div>
+                <div className="mt-1 text-sm font-medium text-slate-500">
+                  Chưa có dữ liệu
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
     </div>
   );
+
 };
 
 export default Profile;

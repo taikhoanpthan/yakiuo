@@ -29,6 +29,7 @@ import {
   updateUserStatus,
   deleteUser,
 } from "../../services/user.service";
+import EmployeeDetail from "./EmployeeDetail";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -40,6 +41,8 @@ const Users = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
 
   const fetchUsers = async () => {
     try {
@@ -122,7 +125,8 @@ const Users = () => {
           <Avatar
             size={44}
             src={record.avatar || undefined}
-            className="shrink-0"
+            className="shrink-0 cursor-pointer"
+            onClick={() => setSelectedEmployee(record)}
           >
             {record.fullName?.charAt(0)?.toUpperCase()}
           </Avatar>
@@ -253,7 +257,14 @@ const Users = () => {
       ),
     },
   ];
-
+  if (selectedEmployee) {
+    return (
+      <EmployeeDetail
+        user={selectedEmployee}
+        onBack={() => setSelectedEmployee(null)}
+      />
+    );
+  }
   return (
     <div>
       <div className="erp-page-header">

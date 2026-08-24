@@ -62,7 +62,7 @@ const getFeedbacks = async ({
       Feedback.find(filter)
         .populate(
           "createdBy",
-          "username fullName role"
+          "username fullName role avatar"
         )
         .sort({
           dateTime: -1,
@@ -96,7 +96,7 @@ const getFeedbackById = async (
       feedbackId
     ).populate(
       "createdBy",
-      "username fullName role"
+      "username fullName role avatar"
     );
 
   if (!feedback) {

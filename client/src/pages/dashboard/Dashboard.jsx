@@ -173,11 +173,6 @@ const Dashboard = () => {
             Xin chào, {userName} 👋
           </h1>
 
-          <p className="mt-2 max-w-xl text-sm leading-6 text-blue-100 md:text-[15px]">
-            {isAdmin
-              ? "Theo dõi tổng quan phản hồi khách hàng và hoạt động của hệ thống."
-              : "Theo dõi những phản hồi mới nhất từ khách hàng tại nhà hàng."}
-          </p>
 
           {/* META */}
 
@@ -196,85 +191,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* ==================================================
-          STATISTICS
-      ================================================== */}
 
-      <div
-        className={`mb-6 grid grid-cols-1 gap-4 ${
-          isAdmin ? "md:grid-cols-2" : "md:grid-cols-1"
-        }`}
-      >
-        {/* ==================================================
-            FEEDBACK
-        ================================================== */}
-
-        <div className="group relative overflow-hidden rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
-          <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-blue-50 transition group-hover:scale-125" />
-
-          <div className="relative">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="text-sm font-medium text-slate-400">
-                  Feedback hiện có
-                </div>
-
-                <div className="mt-2 text-4xl font-bold tracking-tight text-slate-800">
-                  {stats.feedbacks.total}
-                </div>
-              </div>
-
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-xl text-blue-600">
-                <MessageOutlined />
-              </div>
-            </div>
-
-            <div className="mt-5 flex items-center gap-2 text-xs text-slate-400">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-50 text-blue-500">
-                <MessageOutlined />
-              </span>
-
-              {isAdmin
-                ? "Tổng phản hồi trong hệ thống"
-                : "Các phản hồi bạn có quyền xem"}
-            </div>
-          </div>
-        </div>
-
-        {/* ==================================================
-            USERS - ADMIN ONLY
-        ================================================== */}
-
-        {isAdmin && (
-          <div className="group relative overflow-hidden rounded-[24px] border border-slate-100 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
-            <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-violet-50 transition group-hover:scale-125" />
-
-            <div className="relative">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-sm font-medium text-slate-400">
-                    Tổng số nhân viên
-                  </div>
-
-                  <div className="mt-2 text-4xl font-bold tracking-tight text-slate-800">
-                    {stats.users.total}
-                  </div>
-                </div>
-
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50 text-xl text-violet-600">
-                  <UserOutlined />
-                </div>
-              </div>
-
-              <div className="mt-5 flex items-center gap-2 text-xs text-slate-400">
-                <span className="h-2 w-2 rounded-full bg-violet-500" />
-
-                <span>{stats.users.active} nhân viên đang hoạt động</span>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
 
  {/* ==================================================
     WORK SCHEDULE

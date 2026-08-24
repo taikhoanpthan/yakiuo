@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  Button,
-  Card,
-  Form,
-  Input,
-  Typography,
-  message,
-} from "antd";
+import { Button, Card, Form, Input, Typography, message } from "antd";
 
 import {
   LockOutlined,
@@ -63,7 +56,7 @@ const Login = () => {
 
       {/* MAIN */}
 
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-10">
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-6 sm:py-10">
         <motion.div
           initial={{
             opacity: 0,
@@ -162,11 +155,14 @@ const Login = () => {
                   ]}
                 >
                   <Input
-                    prefix={
-                      <UserOutlined className="text-slate-400" />
-                    }
+                    prefix={<UserOutlined className="text-slate-400" />}
                     placeholder="Nhập tên đăng nhập"
-                    className="rounded-xl"
+                    className="rounded-xl !text-[16px]"
+                    styles={{
+                      input: {
+                        fontSize: "16px",
+                      },
+                    }}
                     autoComplete="username"
                   />
                 </Form.Item>
@@ -175,9 +171,7 @@ const Login = () => {
 
                 <Form.Item
                   label={
-                    <span className="font-medium text-slate-700">
-                      Mật khẩu
-                    </span>
+                    <span className="font-medium text-slate-700">Mật khẩu</span>
                   }
                   name="password"
                   rules={[
@@ -188,11 +182,14 @@ const Login = () => {
                   ]}
                 >
                   <Input.Password
-                    prefix={
-                      <LockOutlined className="text-slate-400" />
-                    }
+                    prefix={<LockOutlined className="text-slate-400" />}
                     placeholder="Nhập mật khẩu"
-                    className="rounded-xl"
+                    className="rounded-xl !text-[16px]"
+                    styles={{
+                      input: {
+                        fontSize: "16px",
+                      },
+                    }}
                     autoComplete="current-password"
                     visibilityToggle={{
                       visible: passwordVisible,
@@ -220,9 +217,7 @@ const Login = () => {
                     loading={loading}
                     className="!h-12 !rounded-xl !text-[15px] !font-semibold !shadow-lg !shadow-blue-500/20"
                   >
-                    {loading
-                      ? "Đang đăng nhập..."
-                      : "Đăng nhập"}
+                    {loading ? "Đang đăng nhập..." : "Đăng nhập"}
                   </Button>
                 </Form.Item>
               </Form>
@@ -232,9 +227,7 @@ const Login = () => {
               <div className="mt-6 flex items-center justify-center gap-2 text-center text-xs text-slate-400">
                 <SafetyCertificateOutlined />
 
-                <span>
-                  Kết nối được bảo vệ và mã hóa
-                </span>
+                <span>Kết nối được bảo vệ và mã hóa</span>
               </div>
             </div>
 

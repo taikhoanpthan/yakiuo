@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import {
   Avatar,
   Button,
@@ -7,25 +8,29 @@ import {
   Form,
   Input,
   message,
-  Upload,
   Tag,
+  Upload,
 } from "antd";
 
 import {
   CameraOutlined,
-  SaveOutlined,
-  UserOutlined,
-  MailOutlined,
-  PhoneOutlined,
-  SafetyOutlined,
-  EditOutlined,
+  CheckCircleFilled,
   CloseOutlined,
   DollarOutlined,
-  GoogleOutlined,
+  EditOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  SaveOutlined,
+  SafetyOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 
 import api from "../../services/api";
-import { getMe, updateUser } from "../../services/user.service";
+import {
+  getMe,
+  updateUser,
+} from "../../services/user.service";
+
 import Commission from "../commission/Commission";
 
 const Profile = () => {
@@ -35,11 +40,12 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
+  const [showEditForm, setShowEditForm] =
+    useState(false);
 
-  // =========================
+  // =====================================================
   // GET CURRENT USER
-  // =========================
+  // =====================================================
 
   const fetchProfile = async () => {
     try {
@@ -47,21 +53,30 @@ const Profile = () => {
 
       const response = await getMe();
 
-      const currentUser = response?.data?.user;
+      const currentUser =
+        response?.data?.user;
 
       if (!currentUser) {
-        throw new Error("Không tìm thấy thông tin người dùng");
+        throw new Error(
+          "Không tìm thấy thông tin người dùng",
+        );
       }
 
       setUser(currentUser);
 
       form.setFieldsValue({
-        fullName: currentUser.fullName || "",
-        email: currentUser.email || "",
-        phone: currentUser.phone || "",
+        fullName:
+          currentUser.fullName || "",
+        email:
+          currentUser.email || "",
+        phone:
+          currentUser.phone || "",
       });
     } catch (error) {
-      console.error("Get profile failed:", error);
+      console.error(
+        "Get profile failed:",
+        error,
+      );
 
       message.error(
         error.response?.data?.message ||
@@ -77,9 +92,9 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
-  // =========================
+  // =====================================================
   // UPLOAD AVATAR
-  // =========================
+  // =====================================================
 
   const handleUploadAvatar = async ({
     file,
@@ -87,14 +102,18 @@ const Profile = () => {
     onError,
   }) => {
     try {
-      // Kiểm tra loại file
-      if (!file.type?.startsWith("image/")) {
-        throw new Error("Chỉ được upload file hình ảnh");
+      if (
+        !file.type?.startsWith("image/")
+      ) {
+        throw new Error(
+          "Chỉ được upload file hình ảnh",
+        );
       }
 
-      // Kiểm tra dung lượng
       if (file.size > 5 * 1024 * 1024) {
-        throw new Error("Ảnh không được vượt quá 5MB");
+        throw new Error(
+          "Ảnh không được vượt quá 5MB",
+        );
       }
 
       setUploading(true);
@@ -108,23 +127,30 @@ const Profile = () => {
         formData,
       );
 
-      const avatar = response?.data?.data?.avatar;
+      const avatar =
+        response?.data?.data?.avatar;
 
       if (!avatar) {
-        throw new Error("Không nhận được URL avatar");
+        throw new Error(
+          "Không nhận được URL avatar",
+        );
       }
 
-      // Update UI ngay lập tức
       setUser((prev) => ({
         ...prev,
         avatar,
       }));
 
-      message.success("Đã cập nhật ảnh đại diện");
+      message.success(
+        "Đã cập nhật ảnh đại diện",
+      );
 
       onSuccess?.(response.data);
     } catch (error) {
-      console.error("Upload avatar failed:", error);
+      console.error(
+        "Upload avatar failed:",
+        error,
+      );
 
       message.error(
         error.response?.data?.message ||
@@ -138,41 +164,59 @@ const Profile = () => {
     }
   };
 
-  // =========================
+  // =====================================================
   // UPDATE PROFILE
-  // =========================
+  // =====================================================
 
   const handleSave = async (values) => {
     if (!user?._id) {
-      message.error("Không tìm thấy người dùng");
+      message.error(
+        "Không tìm thấy người dùng",
+      );
       return;
     }
 
     try {
       setSaving(true);
 
-      const response = await updateUser(user._id, {
-        fullName: values.fullName.trim(),
-        phone: values.phone?.trim() || "",
-      });
+      const response =
+        await updateUser(user._id, {
+          fullName:
+            values.fullName.trim(),
+          phone:
+            values.phone?.trim() || "",
+        });
 
-      const updatedUser = response?.data?.user;
+      const updatedUser =
+        response?.data?.user;
 
       if (!updatedUser) {
-        throw new Error("Không nhận được dữ liệu người dùng");
+        throw new Error(
+          "Không nhận được dữ liệu người dùng",
+        );
       }
 
       setUser(updatedUser);
 
       form.setFieldsValue({
-        fullName: updatedUser.fullName || "",
-        email: updatedUser.email || "",
-        phone: updatedUser.phone || "",
+        fullName:
+          updatedUser.fullName || "",
+        email:
+          updatedUser.email || "",
+        phone:
+          updatedUser.phone || "",
       });
 
-      message.success("Đã cập nhật thông tin cá nhân");
+      message.success(
+        "Đã cập nhật thông tin cá nhân",
+      );
+
+      setShowEditForm(false);
     } catch (error) {
-      console.error("Update profile failed:", error);
+      console.error(
+        "Update profile failed:",
+        error,
+      );
 
       message.error(
         error.response?.data?.message ||
@@ -184,9 +228,9 @@ const Profile = () => {
     }
   };
 
-  // =========================
+  // =====================================================
   // ROLE
-  // =========================
+  // =====================================================
 
   const roleConfig = {
     admin: {
@@ -205,288 +249,530 @@ const Profile = () => {
     },
   };
 
-  const role = roleConfig[user?.role] || {
-    label: user?.role?.toUpperCase() || "USER",
-    color: "default",
-  };
+  const role =
+    roleConfig[user?.role] || {
+      label:
+        user?.role?.toUpperCase() ||
+        "USER",
+      color: "default",
+    };
 
-  // =========================
+  // =====================================================
   // LOADING
-  // =========================
+  // =====================================================
 
   if (loading) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-slate-500">
+      <div className="flex min-h-[500px] items-center justify-center">
+        <div className="text-sm text-slate-500">
           Đang tải thông tin cá nhân...
         </div>
       </div>
     );
   }
 
-  // =========================
+  // =====================================================
   // RENDER
-  // =========================
+  // =====================================================
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4 pb-6">
-      {/* PAGE HEADER */}
-      <div className="erp-page-header">
-        <div>
-          <div className="erp-page-eyebrow">Tài khoản</div>
-          <h1 className="erp-page-title">Hồ sơ cá nhân</h1>
-          <p className="erp-page-description">
-            Quản lý thông tin tài khoản, ảnh đại diện và hoa hồng.
-          </p>
-        </div>
-      </div>
+    <div className="yakiuo-profile">
+      {/* =================================================
+          PROFILE HEADER
+      ================================================= */}
 
-      {/* PROFILE CARD */}
-      <Card className="erp-section-card overflow-hidden !p-0">
-        <div className="bg-gradient-to-r from-slate-100 via-white to-slate-50 px-5 pb-5 pt-7 sm:px-8">
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-end">
-            <div className="relative shrink-0">
+      <section className="yakiuo-profile-header">
+        {/* COVER */}
+
+        <div className="yakiuo-cover">
+          <div className="yakiuo-cover-overlay" />
+
+          <div className="yakiuo-cover-brand">
+            <span className="yakiuo-cover-logo">
+              Y
+            </span>
+
+            <span>
+              YAKIUO ISHIKAWA
+            </span>
+          </div>
+
+          <Upload
+            showUploadList={false}
+            accept="image/png,image/jpeg,image/webp"
+            customRequest={
+              handleUploadAvatar
+            }
+          >
+            <Button
+              className="yakiuo-cover-camera"
+              icon={<CameraOutlined />}
+            >
+              <span className="hidden sm:inline">
+                Chỉnh sửa ảnh bìa
+              </span>
+              <span className="sm:hidden">
+                Chỉnh sửa
+              </span>
+            </Button>
+          </Upload>
+        </div>
+
+        {/* PROFILE INFO */}
+
+        <div className="yakiuo-profile-info">
+          <div className="yakiuo-profile-main">
+            {/* AVATAR */}
+
+            <div className="yakiuo-avatar-wrapper">
               <Avatar
-                size={112}
-                src={user?.avatar || undefined}
-                icon={!user?.avatar && <UserOutlined />}
-                className="border-4 border-white shadow-md"
+                className="yakiuo-profile-avatar"
+                src={
+                  user?.avatar ||
+                  undefined
+                }
+                icon={
+                  !user?.avatar && (
+                    <UserOutlined />
+                  )
+                }
               >
-                {!user?.avatar && user?.fullName?.charAt(0)?.toUpperCase()}
+                {!user?.avatar &&
+                  user?.fullName
+                    ?.charAt(0)
+                    ?.toUpperCase()}
               </Avatar>
 
               <Upload
                 showUploadList={false}
                 accept="image/png,image/jpeg,image/webp"
-                customRequest={handleUploadAvatar}
+                customRequest={
+                  handleUploadAvatar
+                }
               >
-                <Button
-                  type="primary"
-                  shape="circle"
-                  size="small"
-                  icon={<CameraOutlined />}
-                  loading={uploading}
-                  className="absolute bottom-1 right-1"
-                  title="Đổi ảnh đại diện"
-                />
+                <button
+                  type="button"
+                  className="yakiuo-avatar-camera"
+                  disabled={uploading}
+                >
+                  <CameraOutlined />
+                </button>
               </Upload>
             </div>
 
-            <div className="min-w-0 flex-1 text-center sm:text-left">
-              <h2 className="mb-1 truncate text-2xl font-bold text-slate-800">
-                {user?.fullName || "Chưa cập nhật"}
-              </h2>
+            {/* NAME */}
 
-              <div className="mb-3 text-sm text-slate-500">
-                @{user?.username}
+            <div className="yakiuo-profile-identity">
+              <div className="yakiuo-profile-name-row">
+                <h1>
+                  {user?.fullName ||
+                    "Chưa cập nhật"}
+                </h1>
+
+                {user?.status ===
+                  "active" && (
+                  <CheckCircleFilled className="yakiuo-verified" />
+                )}
               </div>
 
-              <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
-                <Tag color={role.color}>{role.label}</Tag>
-                <Tag color={user?.status === "active" ? "success" : "error"}>
-                  {user?.status === "active" ? "Đang hoạt động" : "Đã khóa"}
+              <div className="yakiuo-profile-username">
+                @{user?.username ||
+                  "username"}
+              </div>
+
+              <div className="yakiuo-profile-meta">
+                <Tag color={role.color}>
+                  {role.label}
                 </Tag>
+
+                <span>
+                  <span className="yakiuo-online-dot" />
+                  Đang hoạt động
+                </span>
               </div>
             </div>
 
-            <Upload
-              showUploadList={false}
-              accept="image/png,image/jpeg,image/webp"
-              customRequest={handleUploadAvatar}
-            >
+            {/* ACTIONS */}
+
+            <div className="yakiuo-profile-actions">
               <Button
-                icon={<CameraOutlined />}
-                loading={uploading}
-                className="shrink-0"
+                type={
+                  showEditForm
+                    ? "default"
+                    : "primary"
+                }
+                icon={
+                  showEditForm ? (
+                    <CloseOutlined />
+                  ) : (
+                    <EditOutlined />
+                  )
+                }
+                onClick={() =>
+                  setShowEditForm(
+                    (prev) => !prev,
+                  )
+                }
               >
-                Đổi ảnh
+                <span className="hidden sm:inline">
+                  {showEditForm
+                    ? "Đóng"
+                    : "Chỉnh sửa trang cá nhân"}
+                </span>
+
+                <span className="sm:hidden">
+                  {showEditForm
+                    ? "Đóng"
+                    : "Chỉnh sửa"}
+                </span>
               </Button>
-            </Upload>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          <div className="px-5 py-4">
-            <div className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-              Username
-            </div>
-            <div className="truncate font-medium text-slate-700">
-              @{user?.username || "—"}
             </div>
           </div>
 
-          <div className="px-5 py-4">
-            <div className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-              Email
-            </div>
-            <div className="truncate font-medium text-slate-700">
-              {user?.email || "Chưa có"}
-            </div>
-          </div>
+          {/* TABS */}
 
-          <div className="px-5 py-4">
-            <div className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-              Số điện thoại
-            </div>
-            <div className="font-medium text-slate-700">
-              {user?.phone || "Chưa cập nhật"}
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* ACCOUNT INFORMATION */}
-      <Card className="erp-section-card">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="m-0 text-base font-semibold text-slate-800">
-              Thông tin tài khoản
-            </h3>
-            <p className="mt-1 mb-0 text-sm text-slate-500">
-              Chỉnh sửa họ tên và số điện thoại khi cần.
-            </p>
-          </div>
-
-          <Button
-            type={showEditForm ? "default" : "primary"}
-            icon={showEditForm ? <CloseOutlined /> : <EditOutlined />}
-            onClick={() => setShowEditForm((prev) => !prev)}
-          >
-            {showEditForm ? "Đóng" : "Cập nhật thông tin"}
-          </Button>
-        </div>
-
-        {showEditForm && (
-          <>
-            <Divider className="my-5" />
-
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={handleSave}
-              requiredMark={false}
+          <div className="yakiuo-profile-tabs">
+            <button
+              type="button"
+              className="is-active"
             >
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Form.Item
-                  label="Họ và tên"
-                  name="fullName"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Vui lòng nhập họ và tên",
-                    },
-                    {
-                      min: 2,
-                      message: "Họ và tên phải có ít nhất 2 ký tự",
-                    },
-                  ]}
-                >
-                  <Input
-                    size="large"
-                    prefix={<UserOutlined />}
-                    placeholder="Nhập họ và tên"
-                  />
-                </Form.Item>
+              Bài viết
+            </button>
 
-                <Form.Item label="Email" name="email">
-                  <Input
-                    size="large"
-                    prefix={<MailOutlined />}
-                    disabled
-                  />
-                </Form.Item>
+            <button type="button">
+              Giới thiệu
+            </button>
 
-                <Form.Item label="Số điện thoại" name="phone">
-                  <Input
-                    size="large"
-                    prefix={<PhoneOutlined />}
-                    placeholder="Nhập số điện thoại"
-                  />
-                </Form.Item>
+            <button type="button">
+              Hoa hồng
+            </button>
 
-                <Form.Item label="Quyền tài khoản">
-                  <Input
-                    size="large"
-                    prefix={<SafetyOutlined />}
-                    value={role.label}
-                    disabled
-                  />
-                </Form.Item>
-              </div>
-
-              <div className="flex justify-end">
-                <Button
-                  type="primary"
-                  size="large"
-                  htmlType="submit"
-                  icon={<SaveOutlined />}
-                  loading={saving}
-                >
-                  Lưu thay đổi
-                </Button>
-              </div>
-            </Form>
-          </>
-        )}
-      </Card>
-
-      {/* COMMISSION - READY FOR BACKEND */}
-      <div>
-        <div className="mb-3">
-          <h3 className="m-0 text-base font-semibold text-slate-800">
-            Hoa hồng
-          </h3>
-          <p className="mt-1 mb-0 text-sm text-slate-500">
-            Khu vực đã chuẩn bị sẵn để kết nối dữ liệu backend sau này.
-          </p>
+            <button type="button">
+              Ảnh
+            </button>
+          </div>
         </div>
+      </section>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* COMMISSION GG */}
-         <Commission />
+      {/* =================================================
+          BODY
+      ================================================= */}
 
-          {/* NORMAL COMMISSION */}
-          <Card className="erp-section-card">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100">
-                  <DollarOutlined className="text-xl text-slate-600" />
+      <div className="yakiuo-profile-body">
+        <div className="yakiuo-profile-grid">
+          {/* =================================================
+              LEFT COLUMN
+          ================================================= */}
+
+          <div className="yakiuo-profile-left">
+            {/* INTRO */}
+
+            <Card
+              bordered={false}
+              className="yakiuo-social-card"
+            >
+              <div className="yakiuo-card-title">
+                Giới thiệu
+              </div>
+
+              <div className="yakiuo-intro-role">
+                {role.label}
+              </div>
+
+              <div className="yakiuo-intro-list">
+                <div>
+                  <UserOutlined />
+                  <span>
+                    @{user?.username ||
+                      "—"}
+                  </span>
                 </div>
 
                 <div>
-                  <h4 className="m-0 text-base font-semibold text-slate-800">
-                    Commission
-                  </h4>
-                  <p className="mt-1 mb-0 text-xs text-slate-400">
-                    Hoa hồng thông thường
-                  </p>
+                  <MailOutlined />
+                  <span>
+                    {user?.email ||
+                      "Chưa cập nhật"}
+                  </span>
+                </div>
+
+                <div>
+                  <PhoneOutlined />
+                  <span>
+                    {user?.phone ||
+                      "Chưa cập nhật"}
+                  </span>
+                </div>
+
+                <div>
+                  <SafetyOutlined />
+                  <span>
+                    Tài khoản{" "}
+                    {user?.status ===
+                    "active"
+                      ? "đang hoạt động"
+                      : "đã bị khóa"}
+                  </span>
                 </div>
               </div>
+            </Card>
 
-              <Tag color="default">Chờ backend</Tag>
-            </div>
+            {/* ACCOUNT EDIT */}
 
-            <Divider className="my-4" />
+            {showEditForm && (
+              <Card
+                bordered={false}
+                className="yakiuo-social-card"
+              >
+                <div className="yakiuo-card-heading">
+                  <div>
+                    <div className="yakiuo-card-title">
+                      Chỉnh sửa thông tin
+                    </div>
 
-            <div className="flex items-end justify-between">
-              <div>
-                <div className="text-xs text-slate-400">Tổng hoa hồng</div>
-                <div className="mt-1 text-2xl font-bold text-slate-300">—</div>
+                    <div className="yakiuo-card-subtitle">
+                      Cập nhật thông tin cá nhân của bạn.
+                    </div>
+                  </div>
+                </div>
+
+                <Divider />
+
+                <Form
+                  form={form}
+                  layout="vertical"
+                  onFinish={handleSave}
+                  requiredMark={false}
+                >
+                  <Form.Item
+                    label="Họ và tên"
+                    name="fullName"
+                    rules={[
+                      {
+                        required: true,
+                        message:
+                          "Vui lòng nhập họ và tên",
+                      },
+                      {
+                        min: 2,
+                        message:
+                          "Họ và tên phải có ít nhất 2 ký tự",
+                      },
+                    ]}
+                  >
+                    <Input
+                      size="large"
+                      prefix={
+                        <UserOutlined />
+                      }
+                      placeholder="Nhập họ và tên"
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    label="Email"
+                    name="email"
+                  >
+                    <Input
+                      size="large"
+                      prefix={
+                        <MailOutlined />
+                      }
+                      disabled
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    label="Số điện thoại"
+                    name="phone"
+                  >
+                    <Input
+                      size="large"
+                      prefix={
+                        <PhoneOutlined />
+                      }
+                      placeholder="Nhập số điện thoại"
+                    />
+                  </Form.Item>
+
+                  <Form.Item label="Quyền tài khoản">
+                    <Input
+                      size="large"
+                      prefix={
+                        <SafetyOutlined />
+                      }
+                      value={role.label}
+                      disabled
+                    />
+                  </Form.Item>
+
+                  <div className="flex justify-end">
+                    <Button
+                      type="primary"
+                      size="large"
+                      htmlType="submit"
+                      icon={
+                        <SaveOutlined />
+                      }
+                      loading={saving}
+                    >
+                      Lưu thay đổi
+                    </Button>
+                  </div>
+                </Form>
+              </Card>
+            )}
+          </div>
+
+          {/* =================================================
+              RIGHT COLUMN
+          ================================================= */}
+
+          <div className="yakiuo-profile-right">
+            {/* POST / PROFILE INFO */}
+
+            <Card
+              bordered={false}
+              className="yakiuo-social-card"
+            >
+              <div className="yakiuo-card-heading">
+                <div className="yakiuo-card-title">
+                  Thông tin tài khoản
+                </div>
+
+                <Button
+                  type="text"
+                  icon={<EditOutlined />}
+                  onClick={() =>
+                    setShowEditForm(true)
+                  }
+                >
+                  Chỉnh sửa
+                </Button>
               </div>
 
-              <div className="text-right">
-                <div className="text-xs text-slate-400">Trạng thái</div>
-                <div className="mt-1 text-sm font-medium text-slate-500">
-                  Chưa có dữ liệu
+              <div className="yakiuo-info-grid">
+                <div className="yakiuo-info-box">
+                  <span>
+                    Username
+                  </span>
+
+                  <strong>
+                    @{user?.username ||
+                      "—"}
+                  </strong>
+                </div>
+
+                <div className="yakiuo-info-box">
+                  <span>
+                    Email
+                  </span>
+
+                  <strong>
+                    {user?.email ||
+                      "—"}
+                  </strong>
+                </div>
+
+                <div className="yakiuo-info-box">
+                  <span>
+                    Điện thoại
+                  </span>
+
+                  <strong>
+                    {user?.phone ||
+                      "Chưa cập nhật"}
+                  </strong>
+                </div>
+
+                <div className="yakiuo-info-box">
+                  <span>
+                    Vai trò
+                  </span>
+
+                  <strong>
+                    {role.label}
+                  </strong>
                 </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+
+            {/* COMMISSION */}
+
+            <Card
+              bordered={false}
+              className="yakiuo-social-card"
+            >
+              <div className="yakiuo-card-heading">
+                <div>
+                  <div className="yakiuo-card-title">
+                    Hoa hồng
+                  </div>
+
+                  <div className="yakiuo-card-subtitle">
+                    Theo dõi hoa hồng của bạn.
+                  </div>
+                </div>
+
+                <DollarOutlined className="yakiuo-card-icon" />
+              </div>
+
+              <Divider />
+
+              <Commission />
+            </Card>
+
+            {/* NORMAL COMMISSION */}
+
+            <Card
+              bordered={false}
+              className="yakiuo-social-card"
+            >
+              <div className="yakiuo-card-heading">
+                <div className="flex items-center gap-3">
+                  <div className="yakiuo-small-icon">
+                    <DollarOutlined />
+                  </div>
+
+                  <div>
+                    <div className="yakiuo-card-title">
+                      Commission
+                    </div>
+
+                    <div className="yakiuo-card-subtitle">
+                      Hoa hồng thông thường
+                    </div>
+                  </div>
+                </div>
+
+                <Tag color="default">
+                  Chờ backend
+                </Tag>
+              </div>
+
+              <Divider />
+
+              <div className="yakiuo-empty-commission">
+                <div className="yakiuo-empty-money">
+                  —
+                </div>
+
+                <div>
+                  <strong>
+                    Chưa có dữ liệu
+                  </strong>
+
+                  <span>
+                    Dữ liệu commission sẽ được cập nhật khi backend sẵn sàng.
+                  </span>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
   );
-
 };
 
 export default Profile;

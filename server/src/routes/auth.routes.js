@@ -1,6 +1,7 @@
 const express = require("express");
 
-const authController = require("../controllers/auth.controller");
+const authController =
+  require("../controllers/auth.controller");
 
 const {
   authenticate,
@@ -8,52 +9,54 @@ const {
 
 const router = express.Router();
 
-// =========================
+// =====================================================
 // LOGIN
-// =========================
+// =====================================================
 
 router.post(
   "/login",
-  authController.login,
+  authController.login
 );
 
-// =========================
+// =====================================================
 // REFRESH
-// =========================
+// Không authenticate
+// Vì access token có thể đã hết hạn
+// =====================================================
 
 router.post(
   "/refresh",
-  authController.refresh,
+  authController.refresh
 );
 
-// =========================
+// =====================================================
 // CURRENT USER
-// =========================
+// =====================================================
 
 router.get(
   "/me",
   authenticate,
-  authController.me,
+  authController.me
 );
 
-// =========================
+// =====================================================
 // LOGOUT
-// =========================
+// =====================================================
 
 router.post(
   "/logout",
   authenticate,
-  authController.logout,
+  authController.logout
 );
 
-// =========================
+// =====================================================
 // CHANGE PASSWORD
-// =========================
+// =====================================================
 
 router.patch(
   "/change-password",
   authenticate,
-  authController.changePassword,
+  authController.changePassword
 );
 
 module.exports = router;

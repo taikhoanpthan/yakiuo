@@ -336,3 +336,763 @@ button {
     animation-duration: 0.01ms !important;
   }
 }
+/* =====================================================
+   YAKIUO SOCIAL PROFILE
+===================================================== */
+
+.yakiuo-profile {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+}
+
+/* =====================================================
+   PROFILE HEADER
+===================================================== */
+
+.yakiuo-profile-header {
+  overflow: hidden;
+
+  background: #fff;
+
+  border: 1px solid #e4e6eb;
+  border-radius: 0 0 12px 12px;
+
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* =====================================================
+   COVER
+===================================================== */
+
+.yakiuo-cover {
+  position: relative;
+
+  height: 280px;
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      135deg,
+      #172033 0%,
+      #263b68 45%,
+      #3977f6 100%
+    );
+}
+
+.yakiuo-cover::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(255, 255, 255, 0.18),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(255, 255, 255, 0.12),
+      transparent 35%
+    );
+}
+
+.yakiuo-cover-overlay {
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.05),
+      rgba(0, 0, 0, 0.28)
+    );
+}
+
+.yakiuo-cover-brand {
+  position: absolute;
+
+  left: 28px;
+  bottom: 24px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  color: #fff;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  letter-spacing: 1.5px;
+}
+
+.yakiuo-cover-logo {
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.16);
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.25);
+
+  backdrop-filter: blur(10px);
+
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.yakiuo-cover-camera {
+  position: absolute !important;
+
+  right: 20px;
+  bottom: 20px;
+
+  background: rgba(255, 255, 255, 0.92) !important;
+
+  border: none !important;
+
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.16);
+}
+
+/* =====================================================
+   PROFILE INFO
+===================================================== */
+
+.yakiuo-profile-info {
+  position: relative;
+
+  padding: 0 28px;
+}
+
+.yakiuo-profile-main {
+  position: relative;
+
+  display: flex;
+  align-items: flex-end;
+
+  min-height: 150px;
+
+  gap: 20px;
+}
+
+.yakiuo-avatar-wrapper {
+  position: relative;
+
+  flex-shrink: 0;
+
+  margin-top: -68px;
+}
+
+.yakiuo-profile-avatar {
+  width: 150px !important;
+  height: 150px !important;
+
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+
+  border: 5px solid #fff;
+
+  background: #e2e8f0;
+
+  color: #64748b;
+
+  font-size: 52px;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.yakiuo-avatar-camera {
+  position: absolute;
+
+  right: 7px;
+  bottom: 7px;
+
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 3px solid #fff;
+  border-radius: 50%;
+
+  background: #e4e6eb;
+
+  color: #1c1e21;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.yakiuo-avatar-camera:hover {
+  background: #d8dadf;
+}
+
+.yakiuo-profile-identity {
+  min-width: 0;
+
+  flex: 1;
+
+  padding-bottom: 22px;
+}
+
+.yakiuo-profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.yakiuo-profile-name-row h1 {
+  margin: 0;
+
+  color: #1c1e21;
+
+  font-size: 28px;
+  font-weight: 750;
+
+  line-height: 1.2;
+}
+
+.yakiuo-verified {
+  color: #3977f6;
+
+  font-size: 18px;
+}
+
+.yakiuo-profile-username {
+  margin-top: 5px;
+
+  color: #65676b;
+
+  font-size: 14px;
+}
+
+.yakiuo-profile-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 10px;
+
+  margin-top: 10px;
+
+  color: #65676b;
+
+  font-size: 12px;
+}
+
+.yakiuo-profile-meta > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.yakiuo-online-dot {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: #31a24c;
+}
+
+.yakiuo-profile-actions {
+  padding-bottom: 22px;
+}
+
+/* =====================================================
+   TABS
+===================================================== */
+
+.yakiuo-profile-tabs {
+  display: flex;
+  align-items: center;
+
+  gap: 4px;
+
+  border-top: 1px solid #e4e6eb;
+}
+
+.yakiuo-profile-tabs button {
+  position: relative;
+
+  padding: 16px 20px;
+
+  border: none;
+
+  background: transparent;
+
+  color: #65676b;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.yakiuo-profile-tabs button:hover {
+  background: #f2f2f2;
+}
+
+.yakiuo-profile-tabs button.is-active {
+  color: #3977f6;
+}
+
+.yakiuo-profile-tabs button.is-active::after {
+  content: "";
+
+  position: absolute;
+
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+
+  height: 3px;
+
+  border-radius: 3px 3px 0 0;
+
+  background: #3977f6;
+}
+
+/* =====================================================
+   BODY
+===================================================== */
+
+.yakiuo-profile-body {
+  padding-top: 16px;
+}
+
+.yakiuo-profile-grid {
+  display: grid;
+
+  grid-template-columns:
+    minmax(280px, 360px)
+    minmax(0, 1fr);
+
+  align-items: start;
+
+  gap: 16px;
+}
+
+.yakiuo-profile-left,
+.yakiuo-profile-right {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 16px;
+
+  min-width: 0;
+}
+
+/* =====================================================
+   CARD
+===================================================== */
+
+.yakiuo-social-card {
+  border: 1px solid #e4e6eb !important;
+  border-radius: 10px !important;
+
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.yakiuo-social-card
+  .ant-card-body {
+  padding: 20px;
+}
+
+.yakiuo-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 15px;
+}
+
+.yakiuo-card-title {
+  color: #1c1e21;
+
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.yakiuo-card-subtitle {
+  margin-top: 4px;
+
+  color: #65676b;
+
+  font-size: 13px;
+}
+
+.yakiuo-card-icon {
+  color: #3977f6;
+
+  font-size: 20px;
+}
+
+/* =====================================================
+   INTRO
+===================================================== */
+
+.yakiuo-intro-role {
+  margin-top: 14px;
+
+  padding: 10px 12px;
+
+  border-radius: 8px;
+
+  background: #f0f2f5;
+
+  color: #1c1e21;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  text-align: center;
+}
+
+.yakiuo-intro-list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 16px;
+
+  margin-top: 20px;
+}
+
+.yakiuo-intro-list > div {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  color: #65676b;
+
+  font-size: 14px;
+
+  word-break: break-word;
+}
+
+.yakiuo-intro-list svg {
+  flex-shrink: 0;
+
+  width: 20px;
+
+  color: #8a8d91;
+
+  font-size: 17px;
+}
+
+/* =====================================================
+   INFO
+===================================================== */
+
+.yakiuo-info-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 10px;
+}
+
+.yakiuo-info-box {
+  padding: 14px;
+
+  border-radius: 8px;
+
+  background: #f7f8fa;
+}
+
+.yakiuo-info-box span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #8a8d91;
+
+  font-size: 11px;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.5px;
+}
+
+.yakiuo-info-box strong {
+  display: block;
+
+  color: #1c1e21;
+
+  font-size: 13px;
+
+  word-break: break-word;
+}
+
+/* =====================================================
+   COMMISSION EMPTY
+===================================================== */
+
+.yakiuo-empty-commission {
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  padding: 12px;
+
+  border-radius: 10px;
+
+  background: #f7f8fa;
+}
+
+.yakiuo-empty-money {
+  width: 46px;
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 12px;
+
+  background: #e4e6eb;
+
+  color: #8a8d91;
+
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.yakiuo-empty-commission
+  div:last-child {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.yakiuo-empty-commission strong {
+  color: #1c1e21;
+
+  font-size: 13px;
+}
+
+.yakiuo-empty-commission span {
+  color: #8a8d91;
+
+  font-size: 11px;
+
+  line-height: 1.5;
+}
+
+.yakiuo-small-icon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+
+  background: #f0f2f5;
+
+  color: #65676b;
+}
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 768px) {
+  .yakiuo-profile {
+    padding: 0 0 24px;
+  }
+
+  .yakiuo-profile-header {
+    border-right: 0;
+    border-left: 0;
+
+    border-radius: 0;
+  }
+
+  .yakiuo-cover {
+    height: 190px;
+  }
+
+  .yakiuo-cover-brand {
+    left: 16px;
+    bottom: 18px;
+
+    font-size: 10px;
+  }
+
+  .yakiuo-cover-logo {
+    width: 30px;
+    height: 30px;
+
+    font-size: 14px;
+  }
+
+  .yakiuo-cover-camera {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .yakiuo-profile-info {
+    padding: 0 12px;
+  }
+
+  .yakiuo-profile-main {
+    display: block;
+
+    min-height: 0;
+  }
+
+  .yakiuo-avatar-wrapper {
+    width: fit-content;
+
+    margin-top: -54px;
+  }
+
+  .yakiuo-profile-avatar {
+    width: 108px !important;
+    height: 108px !important;
+
+    font-size: 38px;
+
+    border-width: 4px;
+  }
+
+  .yakiuo-avatar-camera {
+    width: 34px;
+    height: 34px;
+
+    right: 3px;
+    bottom: 3px;
+  }
+
+  .yakiuo-profile-identity {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .yakiuo-profile-name-row h1 {
+    font-size: 23px;
+  }
+
+  .yakiuo-profile-actions {
+    padding-bottom: 14px;
+  }
+
+  .yakiuo-profile-actions
+    .ant-btn {
+    width: 100%;
+  }
+
+  .yakiuo-profile-tabs {
+    margin: 0 -12px;
+
+    overflow-x: auto;
+
+    scrollbar-width: none;
+  }
+
+  .yakiuo-profile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .yakiuo-profile-tabs button {
+    flex: 0 0 auto;
+
+    padding: 14px 17px;
+
+    font-size: 13px;
+  }
+
+  .yakiuo-profile-body {
+    padding-top: 10px;
+  }
+
+  .yakiuo-profile-grid {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+  }
+
+  .yakiuo-profile-left,
+  .yakiuo-profile-right {
+    width: 100%;
+
+    gap: 10px;
+  }
+
+  .yakiuo-social-card {
+    border-radius: 0 !important;
+
+    border-right: 0 !important;
+    border-left: 0 !important;
+  }
+
+  .yakiuo-social-card
+    .ant-card-body {
+    padding: 16px;
+  }
+
+  .yakiuo-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .yakiuo-profile-meta {
+    margin-top: 8px;
+  }
+}
+
+/* =====================================================
+   VERY SMALL MOBILE
+===================================================== */
+
+@media (max-width: 420px) {
+  .yakiuo-cover {
+    height: 160px;
+  }
+
+  .yakiuo-profile-avatar {
+    width: 96px !important;
+    height: 96px !important;
+  }
+
+  .yakiuo-profile-name-row h1 {
+    font-size: 21px;
+  }
+
+  .yakiuo-profile-tabs button {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}

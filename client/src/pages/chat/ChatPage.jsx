@@ -15,18 +15,15 @@ import {
   AudioOutlined,
   CheckOutlined,
   FileImageOutlined,
+  HeartOutlined,
   InfoCircleOutlined,
   PhoneOutlined,
   SearchOutlined,
-  SendOutlined,
   SmileOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
 
-import {
-  connectSocket,
-  getSocket,
-} from "../../services/socket";
+import { connectSocket, getSocket } from "../../services/socket";
 
 import api from "../../services/api";
 
@@ -37,8 +34,7 @@ import api from "../../services/api";
 const getCurrentUser = () => {
   try {
     const user =
-      localStorage.getItem("user") ||
-      localStorage.getItem("currentUser");
+      localStorage.getItem("user") || localStorage.getItem("currentUser");
 
     return user ? JSON.parse(user) : null;
   } catch {
@@ -55,13 +51,10 @@ const getUserId = (user) => {
 const formatTime = (date) => {
   if (!date) return "";
 
-  return new Date(date).toLocaleTimeString(
-    "vi-VN",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  );
+  return new Date(date).toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 const formatConversationTime = (date) => {
@@ -70,20 +63,14 @@ const formatConversationTime = (date) => {
   const messageDate = new Date(date);
   const now = new Date();
 
-  if (
-    messageDate.toDateString() ===
-    now.toDateString()
-  ) {
+  if (messageDate.toDateString() === now.toDateString()) {
     return formatTime(date);
   }
 
-  return messageDate.toLocaleDateString(
-    "vi-VN",
-    {
-      day: "2-digit",
-      month: "2-digit",
-    },
-  );
+  return messageDate.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+  });
 };
 
 // =====================================================
@@ -97,87 +84,59 @@ export default function ChatPage() {
 
   const currentUser = getCurrentUser();
 
-  const currentUserId =
-    getUserId(currentUser);
+  const currentUserId = getUserId(currentUser);
 
   // ===================================================
   // STATE
   // ===================================================
 
-  const [conversations, setConversations] =
-    useState([]);
+  const [conversations, setConversations] = useState([]);
 
-  const [
-    selectedConversationId,
-    setSelectedConversationId,
-  ] = useState(null);
+  const [selectedConversationId, setSelectedConversationId] = useState(null);
 
-  const [messages, setMessages] =
-    useState([]);
+  const [messages, setMessages] = useState([]);
 
-  const [
-    loadingConversations,
-    setLoadingConversations,
-  ] = useState(true);
+  const [loadingConversations, setLoadingConversations] = useState(true);
 
-  const [
-    loadingMessages,
-    setLoadingMessages,
-  ] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
 
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
 
-  const [input, setInput] =
-    useState("");
+  const [input, setInput] = useState("");
 
-  const [mobileChat, setMobileChat] =
-    useState(false);
+  const [mobileChat, setMobileChat] = useState(false);
 
-  const [
-    socketConnected,
-    setSocketConnected,
-  ] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
 
   // ===================================================
   // REFS
   // ===================================================
 
-  const messagesEndRef =
-    useRef(null);
+  const messagesEndRef = useRef(null);
 
-  const currentConversationRef =
-    useRef(null);
+  const currentConversationRef = useRef(null);
 
-  const previousConversationRef =
-    useRef(null);
+  const previousConversationRef = useRef(null);
 
   // ===================================================
   // CURRENT CONVERSATION REF
   // ===================================================
 
   useEffect(() => {
-    currentConversationRef.current =
-      selectedConversationId;
+    currentConversationRef.current = selectedConversationId;
   }, [selectedConversationId]);
 
   // ===================================================
   // OTHER USER
   // ===================================================
 
-  const getOtherParticipant = (
-    conversation,
-  ) => {
-    if (
-      !conversation?.participants
-    ) {
+  const getOtherParticipant = (conversation) => {
+    if (!conversation?.participants) {
       return null;
     }
 
     return conversation.participants.find(
-      (user) =>
-        String(user._id) !==
-        String(currentUserId),
+      (user) => String(user._id) !== String(currentUserId),
     );
   };
 
@@ -185,44 +144,29 @@ export default function ChatPage() {
   // LOAD CONVERSATIONS
   // ===================================================
 
-  const loadConversations =
-    async () => {
-      try {
-        setLoadingConversations(true);
+  const loadConversations = async () => {
+    try {
+      setLoadingConversations(true);
 
-        const response =
-          await api.get(
-            "/conversations",
-          );
+      const response = await api.get("/conversations");
 
-        const data =
-          response?.data?.data || [];
+      const data = response?.data?.data || [];
 
-        setConversations(data);
+      setConversations(data);
 
-        if (
-          data.length > 0 &&
-          !selectedConversationId
-        ) {
-          setSelectedConversationId(
-            data[0]._id,
-          );
-        }
-      } catch (error) {
-        console.error(
-          "Load conversations error:",
-          error,
-        );
-
-        antMessage.error(
-          error?.response?.data
-            ?.message ||
-            "Không thể tải cuộc trò chuyện",
-        );
-      } finally {
-        setLoadingConversations(false);
+      if (data.length > 0 && !selectedConversationId) {
+        setSelectedConversationId(data[0]._id);
       }
-    };
+    } catch (error) {
+      console.error("Load conversations error:", error);
+
+      antMessage.error(
+        error?.response?.data?.message || "Không thể tải cuộc trò chuyện",
+      );
+    } finally {
+      setLoadingConversations(false);
+    }
+  };
 
   useEffect(() => {
     loadConversations();
@@ -232,62 +176,40 @@ export default function ChatPage() {
   // SELECTED CONVERSATION
   // ===================================================
 
-  const selectedConversation =
-    useMemo(() => {
-      return conversations.find(
-        (conversation) =>
-          String(conversation._id) ===
-          String(
-            selectedConversationId,
-          ),
-      );
-    }, [
-      conversations,
-      selectedConversationId,
-    ]);
-
-  const otherUser =
-    getOtherParticipant(
-      selectedConversation,
+  const selectedConversation = useMemo(() => {
+    return conversations.find(
+      (conversation) =>
+        String(conversation._id) === String(selectedConversationId),
     );
+  }, [conversations, selectedConversationId]);
+
+  const otherUser = getOtherParticipant(selectedConversation);
 
   // ===================================================
   // LOAD MESSAGES
   // ===================================================
 
-  const loadMessages = async (
-    conversationId,
-  ) => {
+  const loadMessages = async (conversationId) => {
     if (!conversationId) return;
 
     try {
       setLoadingMessages(true);
 
-      const response =
-        await api.get(
-          `/messages/${conversationId}`,
-          {
-            params: {
-              page: 1,
-              limit: 100,
-            },
-          },
-        );
+      const response = await api.get(`/messages/${conversationId}`, {
+        params: {
+          page: 1,
+          limit: 100,
+        },
+      });
 
-      const data =
-        response?.data?.data || [];
+      const data = response?.data?.data || [];
 
       setMessages(data);
     } catch (error) {
-      console.error(
-        "Load messages error:",
-        error,
-      );
+      console.error("Load messages error:", error);
 
       antMessage.error(
-        error?.response?.data
-          ?.message ||
-          "Không thể tải tin nhắn",
+        error?.response?.data?.message || "Không thể tải tin nhắn",
       );
 
       setMessages([]);
@@ -306,9 +228,7 @@ export default function ChatPage() {
       return;
     }
 
-    loadMessages(
-      selectedConversationId,
-    );
+    loadMessages(selectedConversationId);
   }, [selectedConversationId]);
 
   // ===================================================
@@ -316,53 +236,34 @@ export default function ChatPage() {
   // ===================================================
 
   useEffect(() => {
-    const socket =
-      connectSocket();
+    const socket = connectSocket();
 
     if (!socket) return;
 
     const handleConnect = () => {
-      console.log(
-        "🟢 Chat socket connected:",
-        socket.id,
-      );
+      console.log("🟢 Chat socket connected:", socket.id);
 
       setSocketConnected(true);
 
-      const conversationId =
-        currentConversationRef.current;
+      const conversationId = currentConversationRef.current;
 
       if (conversationId) {
-        socket.emit(
-          "conversation:join",
-          {
-            conversationId,
-          },
-        );
+        socket.emit("conversation:join", {
+          conversationId,
+        });
       }
     };
 
-    const handleDisconnect = (
-      reason,
-    ) => {
-      console.log(
-        "🔴 Chat socket disconnected:",
-        reason,
-      );
+    const handleDisconnect = (reason) => {
+      console.log("🔴 Chat socket disconnected:", reason);
 
       setSocketConnected(false);
     };
 
-    const handleNewMessage = (
-      newMessage,
-    ) => {
-      console.log(
-        "📩 New message:",
-        newMessage,
-      );
+    const handleNewMessage = (newMessage) => {
+      console.log("📩 New message:", newMessage);
 
-      const conversationId =
-        newMessage?.conversationId;
+      const conversationId = newMessage?.conversationId;
 
       if (!conversationId) return;
 
@@ -370,57 +271,36 @@ export default function ChatPage() {
       // UPDATE SIDEBAR
       // =============================================
 
-      setConversations(
-        (prev) => {
-          const index =
-            prev.findIndex(
-              (conversation) =>
-                String(
-                  conversation._id,
-                ) ===
-                String(
-                  conversationId,
-                ),
-            );
+      setConversations((prev) => {
+        const index = prev.findIndex(
+          (conversation) => String(conversation._id) === String(conversationId),
+        );
 
-          if (index === -1) {
-            return prev;
-          }
+        if (index === -1) {
+          return prev;
+        }
 
-          const updatedConversation = {
-            ...prev[index],
+        const updatedConversation = {
+          ...prev[index],
 
-            lastMessage:
-              newMessage,
+          lastMessage: newMessage,
 
-            lastMessageAt:
-              newMessage.createdAt,
-          };
+          lastMessageAt: newMessage.createdAt,
+        };
 
-          const next = [
-            updatedConversation,
-            ...prev.filter(
-              (_, i) =>
-                i !== index,
-            ),
-          ];
+        const next = [
+          updatedConversation,
+          ...prev.filter((_, i) => i !== index),
+        ];
 
-          return next;
-        },
-      );
+        return next;
+      });
 
       // =============================================
       // KHÔNG PHẢI CHAT HIỆN TẠI
       // =============================================
 
-      if (
-        String(
-          conversationId,
-        ) !==
-        String(
-          currentConversationRef.current,
-        )
-      ) {
+      if (String(conversationId) !== String(currentConversationRef.current)) {
         return;
       }
 
@@ -428,122 +308,63 @@ export default function ChatPage() {
       // ADD MESSAGE
       // =============================================
 
-      setMessages(
-        (prev) => {
-          if (
-            newMessage?._id &&
-            prev.some(
-              (item) =>
-                String(item._id) ===
-                String(
-                  newMessage._id,
-                ),
-            )
-          ) {
-            return prev;
-          }
+      setMessages((prev) => {
+        if (
+          newMessage?._id &&
+          prev.some((item) => String(item._id) === String(newMessage._id))
+        ) {
+          return prev;
+        }
 
-          if (
-            newMessage?.clientMessageId &&
-            prev.some(
-              (item) =>
-                item.clientMessageId ===
-                newMessage.clientMessageId,
-            )
-          ) {
-            return prev;
-          }
+        if (
+          newMessage?.clientMessageId &&
+          prev.some(
+            (item) => item.clientMessageId === newMessage.clientMessageId,
+          )
+        ) {
+          return prev;
+        }
 
-          return [
-            ...prev,
-            newMessage,
-          ];
-        },
-      );
+        return [...prev, newMessage];
+      });
     };
 
-    const handleMessageError = (
-      error,
-    ) => {
-      console.error(
-        "❌ message:error",
-        error,
-      );
+    const handleMessageError = (error) => {
+      console.error("❌ message:error", error);
 
-      antMessage.error(
-        error?.message ||
-          "Không thể gửi tin nhắn",
-      );
+      antMessage.error(error?.message || "Không thể gửi tin nhắn");
     };
 
-    const handleChatError = (
-      error,
-    ) => {
-      console.error(
-        "❌ chat:error",
-        error,
-      );
+    const handleChatError = (error) => {
+      console.error("❌ chat:error", error);
 
-      antMessage.error(
-        error?.message ||
-          "Lỗi chat",
-      );
+      antMessage.error(error?.message || "Lỗi chat");
     };
 
-    socket.on(
-      "connect",
-      handleConnect,
-    );
+    socket.on("connect", handleConnect);
 
-    socket.on(
-      "disconnect",
-      handleDisconnect,
-    );
+    socket.on("disconnect", handleDisconnect);
 
-    socket.on(
-      "message:new",
-      handleNewMessage,
-    );
+    socket.on("message:new", handleNewMessage);
 
-    socket.on(
-      "message:error",
-      handleMessageError,
-    );
+    socket.on("message:error", handleMessageError);
 
-    socket.on(
-      "chat:error",
-      handleChatError,
-    );
+    socket.on("chat:error", handleChatError);
 
     if (socket.connected) {
       handleConnect();
     }
 
     return () => {
-      socket.off(
-        "connect",
-        handleConnect,
-      );
+      socket.off("connect", handleConnect);
 
-      socket.off(
-        "disconnect",
-        handleDisconnect,
-      );
+      socket.off("disconnect", handleDisconnect);
 
-      socket.off(
-        "message:new",
-        handleNewMessage,
-      );
+      socket.off("message:new", handleNewMessage);
 
-      socket.off(
-        "message:error",
-        handleMessageError,
-      );
+      socket.off("message:error", handleMessageError);
 
-      socket.off(
-        "chat:error",
-        handleChatError,
-      );
+      socket.off("chat:error", handleChatError);
     };
   }, []);
 
@@ -552,49 +373,30 @@ export default function ChatPage() {
   // ===================================================
 
   useEffect(() => {
-    const socket =
-      getSocket();
+    const socket = getSocket();
 
-    if (
-      !socket ||
-      !selectedConversationId
-    ) {
+    if (!socket || !selectedConversationId) {
       return;
     }
 
-    const previousConversation =
-      previousConversationRef.current;
+    const previousConversation = previousConversationRef.current;
 
     if (
       previousConversation &&
-      String(
-        previousConversation,
-      ) !==
-        String(
-          selectedConversationId,
-        )
+      String(previousConversation) !== String(selectedConversationId)
     ) {
-      socket.emit(
-        "conversation:leave",
-        {
-          conversationId:
-            previousConversation,
-        },
-      );
+      socket.emit("conversation:leave", {
+        conversationId: previousConversation,
+      });
     }
 
     if (socket.connected) {
-      socket.emit(
-        "conversation:join",
-        {
-          conversationId:
-            selectedConversationId,
-        },
-      );
+      socket.emit("conversation:join", {
+        conversationId: selectedConversationId,
+      });
     }
 
-    previousConversationRef.current =
-      selectedConversationId;
+    previousConversationRef.current = selectedConversationId;
   }, [selectedConversationId]);
 
   // ===================================================
@@ -602,150 +404,101 @@ export default function ChatPage() {
   // ===================================================
 
   useEffect(() => {
-    const timer =
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView(
-          {
-            behavior: "smooth",
-          },
-        );
-      }, 80);
+    const timer = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }, 80);
 
-    return () =>
-      clearTimeout(timer);
+    return () => clearTimeout(timer);
   }, [messages]);
 
   // ===================================================
   // SEARCH
   // ===================================================
 
-  const filteredConversations =
-    useMemo(() => {
-      const keyword =
-        search
-          .trim()
-          .toLowerCase();
+  const filteredConversations = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
 
-      if (!keyword) {
-        return conversations;
-      }
+    if (!keyword) {
+      return conversations;
+    }
 
-      return conversations.filter(
-        (conversation) => {
-          const user =
-            getOtherParticipant(
-              conversation,
-            );
+    return conversations.filter((conversation) => {
+      const user = getOtherParticipant(conversation);
 
-          if (!user) return false;
+      if (!user) return false;
 
-          return (
-            user.username
-              ?.toLowerCase()
-              .includes(keyword) ||
-            user.email
-              ?.toLowerCase()
-              .includes(keyword)
-          );
-        },
+      return (
+        user.username?.toLowerCase().includes(keyword) ||
+        user.email?.toLowerCase().includes(keyword)
       );
-    }, [
-      conversations,
-      search,
-      currentUserId,
-    ]);
+    });
+  }, [conversations, search, currentUserId]);
 
   // ===================================================
   // SELECT
   // ===================================================
-
-  const handleSelectConversation =
-    (conversationId) => {
-      setSelectedConversationId(
-        conversationId,
-      );
-
-      setMessages([]);
-
-      setInput("");
-
+  const handleSelectConversation = (conversationId) => {
+    if (String(conversationId) === String(selectedConversationId)) {
       setMobileChat(true);
-    };
+      return;
+    }
+
+    setSelectedConversationId(conversationId);
+    setInput("");
+    setMobileChat(true);
+  };
 
   // ===================================================
   // SEND
   // ===================================================
 
-  const handleSendMessage =
-    () => {
-      const content =
-        input.trim();
+  const handleSendMessage = () => {
+    const content = input.trim();
 
-      if (!content) return;
+    if (!content) return;
 
-      if (
-        !selectedConversationId
-      ) {
-        antMessage.warning(
-          "Vui lòng chọn cuộc trò chuyện",
-        );
-        return;
-      }
+    if (!selectedConversationId) {
+      antMessage.warning("Vui lòng chọn cuộc trò chuyện");
+      return;
+    }
 
-      const socket =
-        getSocket();
+    const socket = getSocket();
 
-      if (
-        !socket ||
-        !socket.connected
-      ) {
-        antMessage.error(
-          "Socket chưa kết nối",
-        );
-        return;
-      }
+    if (!socket || !socket.connected) {
+      antMessage.error("Socket chưa kết nối");
+      return;
+    }
 
-      if (!currentUserId) {
-        antMessage.error(
-          "Không xác định được người dùng",
-        );
-        return;
-      }
+    if (!currentUserId) {
+      antMessage.error("Không xác định được người dùng");
+      return;
+    }
 
-      const clientMessageId =
-        `${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2, 10)}`;
+    const clientMessageId = `${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 10)}`;
 
-      socket.emit(
-        "message:send",
-        {
-          conversationId:
-            selectedConversationId,
+    socket.emit("message:send", {
+      conversationId: selectedConversationId,
 
-          senderId:
-            currentUserId,
+      senderId: currentUserId,
 
-          content,
+      content,
 
-          clientMessageId,
-        },
-      );
+      clientMessageId,
+    });
 
-      setInput("");
-    };
+    setInput("");
+  };
 
   // ===================================================
   // ENTER
   // ===================================================
 
-  const handleKeyDown = (
-    event,
-  ) => {
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey
-    ) {
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
 
       handleSendMessage();
@@ -757,20 +510,12 @@ export default function ChatPage() {
   // ===================================================
 
   const handleBack = () => {
-    const socket =
-      getSocket();
+    const socket = getSocket();
 
-    if (
-      socket &&
-      selectedConversationId
-    ) {
-      socket.emit(
-        "conversation:leave",
-        {
-          conversationId:
-            selectedConversationId,
-        },
-      );
+    if (socket && selectedConversationId) {
+      socket.emit("conversation:leave", {
+        conversationId: selectedConversationId,
+      });
     }
 
     setMobileChat(false);
@@ -782,14 +527,14 @@ export default function ChatPage() {
 
   if (loadingConversations) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center bg-[#f5f7fb]">
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-white">
         <Spin size="large" />
       </div>
     );
   }
 
   // ===================================================
-  // UI
+  // UI — Instagram-style Direct Messages
   // ===================================================
 
   return (
@@ -805,9 +550,8 @@ export default function ChatPage() {
       đúng phần content bên dưới Header.
     */
 
-    <div className="flex min-h-0 flex-1 overflow-hidden bg-[#f5f7fb]">
-      <div className="flex min-h-0 w-full overflow-hidden bg-white lg:m-4 lg:rounded-2xl lg:border lg:border-gray-200 lg:shadow-sm">
-
+    <div className="flex min-h-0 flex-1 overflow-hidden bg-white">
+      <div className="flex min-h-0 w-full overflow-hidden bg-white lg:border lg:border-gray-200">
         {/* ================================================= */}
         {/* SIDEBAR */}
         {/* ================================================= */}
@@ -822,83 +566,55 @@ export default function ChatPage() {
             border-r
             border-gray-200
             bg-white
-            lg:w-[350px]
+            lg:w-[397px]
 
-            ${
-              mobileChat
-                ? "hidden lg:flex"
-                : "flex"
-            }
+            ${mobileChat ? "hidden lg:flex" : "flex"}
           `}
         >
           {/* SIDEBAR HEADER */}
 
-          <div className="shrink-0 border-b border-gray-100 px-4 pb-3 pt-4">
+          <div className="shrink-0 px-4 pb-3 pt-5">
             <div className="mb-4 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="m-0 text-xl font-bold text-gray-900">
-                    Tin nhắn
-                  </h1>
+              <div className="flex items-center gap-1.5">
+                <h1 className="m-0 text-[22px] font-bold tracking-tight text-gray-900">
+                  {currentUser?.username || "Tin nhắn"}
+                </h1>
 
-                  <span
-                    className={`
-                      h-2
-                      w-2
-                      rounded-full
+                <span
+                  className={`
+                    h-2
+                    w-2
+                    rounded-full
 
-                      ${
-                        socketConnected
-                          ? "bg-green-500"
-                          : "bg-gray-300"
-                      }
-                    `}
-                  />
-                </div>
-
-                <p className="mt-1 text-xs text-gray-400">
-                  Trao đổi nội bộ
-                </p>
+                    ${socketConnected ? "bg-green-500" : "bg-gray-300"}
+                  `}
+                  title={socketConnected ? "Đã kết nối" : "Mất kết nối"}
+                />
               </div>
 
-              <Avatar
-                size={40}
-                src={
-                  currentUser?.avatar
-                }
-              >
-                {currentUser?.username
-                  ?.charAt(0)
-                  ?.toUpperCase()}
+              <Avatar size={32} src={currentUser?.avatar}>
+                {currentUser?.username?.charAt(0)?.toUpperCase()}
               </Avatar>
             </div>
 
             <Input
-              prefix={
-                <SearchOutlined className="text-gray-400" />
-              }
-              placeholder="Tìm kiếm..."
+              prefix={<SearchOutlined className="text-gray-400" />}
+              placeholder="Tìm kiếm"
               value={search}
-              onChange={(e) =>
-                setSearch(
-                  e.target.value,
-                )
-              }
+              onChange={(e) => setSearch(e.target.value)}
               allowClear
-              className="h-10 rounded-xl"
+              variant="filled"
+              className="h-9 !rounded-xl !bg-[#efefef] text-sm [&_.ant-input]:!bg-transparent [&.ant-input-affix-wrapper]:!border-0 [&.ant-input-affix-wrapper]:!shadow-none"
             />
           </div>
 
           {/* LIST */}
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            {filteredConversations.length ===
-            0 ? (
+          <div className="min-h-0 flex-1 overflow-y-auto pb-2">
+            {filteredConversations.length === 0 ? (
               <div className="flex h-full items-center justify-center px-6">
                 <Empty
-                  image={
-                    Empty.PRESENTED_IMAGE_SIMPLE
-                  }
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
                   description={
                     search
                       ? "Không tìm thấy người dùng"
@@ -907,106 +623,71 @@ export default function ChatPage() {
                 />
               </div>
             ) : (
-              filteredConversations.map(
-                (conversation) => {
-                  const user =
-                    getOtherParticipant(
-                      conversation,
-                    );
+              filteredConversations.map((conversation) => {
+                const user = getOtherParticipant(conversation);
 
-                  if (!user) return null;
+                if (!user) return null;
 
-                  const active =
-                    String(
-                      conversation._id,
-                    ) ===
-                    String(
-                      selectedConversationId,
-                    );
+                const active =
+                  String(conversation._id) === String(selectedConversationId);
 
-                  const lastMessage =
-                    conversation.lastMessage;
+                const lastMessage = conversation.lastMessage;
 
-                  return (
-                    <button
-                      key={
-                        conversation._id
-                      }
-                      type="button"
-                      onClick={() =>
-                        handleSelectConversation(
-                          conversation._id,
-                        )
-                      }
-                      className={`
-                        group
+                return (
+                  <button
+                    key={conversation._id}
+                    type="button"
+                    onClick={() => handleSelectConversation(conversation._id)}
+                    className={`
                         flex
                         w-full
                         items-center
                         gap-3
                         border-0
                         px-4
-                        py-3
+                        py-2.5
                         text-left
                         transition
+                        duration-100
 
-                        ${
-                          active
-                            ? "bg-blue-50"
-                            : "bg-white hover:bg-gray-50"
-                        }
+                        ${active ? "bg-[#efefef]" : "bg-white hover:bg-[#fafafa]"}
                       `}
-                    >
-                      {/* AVATAR */}
+                  >
+                    {/* AVATAR */}
 
-                      <div className="relative shrink-0">
-                        <Avatar
-                          size={50}
-                          src={
-                            user.avatar
-                          }
-                        >
-                          {user.username
-                            ?.charAt(
-                              0,
-                            )
-                            ?.toUpperCase()}
-                        </Avatar>
+                    <div className="relative shrink-0">
+                      <Avatar size={56} src={user.avatar}>
+                        {user.username?.charAt(0)?.toUpperCase()}
+                      </Avatar>
 
-                        {user.status ===
-                          "active" && (
-                          <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-green-500" />
-                        )}
+                      {user.status === "active" && (
+                        <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-[2.5px] border-white bg-green-500" />
+                      )}
+                    </div>
+
+                    {/* INFO */}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate text-sm font-medium text-gray-900">
+                          {user.username}
+                        </span>
                       </div>
 
-                      {/* INFO */}
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-sm font-semibold text-gray-900">
-                            {
-                              user.username
-                            }
+                      <p className="m-0 mt-0.5 truncate text-[13px] text-gray-500">
+                        {lastMessage?.content
+                          ? lastMessage.content
+                          : "Chưa có tin nhắn"}
+                        {lastMessage?.createdAt && (
+                          <span className="text-gray-400">
+                            {" · " + formatConversationTime(lastMessage.createdAt)}
                           </span>
-
-                          {lastMessage?.createdAt && (
-                            <span className="shrink-0 text-[10px] text-gray-400">
-                              {formatConversationTime(
-                                lastMessage.createdAt,
-                              )}
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="m-0 mt-1 truncate text-xs text-gray-400">
-                          {lastMessage?.content ||
-                            "Chưa có tin nhắn"}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                },
-              )
+                        )}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })
             )}
           </div>
         </aside>
@@ -1021,18 +702,22 @@ export default function ChatPage() {
             min-w-0
             flex-1
             flex-col
-            bg-[#f8fafc]
+            bg-white
 
-            ${
-              mobileChat
-                ? "flex"
-                : "hidden lg:flex"
-            }
+            ${mobileChat ? "flex" : "hidden lg:flex"}
           `}
         >
           {!selectedConversation ? (
-            <div className="flex min-h-0 flex-1 items-center justify-center">
-              <Empty description="Chọn một cuộc trò chuyện" />
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4">
+              <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-gray-900">
+                <SendOutlinedMirrored />
+              </div>
+              <p className="m-0 text-xl font-light text-gray-900">
+                Tin nhắn của bạn
+              </p>
+              <p className="m-0 text-sm text-gray-500">
+                Chọn một cuộc trò chuyện để bắt đầu
+              </p>
             </div>
           ) : (
             <>
@@ -1041,62 +726,44 @@ export default function ChatPage() {
               {/* ================================================= */}
 
               <header className="z-10 flex h-[64px] shrink-0 items-center justify-between border-b border-gray-200 bg-white px-3 sm:px-5">
-                <div className="flex min-w-0 items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
                   <Button
                     type="text"
-                    icon={
-                      <ArrowLeftOutlined />
-                    }
+                    icon={<ArrowLeftOutlined />}
                     className="lg:hidden"
-                    onClick={
-                      handleBack
-                    }
+                    onClick={handleBack}
                   />
 
                   <div className="relative">
-                    <Avatar
-                      size={42}
-                      src={
-                        otherUser?.avatar
-                      }
-                    >
-                      {otherUser?.username
-                        ?.charAt(
-                          0,
-                        )
-                        ?.toUpperCase()}
+                    <Avatar size={38} src={otherUser?.avatar}>
+                      {otherUser?.username?.charAt(0)?.toUpperCase()}
                     </Avatar>
 
-                    {otherUser?.status ===
-                      "active" && (
-                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500" />
+                    {otherUser?.status === "active" && (
+                      <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-green-500" />
                     )}
                   </div>
 
                   <div className="min-w-0">
                     <h2 className="m-0 truncate text-sm font-semibold text-gray-900">
-                      {
-                        otherUser?.username
-                      }
+                      {otherUser?.username}
                     </h2>
 
                     <p className="m-0 text-[11px] text-gray-400">
-                      {otherUser?.status ===
-                      "active"
+                      {otherUser?.status === "active"
                         ? "Đang hoạt động"
                         : "Ngoại tuyến"}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-1">
                   <Tooltip title="Gọi thoại">
                     <Button
                       type="text"
                       shape="circle"
-                      icon={
-                        <PhoneOutlined />
-                      }
+                      size="large"
+                      icon={<PhoneOutlined className="text-lg" />}
                     />
                   </Tooltip>
 
@@ -1104,9 +771,8 @@ export default function ChatPage() {
                     <Button
                       type="text"
                       shape="circle"
-                      icon={
-                        <VideoCameraOutlined />
-                      }
+                      size="large"
+                      icon={<VideoCameraOutlined className="text-lg" />}
                     />
                   </Tooltip>
 
@@ -1114,9 +780,8 @@ export default function ChatPage() {
                     <Button
                       type="text"
                       shape="circle"
-                      icon={
-                        <InfoCircleOutlined />
-                      }
+                      size="large"
+                      icon={<InfoCircleOutlined className="text-lg" />}
                     />
                   </Tooltip>
                 </div>
@@ -1126,143 +791,120 @@ export default function ChatPage() {
               {/* MESSAGES */}
               {/* ================================================= */}
 
-              <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-6">
-                <div className="mx-auto flex max-w-4xl flex-col gap-3">
+              <div className="min-h-0 flex-1 overflow-y-auto bg-white px-3 py-4 sm:px-6">
+                <div className="mx-auto flex max-w-4xl flex-col gap-0.5">
                   {loadingMessages ? (
                     <div className="flex min-h-[300px] flex-1 items-center justify-center">
                       <Spin />
                     </div>
-                  ) : messages.length ===
-                    0 ? (
-                    <div className="flex min-h-[400px] items-center justify-center">
-                      <Empty
-                        image={
-                          Empty.PRESENTED_IMAGE_SIMPLE
-                        }
-                        description="Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện."
-                      />
+                  ) : messages.length === 0 ? (
+                    <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 text-center">
+                      <Avatar size={80} src={otherUser?.avatar}>
+                        {otherUser?.username?.charAt(0)?.toUpperCase()}
+                      </Avatar>
+                      <p className="m-0 text-base font-semibold text-gray-900">
+                        {otherUser?.username}
+                      </p>
+                      <p className="m-0 text-sm text-gray-400">
+                        Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện.
+                      </p>
                     </div>
                   ) : (
                     <>
-                      <div className="my-2 text-center">
-                        <span className="rounded-full bg-gray-200/70 px-3 py-1 text-[10px] text-gray-500">
-                          Tin nhắn
+                      <div className="my-3 text-center">
+                        <span className="text-[12px] font-medium text-gray-400">
+                          Hôm nay
                         </span>
                       </div>
 
-                      {messages.map(
-                        (item) => {
-                          const senderId =
-                            item.senderId
-                              ?._id ||
-                            item.senderId;
+                      {messages.map((item, index) => {
+                        const senderId = item.senderId?._id || item.senderId;
 
-                          const isMe =
-                            String(
-                              senderId,
-                            ) ===
-                            String(
-                              currentUserId,
-                            );
+                        const isMe = String(senderId) === String(currentUserId);
 
-                          return (
-                            <div
-                              key={
-                                item._id ||
-                                item.clientMessageId
-                              }
-                              className={`
+                        const prevItem = messages[index - 1];
+
+                        const prevSenderId =
+                          prevItem?.senderId?._id || prevItem?.senderId;
+
+                        const isSameSenderAsPrev =
+                          prevItem &&
+                          String(prevSenderId) === String(senderId);
+
+                        return (
+                          <div
+                            key={item._id || item.clientMessageId}
+                            className={`
                                 flex
                                 items-end
                                 gap-2
 
-                                ${
-                                  isMe
-                                    ? "justify-end"
-                                    : "justify-start"
-                                }
+                                ${isSameSenderAsPrev ? "mt-0.5" : "mt-3"}
+                                ${isMe ? "justify-end" : "justify-start"}
                               `}
-                            >
-                              {!isMe && (
-                                <Avatar
-                                  size={30}
-                                  src={
-                                    item
-                                      .senderId
-                                      ?.avatar ||
-                                    otherUser?.avatar
-                                  }
-                                >
-                                  {item
-                                    .senderId
-                                    ?.username
-                                    ?.charAt(
-                                      0,
-                                    )
-                                    ?.toUpperCase()}
-                                </Avatar>
-                              )}
+                          >
+                            {!isMe && (
+                              <div className="w-6 shrink-0">
+                                {!isSameSenderAsPrev && (
+                                  <Avatar
+                                    size={24}
+                                    src={
+                                      item.senderId?.avatar || otherUser?.avatar
+                                    }
+                                  >
+                                    {item.senderId?.username
+                                      ?.charAt(0)
+                                      ?.toUpperCase()}
+                                  </Avatar>
+                                )}
+                              </div>
+                            )}
 
-                              <div
-                                className={`
+                            <div
+                              className={`
+                                  group
                                   flex
-                                  max-w-[78%]
+                                  max-w-[65%]
                                   flex-col
 
-                                  ${
-                                    isMe
-                                      ? "items-end"
-                                      : "items-start"
-                                  }
+                                  ${isMe ? "items-end" : "items-start"}
                                 `}
-                              >
-                                <div
-                                  className={`
+                            >
+                              <div
+                                className={`
                                     break-words
                                     whitespace-pre-wrap
-                                    rounded-2xl
-                                    px-4
-                                    py-2.5
+                                    rounded-[20px]
+                                    px-3.5
+                                    py-2
                                     text-sm
-                                    leading-6
-                                    shadow-sm
+                                    leading-5
 
                                     ${
                                       isMe
-                                        ? "rounded-br-md bg-blue-600 text-white"
-                                        : "rounded-bl-md bg-white text-gray-800"
+                                        ? "bg-gradient-to-br from-[#4776E6] to-[#8E54E9] text-white"
+                                        : "bg-[#efefef] text-gray-900"
                                     }
                                   `}
-                                >
-                                  {
-                                    item.content
-                                  }
-                                </div>
+                              >
+                                {item.content}
+                              </div>
 
-                                <div className="mt-1 flex items-center gap-1 px-1 text-[10px] text-gray-400">
-                                  <span>
-                                    {formatTime(
-                                      item.createdAt,
-                                    )}
-                                  </span>
+                              <div className="mt-0.5 hidden items-center gap-1 px-1 text-[10px] text-gray-400 group-hover:flex">
+                                <span>{formatTime(item.createdAt)}</span>
 
-                                  {isMe && (
-                                    <CheckOutlined className="text-[9px]" />
-                                  )}
-                                </div>
+                                {isMe && (
+                                  <CheckOutlined className="text-[9px]" />
+                                )}
                               </div>
                             </div>
-                          );
-                        },
-                      )}
+                          </div>
+                        );
+                      })}
                     </>
                   )}
 
-                  <div
-                    ref={
-                      messagesEndRef
-                    }
-                  />
+                  <div ref={messagesEndRef} />
                 </div>
               </div>
 
@@ -1270,83 +912,73 @@ export default function ChatPage() {
               {/* INPUT */}
               {/* ================================================= */}
 
-              <div className="shrink-0 border-t border-gray-200 bg-white p-2.5 sm:p-4">
+              <div className="shrink-0 bg-white px-3 pb-3 pt-1 sm:px-5 sm:pb-4">
                 <div className="mx-auto max-w-4xl">
-                  <div className="flex items-end gap-1.5 rounded-2xl border border-gray-200 bg-gray-50 px-2 py-1.5 focus-within:border-blue-400 focus-within:bg-white">
+                  <div className="flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-2 py-1.5">
                     <Tooltip title="Emoji">
                       <Button
                         type="text"
                         shape="circle"
-                        icon={
-                          <SmileOutlined />
-                        }
-                        className="shrink-0 text-gray-500"
-                      />
-                    </Tooltip>
-
-                    <Tooltip title="Ảnh / File">
-                      <Button
-                        type="text"
-                        shape="circle"
-                        icon={
-                          <FileImageOutlined />
-                        }
-                        className="shrink-0 text-gray-500"
+                        icon={<SmileOutlined className="text-xl text-gray-700" />}
+                        className="shrink-0"
                       />
                     </Tooltip>
 
                     <Input.TextArea
                       value={input}
-                      onChange={(e) =>
-                        setInput(
-                          e.target.value,
-                        )
-                      }
-                      onKeyDown={
-                        handleKeyDown
-                      }
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
                       autoSize={{
                         minRows: 1,
                         maxRows: 5,
                       }}
                       placeholder="Nhắn tin..."
                       variant="borderless"
-                      className="!resize-none !px-1 !py-2"
+                      className="!resize-none !px-1 !py-1 text-sm"
                     />
 
-                    {input.trim() ? (
+                    <Tooltip title="Ảnh / File">
                       <Button
-                        type="primary"
+                        type="text"
                         shape="circle"
                         icon={
-                          <SendOutlined />
-                        }
-                        onClick={
-                          handleSendMessage
-                        }
-                        disabled={
-                          !socketConnected
+                          <FileImageOutlined className="text-xl text-gray-700" />
                         }
                         className="shrink-0"
                       />
+                    </Tooltip>
+
+                    {input.trim() ? (
+                      <Button
+                        type="text"
+                        onClick={handleSendMessage}
+                        disabled={!socketConnected}
+                        className="shrink-0 !px-2 !font-semibold !text-[#3797f0] disabled:!text-gray-300"
+                      >
+                        Gửi
+                      </Button>
                     ) : (
-                      <Tooltip title="Ghi âm">
-                        <Button
-                          type="text"
-                          shape="circle"
-                          icon={
-                            <AudioOutlined />
-                          }
-                          className="shrink-0 text-gray-500"
-                        />
-                      </Tooltip>
+                      <>
+                        <Tooltip title="Ghi âm">
+                          <Button
+                            type="text"
+                            shape="circle"
+                            icon={<AudioOutlined className="text-xl text-gray-700" />}
+                            className="shrink-0"
+                          />
+                        </Tooltip>
+
+                        <Tooltip title="Thích">
+                          <Button
+                            type="text"
+                            shape="circle"
+                            icon={<HeartOutlined className="text-xl text-gray-700" />}
+                            className="shrink-0"
+                          />
+                        </Tooltip>
+                      </>
                     )}
                   </div>
-
-                  <p className="m-0 mt-1 hidden text-center text-[10px] text-gray-400 sm:block">
-                    Enter để gửi · Shift + Enter
-                    để xuống dòng
-                  </p>
                 </div>
               </div>
             </>
@@ -1354,5 +986,27 @@ export default function ChatPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+// =====================================================
+// Small inline "paper-plane" glyph used on the Instagram-style
+// empty state (kept local so no new icon dependency is required)
+// =====================================================
+
+function SendOutlinedMirrored() {
+  return (
+    <svg
+      width="44"
+      height="44"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      className="text-gray-900"
+    >
+      <line x1="22" y1="2" x2="11" y2="13" />
+      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+    </svg>
   );
 }

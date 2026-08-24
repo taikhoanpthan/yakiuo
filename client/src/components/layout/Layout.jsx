@@ -53,8 +53,7 @@ const Layout = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [notifications, setNotifications] = useState([]);
-  const [notificationLoading, setNotificationLoading] =
-    useState(false);
+  const [notificationLoading, setNotificationLoading] = useState(false);
 
   // =====================================================
   // NOTIFICATION
@@ -67,49 +66,46 @@ const Layout = ({ children }) => {
   // MENU
   // =====================================================
 
- const menuItems = useMemo(() => {
-  const items = [
-    {
-      key: "/dashboard",
-      label: "Trang chủ",
-      icon: <AppstoreOutlined />,
-    },
+  const menuItems = useMemo(() => {
+    const items = [
+      {
+        key: "/dashboard",
+        label: "Trang chủ",
+        icon: <AppstoreOutlined />,
+      },
+      {
+        key: "/feedback",
+        label: "Feedback",
+        icon: <CommentOutlined />,
+      },
+      {
+        key: "/chat",
+        label: "Tin nhắn",
+        icon: <MessageOutlined />,
+      },
+      {
+        key: "/todos",
+        label: "Todo List",
+        icon: <CheckSquareOutlined />,
+      },
+    ];
 
-    {
-      key: "/feedback",
-      label: "Feedback",
-      icon: <CommentOutlined />,
-    },
+    if (user?.role === "admin") {
+      items.splice(1, 0, {
+        key: "/users",
+        label: "Nhân viên",
+        icon: <TeamOutlined />,
+      });
 
-    {
-      key: "/chat",
-      label: "Tin nhắn",
-      icon: <MessageOutlined />,
-    },
+      items.push({
+        key: "/notifications",
+        label: "Thông báo",
+        icon: <BellOutlined />,
+      });
+    }
 
-    {
-      key: "/todos",
-      label: "Todo List",
-      icon: <CheckSquareOutlined />,
-    },
-  ];
-
-  if (user?.role === "admin") {
-    items.splice(1, 0, {
-      key: "/users",
-      label: "Nhân viên",
-      icon: <TeamOutlined />,
-    });
-
-    items.push({
-      key: "/notifications",
-      label: "Thông báo",
-      icon: <BellOutlined />,
-    });
-  }
-
-  return items;
-}, [user?.role]);
+    return items;
+  }, [user?.role]);
 
   // =====================================================
   // NAVIGATION
@@ -141,18 +137,18 @@ const Layout = ({ children }) => {
   };
 
   // =====================================================
-  // SHOW NOTIFICATION
+  // NOTIFICATION POPUP
   // =====================================================
 
   const showNotificationPopup = useCallback(
     (notificationItem) => {
-      if (!notificationItem?._id) return;
+      if (!notificationItem?._id) {
+        return;
+      }
 
-      const title =
-        notificationItem.title || "Thông báo mới";
+      const title = notificationItem.title || "Thông báo mới";
 
-      const content =
-        notificationItem.content || "";
+      const content = notificationItem.content || "";
 
       notificationApi.open({
         message: (
@@ -170,13 +166,11 @@ const Layout = ({ children }) => {
                 height: 38,
                 minWidth: 38,
                 borderRadius: 12,
-                background:
-                  "linear-gradient(135deg, #3977f6 0%, #6c9cff 100%)",
+                background: "linear-gradient(135deg, #3977f6 0%, #6c9cff 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow:
-                  "0 6px 16px rgba(57, 119, 246, 0.25)",
+                boxShadow: "0 6px 16px rgba(57, 119, 246, 0.25)",
               }}
             >
               <BellOutlined
@@ -230,6 +224,7 @@ const Layout = ({ children }) => {
               color: "#667085",
               fontSize: 13,
               lineHeight: 1.6,
+              wordBreak: "break-word",
             }}
           >
             {content}
@@ -252,6 +247,7 @@ const Layout = ({ children }) => {
 
         style: {
           width: 380,
+          maxWidth: "calc(100vw - 24px)",
           padding: "16px",
           borderRadius: 18,
           background: "#fff",
@@ -271,7 +267,9 @@ const Layout = ({ children }) => {
             <Button
               type="text"
               size="small"
-              onClick={() => notificationApi.destroy()}
+              onClick={() => {
+                notificationApi.destroy();
+              }}
               style={{
                 color: "#667085",
                 fontWeight: 500,
@@ -298,12 +296,9 @@ const Layout = ({ children }) => {
 
         const response = await getNotifications();
 
-        const data =
-          response?.data?.data?.notifications || [];
+        const data = response?.data?.data?.notifications || [];
 
-        const list = Array.isArray(data)
-          ? data
-          : [];
+        const list = Array.isArray(data) ? data : [];
 
         setNotifications(list);
 
@@ -321,9 +316,7 @@ const Layout = ({ children }) => {
 
         try {
           shownNotifications = JSON.parse(
-            localStorage.getItem(
-              "shownNotificationIds",
-            ) || "[]",
+            localStorage.getItem("shownNotificationIds") || "[]",
           );
 
           if (!Array.isArray(shownNotifications)) {
@@ -333,11 +326,7 @@ const Layout = ({ children }) => {
           shownNotifications = [];
         }
 
-        if (
-          shownNotifications.includes(
-            latest._id,
-          )
-        ) {
+        if (shownNotifications.includes(latest._id)) {
           return;
         }
 
@@ -348,17 +337,12 @@ const Layout = ({ children }) => {
 
         localStorage.setItem(
           "shownNotificationIds",
-          JSON.stringify(
-            updatedShownNotifications,
-          ),
+          JSON.stringify(updatedShownNotifications),
         );
 
         showNotificationPopup(latest);
       } catch (error) {
-        console.error(
-          "Load notifications error:",
-          error,
-        );
+        console.error("Load notifications error:", error);
 
         setNotifications([]);
       } finally {
@@ -393,11 +377,9 @@ const Layout = ({ children }) => {
   // NOTIFICATION DATA
   // =====================================================
 
-  const recentNotifications =
-    notifications.slice(0, 5);
+  const recentNotifications = notifications.slice(0, 5);
 
-  const notificationCount =
-    notifications.length;
+  const notificationCount = notifications.length;
 
   // =====================================================
   // NOTIFICATION POPOVER
@@ -463,110 +445,105 @@ const Layout = ({ children }) => {
         </div>
       )}
 
-      {!notificationLoading &&
-        recentNotifications.length === 0 && (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="Chưa có thông báo"
-            style={{
-              margin: "25px 0",
-            }}
-          />
-        )}
+      {!notificationLoading && recentNotifications.length === 0 && (
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description="Chưa có thông báo"
+          style={{
+            margin: "25px 0",
+          }}
+        />
+      )}
 
-      {!notificationLoading &&
-        recentNotifications.length > 0 && (
-          <div
-            style={{
-              maxHeight: 400,
-              overflowY: "auto",
-            }}
-          >
-            {recentNotifications.map((item) => (
+      {!notificationLoading && recentNotifications.length > 0 && (
+        <div
+          style={{
+            maxHeight: 400,
+            overflowY: "auto",
+            overflowX: "hidden",
+          }}
+        >
+          {recentNotifications.map((item) => (
+            <div
+              key={item._id}
+              style={{
+                display: "flex",
+                gap: 12,
+                padding: "12px 8px",
+                borderRadius: 8,
+                cursor: "pointer",
+              }}
+            >
               <div
-                key={item._id}
                 style={{
+                  width: 36,
+                  height: 36,
+                  minWidth: 36,
+                  borderRadius: "50%",
+                  background: "#f1f5f9",
                   display: "flex",
-                  gap: 12,
-                  padding: "12px 8px",
-                  borderRadius: 8,
-                  cursor: "pointer",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <BellOutlined
+                  style={{
+                    color: "#3977f6",
+                    fontSize: 16,
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
                 }}
               >
                 <div
                   style={{
-                    width: 36,
-                    height: 36,
-                    minWidth: 36,
-                    borderRadius: "50%",
-                    background: "#f1f5f9",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  <BellOutlined
-                    style={{
-                      color: "#3977f6",
-                      fontSize: 16,
-                    }}
-                  />
+                  {item.title || "Thông báo"}
                 </div>
 
                 <div
                   style={{
-                    flex: 1,
-                    minWidth: 0,
+                    fontSize: 12,
+                    color: "#64748b",
+                    marginTop: 4,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    wordBreak: "break-word",
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: "#1e293b",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {item.title || "Thông báo"}
-                  </div>
+                  {item.content || ""}
+                </div>
 
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "#64748b",
-                      marginTop: 4,
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {item.content || ""}
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: "#94a3b8",
-                      marginTop: 5,
-                    }}
-                  >
-                    {item.createdAt
-                      ? dayjs(
-                          item.createdAt,
-                        ).format(
-                          "DD/MM/YYYY HH:mm",
-                        )
-                      : ""}
-                  </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "#94a3b8",
+                    marginTop: 5,
+                  }}
+                >
+                  {item.createdAt
+                    ? dayjs(item.createdAt).format("DD/MM/YYYY HH:mm")
+                    : ""}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -592,102 +569,113 @@ const Layout = ({ children }) => {
   ];
 
   // =====================================================
-  // NAVIGATION
+  // SIDEBAR
   // =====================================================
 
   const renderNav = () => (
-    <>
-      <div className="erp-brand">
-        <div className="erp-brand-mark">
-          Y
-        </div>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        height: "100%",
+        minHeight: 0,
+        overflow: "hidden",
+      }}
+    >
+      {/* BRAND */}
+
+      <div
+        className="erp-brand"
+        style={{
+          flexShrink: 0,
+        }}
+      >
+        <div className="erp-brand-mark">Y</div>
 
         {!collapsed && (
           <div>
             <strong>YAKIUO</strong>
+
             <span>ERP WORKSPACE</span>
           </div>
         )}
       </div>
 
-      <div className="erp-nav-label">
-        Điều hướng
-      </div>
+      {/* LABEL */}
+
+      {!collapsed && (
+        <div
+          className="erp-nav-label"
+          style={{
+            flexShrink: 0,
+          }}
+        >
+          Điều hướng
+        </div>
+      )}
+
+      {/* MENU */}
 
       <nav
         className="erp-nav"
         aria-label="Điều hướng chính"
+        style={{
+          flex: "1 1 auto",
+          minHeight: 0,
+          overflowY: "auto",
+          overflowX: "hidden",
+          paddingBottom: 12,
+        }}
       >
         {menuItems.map((item) => {
           const active =
             location.pathname === item.key ||
-            location.pathname.startsWith(
-              `${item.key}/`,
-            );
+            location.pathname.startsWith(`${item.key}/`);
 
           return (
             <Tooltip
               key={item.key}
-              title={
-                collapsed
-                  ? item.label
-                  : undefined
-              }
+              title={collapsed ? item.label : undefined}
               placement="right"
             >
               <button
                 type="button"
-                className={`erp-nav-item ${
-                  active ? "is-active" : ""
-                }`}
-                onClick={() =>
-                  handleNavigate(item.key)
-                }
+                className={`erp-nav-item ${active ? "is-active" : ""}`}
+                onClick={() => handleNavigate(item.key)}
               >
-                <span className="erp-nav-icon">
-                  {item.icon}
-                </span>
+                <span className="erp-nav-icon">{item.icon}</span>
 
-                {!collapsed && (
-                  <span>{item.label}</span>
-                )}
+                {!collapsed && <span>{item.label}</span>}
               </button>
             </Tooltip>
           );
         })}
       </nav>
 
-      <div className="erp-side-bottom">
+      {/* BOTTOM */}
+
+      <div
+        className="erp-side-bottom"
+        style={{
+          flexShrink: 0,
+        }}
+      >
         <div className="erp-side-help">
           <SettingOutlined />
 
-          {!collapsed && (
-            <span>Hệ thống nội bộ</span>
-          )}
+          {!collapsed && <span>Hệ thống nội bộ</span>}
         </div>
 
-        <Tooltip
-          title={
-            collapsed
-              ? "Đăng xuất"
-              : undefined
-          }
-          placement="right"
-        >
-          <button
-            type="button"
-            className="erp-logout"
-            onClick={handleLogout}
-          >
+        <Tooltip title={collapsed ? "Đăng xuất" : undefined} placement="right">
+          <button type="button" className="erp-logout" onClick={handleLogout}>
             <LogoutOutlined />
 
-            {!collapsed && (
-              <span>Đăng xuất</span>
-            )}
+            {!collapsed && <span>Đăng xuất</span>}
           </button>
         </Tooltip>
       </div>
-    </>
+    </div>
   );
 
   // =====================================================
@@ -699,16 +687,13 @@ const Layout = ({ children }) => {
       {notificationContextHolder}
 
       {/* =================================================
-          ROOT LAYOUT
-
-          QUAN TRỌNG:
-          Không dùng position fixed cho toàn bộ layout.
-          Header nằm trong flow của Ant Layout.
+          ROOT
       ================================================= */}
 
       <AntLayout
         className="erp-shell"
         style={{
+          width: "100%",
           height: "100dvh",
           minHeight: 0,
           overflow: "hidden",
@@ -737,7 +722,9 @@ const Layout = ({ children }) => {
           }}
           style={{
             height: "100dvh",
+            maxHeight: "100dvh",
             overflow: "hidden",
+            flexShrink: 0,
           }}
         >
           {renderNav()}
@@ -751,12 +738,19 @@ const Layout = ({ children }) => {
           <div className="erp-mobile-nav">
             <div
               className="erp-mobile-backdrop"
-              onClick={() =>
-                setMobileMenuOpen(false)
-              }
+              onClick={() => setMobileMenuOpen(false)}
             />
 
-            <aside className="erp-mobile-panel">
+            <aside
+              className="erp-mobile-panel"
+              style={{
+                height: "100dvh",
+                maxHeight: "100dvh",
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
               {renderNav()}
             </aside>
           </div>
@@ -764,15 +758,15 @@ const Layout = ({ children }) => {
 
         {/* =================================================
             WORKSPACE
-
-            Header + Content nằm cùng flow.
         ================================================= */}
 
         <AntLayout
           className="erp-workspace"
           style={{
-            height: "100dvh",
+            flex: "1 1 auto",
+            minWidth: 0,
             minHeight: 0,
+            height: "100dvh",
             overflow: "hidden",
           }}
         >
@@ -783,13 +777,13 @@ const Layout = ({ children }) => {
           <Header
             className="erp-header"
             style={{
+              position: "relative",
+              zIndex: 100,
               flex: "0 0 64px",
               height: 64,
+              minHeight: 64,
               lineHeight: "64px",
               padding: 0,
-              position: "relative",
-              top: "auto",
-              zIndex: 20,
             }}
           >
             {/* LEFT */}
@@ -810,21 +804,15 @@ const Layout = ({ children }) => {
                   if (isMobile) {
                     setMobileMenuOpen(true);
                   } else {
-                    setCollapsed(
-                      (value) => !value,
-                    );
+                    setCollapsed((value) => !value);
                   }
                 }}
               />
 
               <div className="erp-header-context">
-                <span>
-                  Không gian làm việc
-                </span>
+                <span>Không gian làm việc</span>
 
-                <strong>
-                  Yakiuo ERP
-                </strong>
+                <strong>Yakiuo ERP</strong>
               </div>
             </Space>
 
@@ -837,24 +825,19 @@ const Layout = ({ children }) => {
                 trigger="click"
                 placement="bottomRight"
                 arrow={false}
-                content={
-                  notificationContent
-                }
+                content={notificationContent}
                 align={{
                   offset: [40, 8],
                 }}
                 styles={{
                   root: {
-                    maxWidth:
-                      "calc(100vw - 24px)",
+                    maxWidth: "calc(100vw - 24px)",
                   },
                 }}
               >
                 <Tooltip title="Thông báo">
                   <Badge
-                    count={
-                      notificationCount
-                    }
+                    count={notificationCount}
                     overflowCount={99}
                     size="small"
                     offset={[-3, 5]}
@@ -862,9 +845,7 @@ const Layout = ({ children }) => {
                     <Button
                       type="text"
                       className="erp-menu-button"
-                      icon={
-                        <BellOutlined />
-                      }
+                      icon={<BellOutlined />}
                       aria-label="Thông báo"
                     />
                   </Badge>
@@ -879,57 +860,30 @@ const Layout = ({ children }) => {
                   items: userMenu,
 
                   onClick: ({ key }) => {
-                    if (
-                      key === "profile"
-                    ) {
-                      navigate(
-                        "/profile",
-                      );
+                    if (key === "profile") {
+                      navigate("/profile");
                     }
 
-                    if (
-                      key === "logout"
-                    ) {
+                    if (key === "logout") {
                       handleLogout();
                     }
                   },
                 }}
               >
-                <button
-                  type="button"
-                  className="erp-user-menu"
-                >
+                <button type="button" className="erp-user-menu">
                   <Avatar
                     className="erp-avatar"
-                    src={
-                      user?.avatar ||
-                      undefined
-                    }
-                    icon={
-                      !user?.avatar && (
-                        <UserOutlined />
-                      )
-                    }
+                    src={user?.avatar || undefined}
+                    icon={!user?.avatar && <UserOutlined />}
                   >
                     {!user?.avatar &&
-                      (
-                        user?.fullName?.charAt(
-                          0,
-                        ) ||
-                        "Y"
-                      ).toUpperCase()}
+                      (user?.fullName?.charAt(0) || "Y").toUpperCase()}
                   </Avatar>
 
                   <span className="erp-user-copy">
-                    <strong>
-                      {user?.fullName ||
-                        "Người dùng"}
-                    </strong>
+                    <strong>{user?.fullName || "Người dùng"}</strong>
 
-                    <small>
-                      {user?.role ||
-                        "Nhân viên"}
-                    </small>
+                    <small>{user?.role || "Nhân viên"}</small>
                   </span>
                 </button>
               </Dropdown>
@@ -938,9 +892,8 @@ const Layout = ({ children }) => {
 
           {/* =================================================
               CONTENT
-
-              Đây là phần QUAN TRỌNG nhất.
-              Content tự chiếm phần còn lại sau Header.
+              
+              Đây là vùng duy nhất scroll.
           ================================================= */}
 
           <Content
@@ -949,13 +902,11 @@ const Layout = ({ children }) => {
               flex: "1 1 auto",
               minHeight: 0,
               height: "auto",
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
+              overflowY: "auto",
+              overflowX: "hidden",
+              WebkitOverflowScrolling: "touch",
             }}
           >
-            {/* PAGE */}
-
             <motion.main
               key={location.pathname}
               className="erp-page"
@@ -972,11 +923,8 @@ const Layout = ({ children }) => {
                 ease: "easeOut",
               }}
               style={{
-                flex: "1 1 auto",
-                minHeight: 0,
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
+                minHeight: "100%",
+                height: "auto",
               }}
             >
               {children}
@@ -984,29 +932,35 @@ const Layout = ({ children }) => {
 
             {/* =================================================
                 FOOTER
-
-                Không để footer chiếm chỗ trong ChatPage.
-                Ẩn footer ở các màn hình nhỏ.
             ================================================= */}
 
-            <footer
-              className="erp-footer"
-              style={{
-                flex: "0 0 auto",
-              }}
-            >
-              <span>
-                © {new Date().getFullYear()}{" "}
-                Yakiuo ERP
-              </span>
+            <footer className="erp-footer">
+              <div className="erp-footer-left">
+                <div className="erp-footer-brand">
+                  <span className="erp-footer-mark"></span>
 
-              <span>
-                Hệ thống quản trị nội bộ
-              </span>
+                  <div>
+                    <strong>YAKIUO ISHIKAWA</strong>
+                    <span>ERP WORKSPACE</span>
+                  </div>
+                </div>
+              </div>
 
-              <span>
-                Phiên bản 1.0.0
-              </span>
+              <div className="erp-footer-center">
+                <span className="erp-footer-dot" />
+
+                <span>
+                  Developed by <strong>My</strong>
+                </span>
+              </div>
+
+              <div className="erp-footer-right">
+                <span>© {new Date().getFullYear()}</span>
+
+                <span className="erp-footer-divider" />
+
+                <span>v1.0.0</span>
+              </div>
             </footer>
           </Content>
         </AntLayout>

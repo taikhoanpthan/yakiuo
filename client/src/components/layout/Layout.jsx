@@ -52,14 +52,25 @@ const Layout = ({ children }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   const [notifications, setNotifications] = useState([]);
-  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [notificationLoading, setNotificationLoading] =
+    useState(false);
+
+  // =====================================================
+  // ROUTE STATE
+  // =====================================================
+
+  const isChatPage =
+    location.pathname === "/chat" ||
+    location.pathname.startsWith("/chat/");
 
   // =====================================================
   // NOTIFICATION
   // =====================================================
 
-  const [notificationApi, notificationContextHolder] =
-    notification.useNotification();
+  const [
+    notificationApi,
+    notificationContextHolder,
+  ] = notification.useNotification();
 
   // =====================================================
   // MENU
@@ -73,21 +84,18 @@ const Layout = ({ children }) => {
         shortLabel: "Trang chủ",
         icon: <AppstoreOutlined />,
       },
-
       {
         key: "/feedback",
         label: "Feedback",
         shortLabel: "Feedback",
         icon: <CommentOutlined />,
       },
-
       {
         key: "/chat",
         label: "Tin nhắn",
         shortLabel: "Tin nhắn",
         icon: <MessageOutlined />,
       },
-
       {
         key: "/todos",
         label: "Todo List",
@@ -95,10 +103,6 @@ const Layout = ({ children }) => {
         icon: <CheckSquareOutlined />,
       },
     ];
-
-    // ===================================================
-    // ADMIN MENU
-    // ===================================================
 
     if (user?.role === "admin") {
       items.splice(1, 0, {
@@ -140,12 +144,20 @@ const Layout = ({ children }) => {
         "/todos",
         "/notifications",
       ]
-        .map((key) => menuItems.find((item) => item.key === key))
+        .map((key) =>
+          menuItems.find(
+            (item) => item.key === key,
+          ),
+        )
         .filter(Boolean);
     }
 
     return baseItems
-      .map((key) => menuItems.find((item) => item.key === key))
+      .map((key) =>
+        menuItems.find(
+          (item) => item.key === key,
+        ),
+      )
       .filter(Boolean);
   }, [menuItems, user?.role]);
 
@@ -168,15 +180,22 @@ const Layout = ({ children }) => {
     try {
       await logout();
 
-      message.success("Bạn đã đăng xuất an toàn");
+      message.success(
+        "Bạn đã đăng xuất an toàn",
+      );
 
       navigate("/login", {
         replace: true,
       });
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error(
+        "Logout error:",
+        error,
+      );
 
-      message.error("Đăng xuất thất bại");
+      message.error(
+        "Đăng xuất thất bại",
+      );
     }
   };
 
@@ -184,215 +203,258 @@ const Layout = ({ children }) => {
   // NOTIFICATION POPUP
   // =====================================================
 
-  const showNotificationPopup = useCallback(
-    (notificationItem) => {
-      if (!notificationItem?._id) {
-        return;
-      }
+  const showNotificationPopup =
+    useCallback(
+      (notificationItem) => {
+        if (!notificationItem?._id) {
+          return;
+        }
 
-      const title = notificationItem.title || "Thông báo mới";
-      const content = notificationItem.content || "";
+        const title =
+          notificationItem.title ||
+          "Thông báo mới";
 
-      notificationApi.open({
-        message: (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              paddingRight: 24,
-            }}
-          >
+        const content =
+          notificationItem.content || "";
+
+        notificationApi.open({
+          message: (
             <div
               style={{
-                width: 38,
-                height: 38,
-                minWidth: 38,
-                borderRadius: 12,
-                background:
-                  "linear-gradient(135deg, #3977f6 0%, #6c9cff 100%)",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 6px 16px rgba(57, 119, 246, 0.25)",
+                gap: 10,
+                paddingRight: 24,
               }}
             >
-              <BellOutlined
+              <div
                 style={{
-                  color: "#fff",
-                  fontSize: 18,
+                  width: 38,
+                  height: 38,
+                  minWidth: 38,
+                  borderRadius: 12,
+                  background:
+                    "linear-gradient(135deg, #3977f6 0%, #6c9cff 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow:
+                    "0 6px 16px rgba(57, 119, 246, 0.25)",
                 }}
-              />
-            </div>
+              >
+                <BellOutlined
+                  style={{
+                    color: "#fff",
+                    fontSize: 18,
+                  }}
+                />
+              </div>
 
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                  minWidth: 0,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#3977f6",
+                    textTransform:
+                      "uppercase",
+                    letterSpacing:
+                      "0.5px",
+                  }}
+                >
+                  Thông báo mới
+                </span>
+
+                <span
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: "#172033",
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {title}
+                </span>
+              </div>
+            </div>
+          ),
+
+          description: (
+            <div
+              style={{
+                marginTop: 10,
+                marginLeft: 48,
+                marginRight: 4,
+                color: "#667085",
+                fontSize: 13,
+                lineHeight: 1.6,
+                wordBreak: "break-word",
+              }}
+            >
+              {content}
+            </div>
+          ),
+
+          placement: "topRight",
+          duration: 5,
+
+          closeIcon: (
+            <span
+              style={{
+                color: "#98A2B3",
+                fontSize: 14,
+              }}
+            >
+              ×
+            </span>
+          ),
+
+          style: {
+            width: 380,
+            maxWidth:
+              "calc(100vw - 24px)",
+            padding: "16px",
+            borderRadius: 18,
+            background: "#fff",
+            border:
+              "1px solid #E9EEF7",
+            boxShadow:
+              "0 18px 45px rgba(16, 24, 40, 0.14), 0 4px 12px rgba(16, 24, 40, 0.06)",
+          },
+
+          btn: (
             <div
               style={{
                 display: "flex",
-                flexDirection: "column",
-                gap: 2,
-                minWidth: 0,
+                justifyContent:
+                  "flex-end",
+                marginTop: 8,
               }}
             >
-              <span
+              <Button
+                type="text"
+                size="small"
+                onClick={() =>
+                  notificationApi.destroy()
+                }
                 style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "#3977f6",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.5px",
+                  color: "#667085",
+                  fontWeight: 500,
+                  borderRadius: 8,
                 }}
               >
-                Thông báo mới
-              </span>
-
-              <span
-                style={{
-                  fontSize: 15,
-                  fontWeight: 700,
-                  color: "#172033",
-                  lineHeight: 1.3,
-                }}
-              >
-                {title}
-              </span>
+                Đóng
+              </Button>
             </div>
-          </div>
-        ),
-
-        description: (
-          <div
-            style={{
-              marginTop: 10,
-              marginLeft: 48,
-              marginRight: 4,
-              color: "#667085",
-              fontSize: 13,
-              lineHeight: 1.6,
-              wordBreak: "break-word",
-            }}
-          >
-            {content}
-          </div>
-        ),
-
-        placement: "topRight",
-        duration: 5,
-
-        closeIcon: (
-          <span
-            style={{
-              color: "#98A2B3",
-              fontSize: 14,
-            }}
-          >
-            ×
-          </span>
-        ),
-
-        style: {
-          width: 380,
-          maxWidth: "calc(100vw - 24px)",
-          padding: "16px",
-          borderRadius: 18,
-          background: "#fff",
-          border: "1px solid #E9EEF7",
-          boxShadow:
-            "0 18px 45px rgba(16, 24, 40, 0.14), 0 4px 12px rgba(16, 24, 40, 0.06)",
-        },
-
-        btn: (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginTop: 8,
-            }}
-          >
-            <Button
-              type="text"
-              size="small"
-              onClick={() => notificationApi.destroy()}
-              style={{
-                color: "#667085",
-                fontWeight: 500,
-                borderRadius: 8,
-              }}
-            >
-              Đóng
-            </Button>
-          </div>
-        ),
-      });
-    },
-    [notificationApi],
-  );
+          ),
+        });
+      },
+      [notificationApi],
+    );
 
   // =====================================================
   // LOAD NOTIFICATIONS
   // =====================================================
 
-  const loadNotifications = useCallback(
-    async (showPopup = false) => {
-      try {
-        setNotificationLoading(true);
-
-        const response = await getNotifications();
-
-        const data = response?.data?.data?.notifications || [];
-
-        const list = Array.isArray(data) ? data : [];
-
-        setNotifications(list);
-
-        if (!showPopup || list.length === 0) {
-          return;
-        }
-
-        const latest = list[0];
-
-        if (!latest?._id) {
-          return;
-        }
-
-        let shownNotifications = [];
-
+  const loadNotifications =
+    useCallback(
+      async (showPopup = false) => {
         try {
-          shownNotifications = JSON.parse(
-            localStorage.getItem("shownNotificationIds") || "[]",
-          );
+          setNotificationLoading(true);
 
-          if (!Array.isArray(shownNotifications)) {
+          const response =
+            await getNotifications();
+
+          const data =
+            response?.data?.data
+              ?.notifications || [];
+
+          const list = Array.isArray(data)
+            ? data
+            : [];
+
+          setNotifications(list);
+
+          if (
+            !showPopup ||
+            list.length === 0
+          ) {
+            return;
+          }
+
+          const latest = list[0];
+
+          if (!latest?._id) {
+            return;
+          }
+
+          let shownNotifications = [];
+
+          try {
+            shownNotifications =
+              JSON.parse(
+                localStorage.getItem(
+                  "shownNotificationIds",
+                ) || "[]",
+              );
+
+            if (
+              !Array.isArray(
+                shownNotifications,
+              )
+            ) {
+              shownNotifications = [];
+            }
+          } catch {
             shownNotifications = [];
           }
-        } catch {
-          shownNotifications = [];
+
+          if (
+            shownNotifications.includes(
+              latest._id,
+            )
+          ) {
+            return;
+          }
+
+          const updatedShownNotifications =
+            [
+              latest._id,
+              ...shownNotifications,
+            ].slice(0, 50);
+
+          localStorage.setItem(
+            "shownNotificationIds",
+            JSON.stringify(
+              updatedShownNotifications,
+            ),
+          );
+
+          showNotificationPopup(
+            latest,
+          );
+        } catch (error) {
+          console.error(
+            "Load notifications error:",
+            error,
+          );
+
+          setNotifications([]);
+        } finally {
+          setNotificationLoading(
+            false,
+          );
         }
-
-        if (shownNotifications.includes(latest._id)) {
-          return;
-        }
-
-        const updatedShownNotifications = [
-          latest._id,
-          ...shownNotifications,
-        ].slice(0, 50);
-
-        localStorage.setItem(
-          "shownNotificationIds",
-          JSON.stringify(updatedShownNotifications),
-        );
-
-        showNotificationPopup(latest);
-      } catch (error) {
-        console.error("Load notifications error:", error);
-
-        setNotifications([]);
-      } finally {
-        setNotificationLoading(false);
-      }
-    },
-    [showNotificationPopup],
-  );
+      },
+      [showNotificationPopup],
+    );
 
   // =====================================================
   // NOTIFICATION POLLING
@@ -406,9 +468,12 @@ const Layout = ({ children }) => {
 
     loadNotifications(true);
 
-    const interval = setInterval(() => {
-      loadNotifications(true);
-    }, 10000);
+    const interval = setInterval(
+      () => {
+        loadNotifications(true);
+      },
+      10000,
+    );
 
     return () => {
       clearInterval(interval);
@@ -420,7 +485,10 @@ const Layout = ({ children }) => {
   // =====================================================
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 991px)");
+    const mediaQuery =
+      window.matchMedia(
+        "(max-width: 991px)",
+      );
 
     const handleChange = (event) => {
       setIsMobile(event.matches);
@@ -432,10 +500,16 @@ const Layout = ({ children }) => {
 
     setIsMobile(mediaQuery.matches);
 
-    mediaQuery.addEventListener("change", handleChange);
+    mediaQuery.addEventListener(
+      "change",
+      handleChange,
+    );
 
     return () => {
-      mediaQuery.removeEventListener("change", handleChange);
+      mediaQuery.removeEventListener(
+        "change",
+        handleChange,
+      );
     };
   }, []);
 
@@ -443,9 +517,11 @@ const Layout = ({ children }) => {
   // NOTIFICATION DATA
   // =====================================================
 
-  const recentNotifications = notifications.slice(0, 5);
+  const recentNotifications =
+    notifications.slice(0, 5);
 
-  const notificationCount = notifications.length;
+  const notificationCount =
+    notifications.length;
 
   // =====================================================
   // NOTIFICATION POPOVER
@@ -454,16 +530,19 @@ const Layout = ({ children }) => {
   const notificationContent = (
     <div
       style={{
-        width: "min(360px, calc(100vw - 56px))",
+        width:
+          "min(360px, calc(100vw - 56px))",
       }}
     >
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent:
+            "space-between",
           alignItems: "center",
           paddingBottom: 12,
-          borderBottom: "1px solid #f1f5f9",
+          borderBottom:
+            "1px solid #f1f5f9",
           marginBottom: 4,
         }}
       >
@@ -503,7 +582,8 @@ const Layout = ({ children }) => {
         <div
           style={{
             display: "flex",
-            justifyContent: "center",
+            justifyContent:
+              "center",
             padding: "30px 0",
           }}
         >
@@ -511,105 +591,134 @@ const Layout = ({ children }) => {
         </div>
       )}
 
-      {!notificationLoading && recentNotifications.length === 0 && (
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description="Chưa có thông báo"
-          style={{
-            margin: "25px 0",
-          }}
-        />
-      )}
+      {!notificationLoading &&
+        recentNotifications.length ===
+          0 && (
+          <Empty
+            image={
+              Empty.PRESENTED_IMAGE_SIMPLE
+            }
+            description="Chưa có thông báo"
+            style={{
+              margin: "25px 0",
+            }}
+          />
+        )}
 
-      {!notificationLoading && recentNotifications.length > 0 && (
-        <div
-          style={{
-            maxHeight: 400,
-            overflowY: "auto",
-            overflowX: "hidden",
-          }}
-        >
-          {recentNotifications.map((item) => (
-            <div
-              key={item._id}
-              style={{
-                display: "flex",
-                gap: 12,
-                padding: "12px 8px",
-                borderRadius: 8,
-                cursor: "pointer",
-              }}
-            >
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  minWidth: 36,
-                  borderRadius: "50%",
-                  background: "#f1f5f9",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <BellOutlined
-                  style={{
-                    color: "#3977f6",
-                    fontSize: 16,
-                  }}
-                />
-              </div>
-
-              <div
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                }}
-              >
+      {!notificationLoading &&
+        recentNotifications.length >
+          0 && (
+          <div
+            style={{
+              maxHeight: 400,
+              overflowY: "auto",
+              overflowX: "hidden",
+            }}
+          >
+            {recentNotifications.map(
+              (item) => (
                 <div
+                  key={item._id}
                   style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: "#1e293b",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
+                    display: "flex",
+                    gap: 12,
+                    padding: "12px 8px",
+                    borderRadius: 8,
+                    cursor: "pointer",
                   }}
                 >
-                  {item.title || "Thông báo"}
-                </div>
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      minWidth: 36,
+                      borderRadius:
+                        "50%",
+                      background:
+                        "#f1f5f9",
+                      display: "flex",
+                      alignItems:
+                        "center",
+                      justifyContent:
+                        "center",
+                    }}
+                  >
+                    <BellOutlined
+                      style={{
+                        color:
+                          "#3977f6",
+                        fontSize: 16,
+                      }}
+                    />
+                  </div>
 
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "#64748b",
-                    marginTop: 4,
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {item.content || ""}
-                </div>
+                  <div
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color:
+                          "#1e293b",
+                        overflow:
+                          "hidden",
+                        textOverflow:
+                          "ellipsis",
+                        whiteSpace:
+                          "nowrap",
+                      }}
+                    >
+                      {item.title ||
+                        "Thông báo"}
+                    </div>
 
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "#94a3b8",
-                    marginTop: 5,
-                  }}
-                >
-                  {item.createdAt
-                    ? dayjs(item.createdAt).format("DD/MM/YYYY HH:mm")
-                    : ""}
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color:
+                          "#64748b",
+                        marginTop: 4,
+                        display:
+                          "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient:
+                          "vertical",
+                        overflow:
+                          "hidden",
+                        wordBreak:
+                          "break-word",
+                      }}
+                    >
+                      {item.content ||
+                        ""}
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color:
+                          "#94a3b8",
+                        marginTop: 5,
+                      }}
+                    >
+                      {item.createdAt
+                        ? dayjs(
+                            item.createdAt,
+                          ).format(
+                            "DD/MM/YYYY HH:mm",
+                          )
+                        : ""}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+              ),
+            )}
+          </div>
+        )}
     </div>
   );
 
@@ -629,7 +738,8 @@ const Layout = ({ children }) => {
           {
             key: "users",
             icon: <TeamOutlined />,
-            label: "Quản lý nhân viên",
+            label:
+              "Quản lý nhân viên",
           },
         ]
       : []),
@@ -669,12 +779,16 @@ const Layout = ({ children }) => {
           flexShrink: 0,
         }}
       >
-        <div className="erp-brand-mark">Y</div>
+        <div className="erp-brand-mark">
+          Y
+        </div>
 
         {!collapsed && (
           <div>
             <strong>YAKIUO</strong>
-            <span>ERP WORKSPACE</span>
+            <span>
+              ERP WORKSPACE
+            </span>
           </div>
         )}
       </div>
@@ -707,25 +821,44 @@ const Layout = ({ children }) => {
       >
         {menuItems.map((item) => {
           const active =
-            location.pathname === item.key ||
-            location.pathname.startsWith(`${item.key}/`);
+            location.pathname ===
+              item.key ||
+            location.pathname.startsWith(
+              `${item.key}/`,
+            );
 
           return (
             <Tooltip
               key={item.key}
-              title={collapsed ? item.label : undefined}
+              title={
+                collapsed
+                  ? item.label
+                  : undefined
+              }
               placement="right"
             >
               <button
                 type="button"
                 className={`erp-nav-item ${
-                  active ? "is-active" : ""
+                  active
+                    ? "is-active"
+                    : ""
                 }`}
-                onClick={() => handleNavigate(item.key)}
+                onClick={() =>
+                  handleNavigate(
+                    item.key,
+                  )
+                }
               >
-                <span className="erp-nav-icon">{item.icon}</span>
+                <span className="erp-nav-icon">
+                  {item.icon}
+                </span>
 
-                {!collapsed && <span>{item.label}</span>}
+                {!collapsed && (
+                  <span>
+                    {item.label}
+                  </span>
+                )}
               </button>
             </Tooltip>
           );
@@ -743,11 +876,19 @@ const Layout = ({ children }) => {
         <div className="erp-side-help">
           <SettingOutlined />
 
-          {!collapsed && <span>Hệ thống nội bộ</span>}
+          {!collapsed && (
+            <span>
+              Hệ thống nội bộ
+            </span>
+          )}
         </div>
 
         <Tooltip
-          title={collapsed ? "Đăng xuất" : undefined}
+          title={
+            collapsed
+              ? "Đăng xuất"
+              : undefined
+          }
           placement="right"
         >
           <button
@@ -757,7 +898,9 @@ const Layout = ({ children }) => {
           >
             <LogoutOutlined />
 
-            {!collapsed && <span>Đăng xuất</span>}
+            {!collapsed && (
+              <span>Đăng xuất</span>
+            )}
           </button>
         </Tooltip>
       </div>
@@ -790,7 +933,6 @@ const Layout = ({ children }) => {
           paddingTop: 7,
           paddingLeft: 6,
           paddingRight: 6,
-
           paddingBottom:
             "max(7px, env(safe-area-inset-bottom))",
 
@@ -800,103 +942,144 @@ const Layout = ({ children }) => {
           overflowX: "auto",
           overflowY: "hidden",
 
-          WebkitOverflowScrolling: "touch",
+          WebkitOverflowScrolling:
+            "touch",
 
-          background: "rgba(255,255,255,0.96)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
+          background:
+            "rgba(255,255,255,0.96)",
+          backdropFilter:
+            "blur(20px)",
+          WebkitBackdropFilter:
+            "blur(20px)",
 
-          borderTop: "1px solid rgba(15,23,42,0.08)",
-          boxShadow: "0 -8px 30px rgba(15,23,42,0.08)",
+          borderTop:
+            "1px solid rgba(15,23,42,0.08)",
+
+          boxShadow:
+            "0 -8px 30px rgba(15,23,42,0.08)",
         }}
       >
-        {mobileMenuItems.map((item) => {
-          const active =
-            location.pathname === item.key ||
-            location.pathname.startsWith(`${item.key}/`);
+        {mobileMenuItems.map(
+          (item) => {
+            const active =
+              location.pathname ===
+                item.key ||
+              location.pathname.startsWith(
+                `${item.key}/`,
+              );
 
-          return (
-            <button
-              key={item.key}
-              type="button"
-              className={`erp-mobile-task-item ${
-                active ? "is-active" : ""
-              }`}
-              onClick={() => handleNavigate(item.key)}
-              style={{
-                flex: "1 0 72px",
-                minWidth: 72,
-                minHeight: 50,
-
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-
-                gap: 3,
-
-                border: 0,
-                background: "transparent",
-                cursor: "pointer",
-
-                padding: "3px 4px",
-              }}
-            >
-              <span
-                className="erp-mobile-task-icon"
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className={`erp-mobile-task-item ${
+                  active
+                    ? "is-active"
+                    : ""
+                }`}
+                onClick={() =>
+                  handleNavigate(
+                    item.key,
+                  )
+                }
                 style={{
+                  flex: "1 0 72px",
+                  minWidth: 72,
+                  minHeight: 50,
+
                   display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 21,
-                  lineHeight: 1,
-                }}
-              >
-                {item.icon}
-              </span>
+                  flexDirection:
+                    "column",
+                  alignItems:
+                    "center",
+                  justifyContent:
+                    "center",
 
-              <span
-                className="erp-mobile-task-label"
-                style={{
-                  maxWidth: 68,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  fontSize: 10,
-                  lineHeight: "14px",
+                  gap: 3,
+
+                  border: 0,
+                  background:
+                    "transparent",
+                  cursor: "pointer",
+
+                  padding:
+                    "3px 4px",
                 }}
               >
-                {item.shortLabel || item.label}
-              </span>
-            </button>
-          );
-        })}
+                <span
+                  className="erp-mobile-task-icon"
+                  style={{
+                    display: "flex",
+                    alignItems:
+                      "center",
+                    justifyContent:
+                      "center",
+                    fontSize: 21,
+                    lineHeight: 1,
+                  }}
+                >
+                  {item.icon}
+                </span>
+
+                <span
+                  className="erp-mobile-task-label"
+                  style={{
+                    maxWidth: 68,
+                    overflow:
+                      "hidden",
+                    textOverflow:
+                      "ellipsis",
+                    whiteSpace:
+                      "nowrap",
+                    fontSize: 10,
+                    lineHeight:
+                      "14px",
+                  }}
+                >
+                  {item.shortLabel ||
+                    item.label}
+                </span>
+              </button>
+            );
+          },
+        )}
 
         {/* PROFILE */}
 
         <button
           type="button"
           className={`erp-mobile-task-item ${
-            location.pathname === "/profile" ||
-            location.pathname.startsWith("/profile/")
+            location.pathname ===
+              "/profile" ||
+            location.pathname.startsWith(
+              "/profile/",
+            )
               ? "is-active"
               : ""
           }`}
-          onClick={() => handleNavigate("/profile")}
+          onClick={() =>
+            handleNavigate(
+              "/profile",
+            )
+          }
           style={{
             flex: "1 0 72px",
             minWidth: 72,
             minHeight: 50,
 
             display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
+            flexDirection:
+              "column",
+            alignItems:
+              "center",
+            justifyContent:
+              "center",
 
             gap: 3,
 
             border: 0,
-            background: "transparent",
+            background:
+              "transparent",
             cursor: "pointer",
 
             padding: "3px 4px",
@@ -906,18 +1089,31 @@ const Layout = ({ children }) => {
             className="erp-mobile-task-avatar"
             style={{
               display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              alignItems:
+                "center",
+              justifyContent:
+                "center",
               height: 24,
             }}
           >
             <Avatar
               size={24}
-              src={user?.avatar || undefined}
-              icon={!user?.avatar && <UserOutlined />}
+              src={
+                user?.avatar ||
+                undefined
+              }
+              icon={
+                !user?.avatar && (
+                  <UserOutlined />
+                )
+              }
             >
               {!user?.avatar &&
-                (user?.fullName?.charAt(0) || "Y").toUpperCase()}
+                (
+                  user?.fullName?.charAt(
+                    0,
+                  ) || "Y"
+                ).toUpperCase()}
             </Avatar>
           </span>
 
@@ -925,7 +1121,8 @@ const Layout = ({ children }) => {
             className="erp-mobile-task-label"
             style={{
               fontSize: 10,
-              lineHeight: "14px",
+              lineHeight:
+                "14px",
             }}
           >
             Tôi
@@ -942,10 +1139,6 @@ const Layout = ({ children }) => {
   return (
     <>
       {notificationContextHolder}
-
-      {/* =================================================
-          ROOT
-      ================================================= */}
 
       <AntLayout
         className="erp-shell"
@@ -987,9 +1180,7 @@ const Layout = ({ children }) => {
           {renderNav()}
         </Sider>
 
-        {/* =================================================
-            MOBILE TASKBAR
-        ================================================= */}
+        {/* MOBILE TASKBAR */}
 
         {renderMobileTaskbar()}
 
@@ -1033,7 +1224,8 @@ const Layout = ({ children }) => {
                 className="erp-menu-button"
                 aria-label="Mở menu"
                 icon={
-                  collapsed || isMobile ? (
+                  collapsed ||
+                  isMobile ? (
                     <MenuUnfoldOutlined />
                   ) : (
                     <MenuFoldOutlined />
@@ -1041,19 +1233,24 @@ const Layout = ({ children }) => {
                 }
                 onClick={() => {
                   if (isMobile) {
-                    // Mobile dùng taskbar.
-                    // Không mở sidebar desktop.
                     return;
                   }
 
-                  setCollapsed((value) => !value);
+                  setCollapsed(
+                    (value) =>
+                      !value,
+                  );
                 }}
               />
 
               <div className="erp-header-context">
-                <span>Không gian làm việc</span>
+                <span>
+                  Không gian làm việc
+                </span>
 
-                <strong>Yakiuo ERP</strong>
+                <strong>
+                  Yakiuo ERP
+                </strong>
               </div>
             </Space>
 
@@ -1066,19 +1263,24 @@ const Layout = ({ children }) => {
                 trigger="click"
                 placement="bottomRight"
                 arrow={false}
-                content={notificationContent}
+                content={
+                  notificationContent
+                }
                 align={{
                   offset: [40, 8],
                 }}
                 styles={{
                   root: {
-                    maxWidth: "calc(100vw - 24px)",
+                    maxWidth:
+                      "calc(100vw - 24px)",
                   },
                 }}
               >
                 <Tooltip title="Thông báo">
                   <Badge
-                    count={notificationCount}
+                    count={
+                      notificationCount
+                    }
                     overflowCount={99}
                     size="small"
                     offset={[-3, 5]}
@@ -1086,7 +1288,9 @@ const Layout = ({ children }) => {
                     <Button
                       type="text"
                       className="erp-menu-button"
-                      icon={<BellOutlined />}
+                      icon={
+                        <BellOutlined />
+                      }
                       aria-label="Thông báo"
                     />
                   </Badge>
@@ -1100,16 +1304,30 @@ const Layout = ({ children }) => {
                 menu={{
                   items: userMenu,
 
-                  onClick: ({ key }) => {
-                    if (key === "profile") {
-                      navigate("/profile");
+                  onClick: ({
+                    key,
+                  }) => {
+                    if (
+                      key ===
+                      "profile"
+                    ) {
+                      navigate(
+                        "/profile",
+                      );
                     }
 
-                    if (key === "users") {
-                      navigate("/users");
+                    if (
+                      key === "users"
+                    ) {
+                      navigate(
+                        "/users",
+                      );
                     }
 
-                    if (key === "logout") {
+                    if (
+                      key ===
+                      "logout"
+                    ) {
                       handleLogout();
                     }
                   },
@@ -1121,25 +1339,33 @@ const Layout = ({ children }) => {
                 >
                   <Avatar
                     className="erp-avatar"
-                    src={user?.avatar || undefined}
+                    src={
+                      user?.avatar ||
+                      undefined
+                    }
                     icon={
-                      !user?.avatar && <UserOutlined />
+                      !user?.avatar && (
+                        <UserOutlined />
+                      )
                     }
                   >
                     {!user?.avatar &&
                       (
-                        user?.fullName?.charAt(0) ||
-                        "Y"
+                        user?.fullName?.charAt(
+                          0,
+                        ) || "Y"
                       ).toUpperCase()}
                   </Avatar>
 
                   <span className="erp-user-copy">
                     <strong>
-                      {user?.fullName || "Người dùng"}
+                      {user?.fullName ||
+                        "Người dùng"}
                     </strong>
 
                     <small>
-                      {user?.role === "admin"
+                      {user?.role ===
+                      "admin"
                         ? "Quản trị viên"
                         : "Nhân viên"}
                     </small>
@@ -1154,29 +1380,50 @@ const Layout = ({ children }) => {
           ================================================= */}
 
           <Content
-            className="erp-content"
+            className={`erp-content ${
+              isChatPage
+                ? "erp-content-chat"
+                : ""
+            }`}
             style={{
               flex: "1 1 auto",
               minHeight: 0,
-              height: "auto",
-
-              overflowY: "auto",
-              overflowX: "hidden",
-
-              WebkitOverflowScrolling: "touch",
+              minWidth: 0,
 
               /*
-               * QUAN TRỌNG:
-               * Mobile phải chừa khoảng cho taskbar fixed.
+               * CHAT:
+               * Không cho Content scroll.
+               * ChatPage tự quản lý scroll.
                */
-              paddingBottom: isMobile
-                ? "calc(82px + env(safe-area-inset-bottom))"
-                : 0,
+              overflowY: isChatPage
+                ? "hidden"
+                : "auto",
+
+              overflowX: "hidden",
+
+              WebkitOverflowScrolling:
+                "touch",
+
+              /*
+               * Các page bình thường phải
+               * chừa taskbar mobile.
+               *
+               * ChatPage tự chừa taskbar
+               * nên Content không cộng thêm.
+               */
+              paddingBottom:
+                isMobile && !isChatPage
+                  ? "calc(82px + env(safe-area-inset-bottom))"
+                  : 0,
             }}
           >
             <motion.main
               key={location.pathname}
-              className="erp-page"
+              className={`erp-page ${
+                isChatPage
+                  ? "erp-page-chat"
+                  : ""
+              }`}
               initial={{
                 opacity: 0,
                 y: 8,
@@ -1190,8 +1437,27 @@ const Layout = ({ children }) => {
                 ease: "easeOut",
               }}
               style={{
-                minHeight: "100%",
-                height: "auto",
+                minWidth: 0,
+
+                /*
+                 * CHAT:
+                 * Bắt buộc wrapper phải có
+                 * chiều cao thực tế để
+                 * flex bên trong hoạt động.
+                 */
+                ...(isChatPage
+                  ? {
+                      height: "100%",
+                      minHeight: 0,
+                      overflow: "hidden",
+                      display: "flex",
+                      flexDirection:
+                        "column",
+                    }
+                  : {
+                      minHeight: "100%",
+                      height: "auto",
+                    }),
               }}
             >
               {children}
@@ -1201,37 +1467,49 @@ const Layout = ({ children }) => {
                 FOOTER
             ================================================= */}
 
-            <footer className="erp-footer">
-              <div className="erp-footer-left">
-                <div className="erp-footer-brand">
-                  <span className="erp-footer-mark"></span>
+            {!isChatPage && (
+              <footer className="erp-footer">
+                <div className="erp-footer-left">
+                  <div className="erp-footer-brand">
+                    <span className="erp-footer-mark"></span>
 
-                  <div>
-                    <strong>YAKIUO ISHIKAWA</strong>
+                    <div>
+                      <strong>
+                        YAKIUO ISHIKAWA
+                      </strong>
 
-                    <span>ERP WORKSPACE</span>
+                      <span>
+                        ERP WORKSPACE
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="erp-footer-center">
-                <span className="erp-footer-dot" />
+                <div className="erp-footer-center">
+                  <span className="erp-footer-dot" />
 
-                <span>
-                  Developed by <strong>My</strong>
-                </span>
-              </div>
+                  <span>
+                    Developed by{" "}
+                    <strong>
+                      My
+                    </strong>
+                  </span>
+                </div>
 
-              <div className="erp-footer-right">
-                <span>
-                  © {new Date().getFullYear()}
-                </span>
+                <div className="erp-footer-right">
+                  <span>
+                    ©{" "}
+                    {new Date().getFullYear()}
+                  </span>
 
-                <span className="erp-footer-divider" />
+                  <span className="erp-footer-divider" />
 
-                <span>v1.0.0</span>
-              </div>
-            </footer>
+                  <span>
+                    v1.0.0
+                  </span>
+                </div>
+              </footer>
+            )}
           </Content>
         </AntLayout>
       </AntLayout>

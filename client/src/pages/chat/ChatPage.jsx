@@ -24,7 +24,6 @@ import {
 } from "@ant-design/icons";
 
 import { connectSocket, getSocket } from "../../services/socket";
-
 import api from "../../services/api";
 
 // =====================================================
@@ -83,7 +82,6 @@ export default function ChatPage() {
   // ===================================================
 
   const currentUser = getCurrentUser();
-
   const currentUserId = getUserId(currentUser);
 
   // ===================================================
@@ -91,31 +89,25 @@ export default function ChatPage() {
   // ===================================================
 
   const [conversations, setConversations] = useState([]);
-
   const [selectedConversationId, setSelectedConversationId] = useState(null);
-
   const [messages, setMessages] = useState([]);
 
   const [loadingConversations, setLoadingConversations] = useState(true);
-
   const [loadingMessages, setLoadingMessages] = useState(false);
 
   const [search, setSearch] = useState("");
-
   const [input, setInput] = useState("");
 
   const [mobileChat, setMobileChat] = useState(false);
-
   const [socketConnected, setSocketConnected] = useState(false);
 
   // ===================================================
   // REFS
   // ===================================================
 
-  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   const currentConversationRef = useRef(null);
-
   const previousConversationRef = useRef(null);
 
   // ===================================================
@@ -161,7 +153,8 @@ export default function ChatPage() {
       console.error("Load conversations error:", error);
 
       antMessage.error(
-        error?.response?.data?.message || "Không thể tải cuộc trò chuyện",
+        error?.response?.data?.message ||
+          "Không thể tải cuộc trò chuyện",
       );
     } finally {
       setLoadingConversations(false);
@@ -209,7 +202,8 @@ export default function ChatPage() {
       console.error("Load messages error:", error);
 
       antMessage.error(
-        error?.response?.data?.message || "Không thể tải tin nhắn",
+        error?.response?.data?.message ||
+          "Không thể tải tin nhắn",
       );
 
       setMessages([]);
@@ -267,13 +261,14 @@ export default function ChatPage() {
 
       if (!conversationId) return;
 
-      // =============================================
+      // =================================================
       // UPDATE SIDEBAR
-      // =============================================
+      // =================================================
 
       setConversations((prev) => {
         const index = prev.findIndex(
-          (conversation) => String(conversation._id) === String(conversationId),
+          (conversation) =>
+            String(conversation._id) === String(conversationId),
         );
 
         if (index === -1) {
@@ -282,36 +277,38 @@ export default function ChatPage() {
 
         const updatedConversation = {
           ...prev[index],
-
           lastMessage: newMessage,
-
           lastMessageAt: newMessage.createdAt,
         };
 
-        const next = [
+        return [
           updatedConversation,
           ...prev.filter((_, i) => i !== index),
         ];
-
-        return next;
       });
 
-      // =============================================
-      // KHÔNG PHẢI CHAT HIỆN TẠI
-      // =============================================
+      // =================================================
+      // NOT CURRENT CHAT
+      // =================================================
 
-      if (String(conversationId) !== String(currentConversationRef.current)) {
+      if (
+        String(conversationId) !==
+        String(currentConversationRef.current)
+      ) {
         return;
       }
 
-      // =============================================
+      // =================================================
       // ADD MESSAGE
-      // =============================================
+      // =================================================
 
       setMessages((prev) => {
         if (
           newMessage?._id &&
-          prev.some((item) => String(item._id) === String(newMessage._id))
+          prev.some(
+            (item) =>
+              String(item._id) === String(newMessage._id),
+          )
         ) {
           return prev;
         }
@@ -319,7 +316,9 @@ export default function ChatPage() {
         if (
           newMessage?.clientMessageId &&
           prev.some(
-            (item) => item.clientMessageId === newMessage.clientMessageId,
+            (item) =>
+              item.clientMessageId ===
+              newMessage.clientMessageId,
           )
         ) {
           return prev;
@@ -332,7 +331,9 @@ export default function ChatPage() {
     const handleMessageError = (error) => {
       console.error("❌ message:error", error);
 
-      antMessage.error(error?.message || "Không thể gửi tin nhắn");
+      antMessage.error(
+        error?.message || "Không thể gửi tin nhắn",
+      );
     };
 
     const handleChatError = (error) => {
@@ -342,13 +343,9 @@ export default function ChatPage() {
     };
 
     socket.on("connect", handleConnect);
-
     socket.on("disconnect", handleDisconnect);
-
     socket.on("message:new", handleNewMessage);
-
     socket.on("message:error", handleMessageError);
-
     socket.on("chat:error", handleChatError);
 
     if (socket.connected) {
@@ -357,13 +354,9 @@ export default function ChatPage() {
 
     return () => {
       socket.off("connect", handleConnect);
-
       socket.off("disconnect", handleDisconnect);
-
       socket.off("message:new", handleNewMessage);
-
       socket.off("message:error", handleMessageError);
-
       socket.off("chat:error", handleChatError);
     };
   }, []);
@@ -379,11 +372,13 @@ export default function ChatPage() {
       return;
     }
 
-    const previousConversation = previousConversationRef.current;
+    const previousConversation =
+      previousConversationRef.current;
 
     if (
       previousConversation &&
-      String(previousConversation) !== String(selectedConversationId)
+      String(previousConversation) !==
+        String(selectedConversationId)
     ) {
       socket.emit("conversation:leave", {
         conversationId: previousConversation,
@@ -396,7 +391,8 @@ export default function ChatPage() {
       });
     }
 
-    previousConversationRef.current = selectedConversationId;
+    previousConversationRef.current =
+      selectedConversationId;
   }, [selectedConversationId]);
 
   // ===================================================
@@ -405,13 +401,18 @@ export default function ChatPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({
+      const container = messagesContainerRef.current;
+
+      if (!container) return;
+
+      container.scrollTo({
+        top: container.scrollHeight,
         behavior: "smooth",
       });
-    }, 80);
+    }, 100);
 
     return () => clearTimeout(timer);
-  }, [messages]);
+  }, [messages, loadingMessages]);
 
   // ===================================================
   // SEARCH
@@ -439,8 +440,12 @@ export default function ChatPage() {
   // ===================================================
   // SELECT
   // ===================================================
+
   const handleSelectConversation = (conversationId) => {
-    if (String(conversationId) === String(selectedConversationId)) {
+    if (
+      String(conversationId) ===
+      String(selectedConversationId)
+    ) {
       setMobileChat(true);
       return;
     }
@@ -460,7 +465,9 @@ export default function ChatPage() {
     if (!content) return;
 
     if (!selectedConversationId) {
-      antMessage.warning("Vui lòng chọn cuộc trò chuyện");
+      antMessage.warning(
+        "Vui lòng chọn cuộc trò chuyện",
+      );
       return;
     }
 
@@ -472,7 +479,9 @@ export default function ChatPage() {
     }
 
     if (!currentUserId) {
-      antMessage.error("Không xác định được người dùng");
+      antMessage.error(
+        "Không xác định được người dùng",
+      );
       return;
     }
 
@@ -482,11 +491,8 @@ export default function ChatPage() {
 
     socket.emit("message:send", {
       conversationId: selectedConversationId,
-
       senderId: currentUserId,
-
       content,
-
       clientMessageId,
     });
 
@@ -498,7 +504,10 @@ export default function ChatPage() {
   // ===================================================
 
   const handleKeyDown = (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey
+    ) {
       event.preventDefault();
 
       handleSendMessage();
@@ -527,30 +536,30 @@ export default function ChatPage() {
 
   if (loadingConversations) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center bg-white">
+      <div className="flex h-full min-h-0 w-full items-center justify-center overflow-hidden bg-white">
         <Spin size="large" />
       </div>
     );
   }
 
   // ===================================================
-  // UI — Instagram-style Direct Messages
+  // UI
   // ===================================================
 
   return (
-    /*
-      QUAN TRỌNG:
-
-      Không dùng:
-      h-[calc(100vh-64px)]
-
-      Vì Layout của bạn đã xử lý chiều cao/header.
-
-      flex-1 + min-h-0 giúp ChatPage nằm
-      đúng phần content bên dưới Header.
-    */
-
-    <div className="flex h-full min-h-0 min-w-0 w-full overflow-hidden bg-white">
+    <div
+      className={`
+        flex
+        h-full
+        min-h-0
+        min-w-0
+        w-full
+        overflow-hidden
+        bg-white
+        pb-[78px]
+        lg:pb-0
+      `}
+    >
       <div className="flex h-full min-h-0 min-w-0 w-full overflow-hidden bg-white lg:border lg:border-gray-200">
         {/* ================================================= */}
         {/* SIDEBAR */}
@@ -559,6 +568,7 @@ export default function ChatPage() {
         <aside
           className={`
             flex
+            h-full
             min-h-0
             w-full
             shrink-0
@@ -585,23 +595,39 @@ export default function ChatPage() {
                     h-2
                     w-2
                     rounded-full
-
-                    ${socketConnected ? "bg-green-500" : "bg-gray-300"}
+                    ${
+                      socketConnected
+                        ? "bg-green-500"
+                        : "bg-gray-300"
+                    }
                   `}
-                  title={socketConnected ? "Đã kết nối" : "Mất kết nối"}
+                  title={
+                    socketConnected
+                      ? "Đã kết nối"
+                      : "Mất kết nối"
+                  }
                 />
               </div>
 
-              <Avatar size={32} src={currentUser?.avatar}>
-                {currentUser?.username?.charAt(0)?.toUpperCase()}
+              <Avatar
+                size={32}
+                src={currentUser?.avatar}
+              >
+                {currentUser?.username
+                  ?.charAt(0)
+                  ?.toUpperCase()}
               </Avatar>
             </div>
 
             <Input
-              prefix={<SearchOutlined className="text-gray-400" />}
+              prefix={
+                <SearchOutlined className="text-gray-400" />
+              }
               placeholder="Tìm kiếm"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
               allowClear
               variant="filled"
               className="h-9 !rounded-xl !bg-[#efefef] text-sm [&_.ant-input]:!bg-transparent [&.ant-input-affix-wrapper]:!border-0 [&.ant-input-affix-wrapper]:!shadow-none"
@@ -610,11 +636,13 @@ export default function ChatPage() {
 
           {/* LIST */}
 
-          <div className="min-h-0 flex-1 overflow-y-auto pb-2">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2">
             {filteredConversations.length === 0 ? (
               <div className="flex h-full items-center justify-center px-6">
                 <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  image={
+                    Empty.PRESENTED_IMAGE_SIMPLE
+                  }
                   description={
                     search
                       ? "Không tìm thấy người dùng"
@@ -623,22 +651,34 @@ export default function ChatPage() {
                 />
               </div>
             ) : (
-              filteredConversations.map((conversation) => {
-                const user = getOtherParticipant(conversation);
+              filteredConversations.map(
+                (conversation) => {
+                  const user =
+                    getOtherParticipant(
+                      conversation,
+                    );
 
-                if (!user) return null;
+                  if (!user) return null;
 
-                const active =
-                  String(conversation._id) === String(selectedConversationId);
+                  const active =
+                    String(conversation._id) ===
+                    String(
+                      selectedConversationId,
+                    );
 
-                const lastMessage = conversation.lastMessage;
+                  const lastMessage =
+                    conversation.lastMessage;
 
-                return (
-                  <button
-                    key={conversation._id}
-                    type="button"
-                    onClick={() => handleSelectConversation(conversation._id)}
-                    className={`
+                  return (
+                    <button
+                      key={conversation._id}
+                      type="button"
+                      onClick={() =>
+                        handleSelectConversation(
+                          conversation._id,
+                        )
+                      }
+                      className={`
                         flex
                         w-full
                         items-center
@@ -650,45 +690,55 @@ export default function ChatPage() {
                         transition
                         duration-100
 
-                        ${active ? "bg-[#efefef]" : "bg-white hover:bg-[#fafafa]"}
+                        ${
+                          active
+                            ? "bg-[#efefef]"
+                            : "bg-white hover:bg-[#fafafa]"
+                        }
                       `}
-                  >
-                    {/* AVATAR */}
+                    >
+                      <div className="relative shrink-0">
+                        <Avatar
+                          size={56}
+                          src={user.avatar}
+                        >
+                          {user.username
+                            ?.charAt(0)
+                            ?.toUpperCase()}
+                        </Avatar>
 
-                    <div className="relative shrink-0">
-                      <Avatar size={56} src={user.avatar}>
-                        {user.username?.charAt(0)?.toUpperCase()}
-                      </Avatar>
-
-                      {user.status === "active" && (
-                        <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-[2.5px] border-white bg-green-500" />
-                      )}
-                    </div>
-
-                    {/* INFO */}
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="truncate text-sm font-medium text-gray-900">
-                          {user.username}
-                        </span>
+                        {user.status ===
+                          "active" && (
+                          <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-[2.5px] border-white bg-green-500" />
+                        )}
                       </div>
 
-                      <p className="m-0 mt-0.5 truncate text-[13px] text-gray-500">
-                        {lastMessage?.content
-                          ? lastMessage.content
-                          : "Chưa có tin nhắn"}
-                        {lastMessage?.createdAt && (
-                          <span className="text-gray-400">
-                            {" · " +
-                              formatConversationTime(lastMessage.createdAt)}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate text-sm font-medium text-gray-900">
+                            {user.username}
                           </span>
-                        )}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })
+                        </div>
+
+                        <p className="m-0 mt-0.5 truncate text-[13px] text-gray-500">
+                          {lastMessage?.content
+                            ? lastMessage.content
+                            : "Chưa có tin nhắn"}
+
+                          {lastMessage?.createdAt && (
+                            <span className="text-gray-400">
+                              {" · " +
+                                formatConversationTime(
+                                  lastMessage.createdAt,
+                                )}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                },
+              )
             )}
           </div>
         </aside>
@@ -699,24 +749,33 @@ export default function ChatPage() {
 
         <main
           className={`
-    h-full
-    min-h-0
-    min-w-0
-    flex-1
-    overflow-hidden
-    flex-col
-    bg-white
-    ${mobileChat ? "flex" : "hidden lg:flex"}
-  `}
+            relative
+            flex
+            h-full
+            min-h-0
+            min-w-0
+            flex-1
+            flex-col
+            overflow-hidden
+            bg-white
+
+            ${
+              mobileChat
+                ? "flex"
+                : "hidden lg:flex"
+            }
+          `}
         >
           {!selectedConversation ? (
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4">
               <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-gray-900">
                 <SendOutlinedMirrored />
               </div>
+
               <p className="m-0 text-xl font-light text-gray-900">
                 Tin nhắn của bạn
               </p>
+
               <p className="m-0 text-sm text-gray-500">
                 Chọn một cuộc trò chuyện để bắt đầu
               </p>
@@ -727,8 +786,8 @@ export default function ChatPage() {
               {/* CHAT HEADER */}
               {/* ================================================= */}
 
-              <header className="z-10 flex h-[64px] shrink-0 items-center justify-between border-b border-gray-200 bg-white px-3 sm:px-5">
-                <div className="flex min-w-0 items-center gap-2.5">
+              <header className="z-10 flex h-[64px] shrink-0 items-center justify-between border-b border-gray-200 bg-white px-2 sm:px-5">
+                <div className="flex min-w-0 items-center gap-1.5 sm:gap-2.5">
                   <Button
                     type="text"
                     icon={<ArrowLeftOutlined />}
@@ -736,36 +795,45 @@ export default function ChatPage() {
                     onClick={handleBack}
                   />
 
-                  <div className="relative">
-                    <Avatar size={38} src={otherUser?.avatar}>
-                      {otherUser?.username?.charAt(0)?.toUpperCase()}
+                  <div className="relative shrink-0">
+                    <Avatar
+                      size={38}
+                      src={otherUser?.avatar}
+                    >
+                      {otherUser?.username
+                        ?.charAt(0)
+                        ?.toUpperCase()}
                     </Avatar>
 
-                    {otherUser?.status === "active" && (
+                    {otherUser?.status ===
+                      "active" && (
                       <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-green-500" />
                     )}
                   </div>
 
                   <div className="min-w-0">
-                    <h2 className="m-0 truncate text-sm font-semibold text-gray-900">
+                    <h2 className="m-0 max-w-[130px] truncate text-sm font-semibold text-gray-900 sm:max-w-none">
                       {otherUser?.username}
                     </h2>
 
                     <p className="m-0 text-[11px] text-gray-400">
-                      {otherUser?.status === "active"
+                      {otherUser?.status ===
+                      "active"
                         ? "Đang hoạt động"
                         : "Ngoại tuyến"}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex shrink-0 items-center gap-0">
                   <Tooltip title="Gọi thoại">
                     <Button
                       type="text"
                       shape="circle"
                       size="large"
-                      icon={<PhoneOutlined className="text-lg" />}
+                      icon={
+                        <PhoneOutlined className="text-lg" />
+                      }
                     />
                   </Tooltip>
 
@@ -774,7 +842,9 @@ export default function ChatPage() {
                       type="text"
                       shape="circle"
                       size="large"
-                      icon={<VideoCameraOutlined className="text-lg" />}
+                      icon={
+                        <VideoCameraOutlined className="text-lg" />
+                      }
                     />
                   </Tooltip>
 
@@ -783,7 +853,9 @@ export default function ChatPage() {
                       type="text"
                       shape="circle"
                       size="large"
-                      icon={<InfoCircleOutlined className="text-lg" />}
+                      icon={
+                        <InfoCircleOutlined className="text-lg" />
+                      }
                     />
                   </Tooltip>
                 </div>
@@ -793,22 +865,44 @@ export default function ChatPage() {
               {/* MESSAGES */}
               {/* ================================================= */}
 
-              <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-white px-3 py-4 sm:px-6">
+              <div
+                ref={messagesContainerRef}
+                className="
+                  min-h-0
+                  min-w-0
+                  flex-1
+                  overflow-x-hidden
+                  overflow-y-auto
+                  overscroll-contain
+                  bg-white
+                  px-3
+                  py-4
+                  sm:px-6
+                "
+              >
                 <div className="mx-auto flex w-full min-w-0 max-w-4xl flex-col gap-0.5">
                   {loadingMessages ? (
-                    <div className="flex min-h-[300px] flex-1 items-center justify-center">
+                    <div className="flex min-h-[300px] items-center justify-center">
                       <Spin />
                     </div>
                   ) : messages.length === 0 ? (
-                    <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 text-center">
-                      <Avatar size={80} src={otherUser?.avatar}>
-                        {otherUser?.username?.charAt(0)?.toUpperCase()}
+                    <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 px-4 text-center">
+                      <Avatar
+                        size={80}
+                        src={otherUser?.avatar}
+                      >
+                        {otherUser?.username
+                          ?.charAt(0)
+                          ?.toUpperCase()}
                       </Avatar>
+
                       <p className="m-0 text-base font-semibold text-gray-900">
                         {otherUser?.username}
                       </p>
+
                       <p className="m-0 text-sm text-gray-400">
-                        Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện.
+                        Chưa có tin nhắn. Hãy bắt đầu
+                        cuộc trò chuyện.
                       </p>
                     </div>
                   ) : (
@@ -819,97 +913,130 @@ export default function ChatPage() {
                         </span>
                       </div>
 
-                      {messages.map((item, index) => {
-                        const senderId = item.senderId?._id || item.senderId;
+                      {messages.map(
+                        (item, index) => {
+                          const senderId =
+                            item.senderId?._id ||
+                            item.senderId;
 
-                        const isMe = String(senderId) === String(currentUserId);
+                          const isMe =
+                            String(senderId) ===
+                            String(currentUserId);
 
-                        const prevItem = messages[index - 1];
+                          const prevItem =
+                            messages[index - 1];
 
-                        const prevSenderId =
-                          prevItem?.senderId?._id || prevItem?.senderId;
+                          const prevSenderId =
+                            prevItem?.senderId?._id ||
+                            prevItem?.senderId;
 
-                        const isSameSenderAsPrev =
-                          prevItem && String(prevSenderId) === String(senderId);
+                          const isSameSenderAsPrev =
+                            prevItem &&
+                            String(
+                              prevSenderId,
+                            ) === String(senderId);
 
-                        return (
-                          <div
-                            key={item._id || item.clientMessageId}
-                            className={`
-    flex
-    min-w-0
-    max-w-full
-    items-end
-    gap-2
-    ${isSameSenderAsPrev ? "mt-0.5" : "mt-3"}
-    ${isMe ? "justify-end" : "justify-start"}
-  `}
-                          >
-                            {!isMe && (
-                              <div className="w-6 shrink-0">
-                                {!isSameSenderAsPrev && (
-                                  <Avatar
-                                    size={24}
-                                    src={
-                                      item.senderId?.avatar || otherUser?.avatar
-                                    }
-                                  >
-                                    {item.senderId?.username
-                                      ?.charAt(0)
-                                      ?.toUpperCase()}
-                                  </Avatar>
-                                )}
-                              </div>
-                            )}
-
+                          return (
                             <div
+                              key={
+                                item._id ||
+                                item.clientMessageId
+                              }
                               className={`
-    group
-    min-w-0
-    max-w-[65%]
-    flex
-    flex-col
-    ${isMe ? "items-end" : "items-start"}
-  `}
+                                flex
+                                min-w-0
+                                max-w-full
+                                items-end
+                                gap-2
+                                ${
+                                  isSameSenderAsPrev
+                                    ? "mt-0.5"
+                                    : "mt-3"
+                                }
+                                ${
+                                  isMe
+                                    ? "justify-end"
+                                    : "justify-start"
+                                }
+                              `}
                             >
+                              {!isMe && (
+                                <div className="w-6 shrink-0">
+                                  {!isSameSenderAsPrev && (
+                                    <Avatar
+                                      size={24}
+                                      src={
+                                        item.senderId
+                                          ?.avatar ||
+                                        otherUser?.avatar
+                                      }
+                                    >
+                                      {item
+                                        .senderId
+                                        ?.username
+                                        ?.charAt(0)
+                                        ?.toUpperCase()}
+                                    </Avatar>
+                                  )}
+                                </div>
+                              )}
+
                               <div
                                 className={`
-    min-w-0
-    max-w-full
-    break-words
-    break-all
-    whitespace-pre-wrap
-    overflow-hidden
-    rounded-[20px]
-    px-3.5
-    py-2
-    text-sm
-    leading-5
-    ${
-      isMe
-        ? "bg-gradient-to-br from-[#4776E6] to-[#8E54E9] text-white"
-        : "bg-[#efefef] text-gray-900"
-    }
-  `}
+                                  group
+                                  min-w-0
+                                  max-w-[78%]
+                                  sm:max-w-[65%]
+                                  flex
+                                  flex-col
+                                  ${
+                                    isMe
+                                      ? "items-end"
+                                      : "items-start"
+                                  }
+                                `}
                               >
-                                {item.content}
-                              </div>
+                                <div
+                                  className={`
+                                    min-w-0
+                                    max-w-full
+                                    break-words
+                                    break-all
+                                    whitespace-pre-wrap
+                                    overflow-hidden
+                                    rounded-[20px]
+                                    px-3.5
+                                    py-2
+                                    text-sm
+                                    leading-5
+                                    ${
+                                      isMe
+                                        ? "bg-gradient-to-br from-[#4776E6] to-[#8E54E9] text-white"
+                                        : "bg-[#efefef] text-gray-900"
+                                    }
+                                  `}
+                                >
+                                  {item.content}
+                                </div>
 
-                              <div className="mt-0.5 hidden items-center gap-1 px-1 text-[10px] text-gray-400 group-hover:flex">
-                                <span>{formatTime(item.createdAt)}</span>
+                                <div className="mt-0.5 hidden items-center gap-1 px-1 text-[10px] text-gray-400 group-hover:flex">
+                                  <span>
+                                    {formatTime(
+                                      item.createdAt,
+                                    )}
+                                  </span>
 
-                                {isMe && (
-                                  <CheckOutlined className="text-[9px]" />
-                                )}
+                                  {isMe && (
+                                    <CheckOutlined className="text-[9px]" />
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        },
+                      )}
                     </>
                   )}
-
-                  <div ref={messagesEndRef} />
                 </div>
               </div>
 
@@ -917,7 +1044,17 @@ export default function ChatPage() {
               {/* INPUT */}
               {/* ================================================= */}
 
-              <div className="shrink-0 bg-white px-3 pb-3 pt-1 sm:px-5 sm:pb-4">
+              <div
+                className="
+                  shrink-0
+                  bg-white
+                  px-3
+                  pb-3
+                  pt-1
+                  sm:px-5
+                  sm:pb-4
+                "
+              >
                 <div className="mx-auto w-full min-w-0 max-w-4xl">
                   <div className="flex min-w-0 items-center gap-1.5 rounded-full border border-gray-300 bg-white px-2 py-1.5">
                     <Tooltip title="Emoji">
@@ -933,7 +1070,9 @@ export default function ChatPage() {
 
                     <Input.TextArea
                       value={input}
-                      onChange={(e) => setInput(e.target.value)}
+                      onChange={(e) =>
+                        setInput(e.target.value)
+                      }
                       onKeyDown={handleKeyDown}
                       autoSize={{
                         minRows: 1,
@@ -941,7 +1080,7 @@ export default function ChatPage() {
                       }}
                       placeholder="Nhắn tin..."
                       variant="borderless"
-                      className="!resize-none !px-1 !py-1 text-sm"
+                      className="!min-w-0 !resize-none !px-1 !py-1 text-sm"
                     />
 
                     <Tooltip title="Ảnh / File">
@@ -958,8 +1097,12 @@ export default function ChatPage() {
                     {input.trim() ? (
                       <Button
                         type="text"
-                        onClick={handleSendMessage}
-                        disabled={!socketConnected}
+                        onClick={
+                          handleSendMessage
+                        }
+                        disabled={
+                          !socketConnected
+                        }
                         className="shrink-0 !px-2 !font-semibold !text-[#3797f0] disabled:!text-gray-300"
                       >
                         Gửi
@@ -1001,8 +1144,7 @@ export default function ChatPage() {
 }
 
 // =====================================================
-// Small inline "paper-plane" glyph used on the Instagram-style
-// empty state (kept local so no new icon dependency is required)
+// EMPTY STATE ICON
 // =====================================================
 
 function SendOutlinedMirrored() {

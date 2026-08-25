@@ -550,8 +550,8 @@ export default function ChatPage() {
       đúng phần content bên dưới Header.
     */
 
-    <div className="flex min-h-0 flex-1 overflow-hidden bg-white">
-      <div className="flex min-h-0 w-full overflow-hidden bg-white lg:border lg:border-gray-200">
+    <div className="flex h-full min-h-0 min-w-0 w-full overflow-hidden bg-white">
+      <div className="flex h-full min-h-0 min-w-0 w-full overflow-hidden bg-white lg:border lg:border-gray-200">
         {/* ================================================= */}
         {/* SIDEBAR */}
         {/* ================================================= */}
@@ -680,7 +680,8 @@ export default function ChatPage() {
                           : "Chưa có tin nhắn"}
                         {lastMessage?.createdAt && (
                           <span className="text-gray-400">
-                            {" · " + formatConversationTime(lastMessage.createdAt)}
+                            {" · " +
+                              formatConversationTime(lastMessage.createdAt)}
                           </span>
                         )}
                       </p>
@@ -698,14 +699,15 @@ export default function ChatPage() {
 
         <main
           className={`
-            min-h-0
-            min-w-0
-            flex-1
-            flex-col
-            bg-white
-
-            ${mobileChat ? "flex" : "hidden lg:flex"}
-          `}
+    h-full
+    min-h-0
+    min-w-0
+    flex-1
+    overflow-hidden
+    flex-col
+    bg-white
+    ${mobileChat ? "flex" : "hidden lg:flex"}
+  `}
         >
           {!selectedConversation ? (
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4">
@@ -791,8 +793,8 @@ export default function ChatPage() {
               {/* MESSAGES */}
               {/* ================================================= */}
 
-              <div className="min-h-0 flex-1 overflow-y-auto bg-white px-3 py-4 sm:px-6">
-                <div className="mx-auto flex max-w-4xl flex-col gap-0.5">
+              <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-white px-3 py-4 sm:px-6">
+                <div className="mx-auto flex w-full min-w-0 max-w-4xl flex-col gap-0.5">
                   {loadingMessages ? (
                     <div className="flex min-h-[300px] flex-1 items-center justify-center">
                       <Spin />
@@ -828,20 +830,20 @@ export default function ChatPage() {
                           prevItem?.senderId?._id || prevItem?.senderId;
 
                         const isSameSenderAsPrev =
-                          prevItem &&
-                          String(prevSenderId) === String(senderId);
+                          prevItem && String(prevSenderId) === String(senderId);
 
                         return (
                           <div
                             key={item._id || item.clientMessageId}
                             className={`
-                                flex
-                                items-end
-                                gap-2
-
-                                ${isSameSenderAsPrev ? "mt-0.5" : "mt-3"}
-                                ${isMe ? "justify-end" : "justify-start"}
-                              `}
+    flex
+    min-w-0
+    max-w-full
+    items-end
+    gap-2
+    ${isSameSenderAsPrev ? "mt-0.5" : "mt-3"}
+    ${isMe ? "justify-end" : "justify-start"}
+  `}
                           >
                             {!isMe && (
                               <div className="w-6 shrink-0">
@@ -862,30 +864,33 @@ export default function ChatPage() {
 
                             <div
                               className={`
-                                  group
-                                  flex
-                                  max-w-[65%]
-                                  flex-col
-
-                                  ${isMe ? "items-end" : "items-start"}
-                                `}
+    group
+    min-w-0
+    max-w-[65%]
+    flex
+    flex-col
+    ${isMe ? "items-end" : "items-start"}
+  `}
                             >
                               <div
                                 className={`
-                                    break-words
-                                    whitespace-pre-wrap
-                                    rounded-[20px]
-                                    px-3.5
-                                    py-2
-                                    text-sm
-                                    leading-5
-
-                                    ${
-                                      isMe
-                                        ? "bg-gradient-to-br from-[#4776E6] to-[#8E54E9] text-white"
-                                        : "bg-[#efefef] text-gray-900"
-                                    }
-                                  `}
+    min-w-0
+    max-w-full
+    break-words
+    break-all
+    whitespace-pre-wrap
+    overflow-hidden
+    rounded-[20px]
+    px-3.5
+    py-2
+    text-sm
+    leading-5
+    ${
+      isMe
+        ? "bg-gradient-to-br from-[#4776E6] to-[#8E54E9] text-white"
+        : "bg-[#efefef] text-gray-900"
+    }
+  `}
                               >
                                 {item.content}
                               </div>
@@ -913,13 +918,15 @@ export default function ChatPage() {
               {/* ================================================= */}
 
               <div className="shrink-0 bg-white px-3 pb-3 pt-1 sm:px-5 sm:pb-4">
-                <div className="mx-auto max-w-4xl">
-                  <div className="flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-2 py-1.5">
+                <div className="mx-auto w-full min-w-0 max-w-4xl">
+                  <div className="flex min-w-0 items-center gap-1.5 rounded-full border border-gray-300 bg-white px-2 py-1.5">
                     <Tooltip title="Emoji">
                       <Button
                         type="text"
                         shape="circle"
-                        icon={<SmileOutlined className="text-xl text-gray-700" />}
+                        icon={
+                          <SmileOutlined className="text-xl text-gray-700" />
+                        }
                         className="shrink-0"
                       />
                     </Tooltip>
@@ -963,7 +970,9 @@ export default function ChatPage() {
                           <Button
                             type="text"
                             shape="circle"
-                            icon={<AudioOutlined className="text-xl text-gray-700" />}
+                            icon={
+                              <AudioOutlined className="text-xl text-gray-700" />
+                            }
                             className="shrink-0"
                           />
                         </Tooltip>
@@ -972,7 +981,9 @@ export default function ChatPage() {
                           <Button
                             type="text"
                             shape="circle"
-                            icon={<HeartOutlined className="text-xl text-gray-700" />}
+                            icon={
+                              <HeartOutlined className="text-xl text-gray-700" />
+                            }
                             className="shrink-0"
                           />
                         </Tooltip>

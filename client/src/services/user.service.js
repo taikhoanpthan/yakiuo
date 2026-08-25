@@ -38,3 +38,8 @@ export const getMe = async () => {
 
   return response.data;
 };
+export const changePassword = async (data) => {
+  const response = await api.patch("/users/me/password", data);
+
+  return response.data;
+};

@@ -1,5 +1,10 @@
 @import "tailwindcss";
 @import "./App.css";
+
+/* =========================================================
+   GLOBAL
+========================================================= */
+
 :root {
   font-family:
     Inter,
@@ -9,363 +14,717 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  color: #1d293d;
+
+  color: #1c1e21;
   background: #f5f7fb;
+
   font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --erp-bg: #f5f7fb;
+  --erp-card: #ffffff;
+  --erp-sidebar: #111b31;
+  --erp-sidebar-text: #aab6ca;
+  --erp-primary: #3977f6;
+  --erp-primary-soft: rgba(57, 119, 246, 0.1);
+  --erp-border: #e4e6eb;
+  --erp-text: #1c1e21;
+  --erp-muted: #65676b;
 }
-* {
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
-html,
-body,
-#root {
-  margin: 0;
+
+html {
+  width: 100%;
   min-height: 100%;
+  overflow-x: hidden;
 }
+
 body {
+  margin: 0;
   min-width: 320px;
-  background: #f5f7fb;
+  min-height: 100dvh;
+
+  background: var(--erp-bg);
+  color: var(--erp-text);
+
+  overflow-x: hidden;
 }
-button {
+
+#root {
+  width: 100%;
+  min-height: 100dvh;
+}
+
+button,
+input,
+textarea,
+select {
   font-family: inherit;
 }
-.erp-shell {
-  min-height: 100vh !important;
-  background: #f5f7fb !important;
+
+button {
+  -webkit-tap-highlight-color: transparent;
 }
+
+/* iOS tránh tự zoom input */
+@media (max-width: 768px) {
+  input,
+  textarea,
+  select,
+  .ant-input,
+  .ant-input-affix-wrapper,
+  .ant-select-selector {
+    font-size: 16px !important;
+  }
+}
+
+/* =========================================================
+   YAKIUO APP SHELL
+========================================================= */
+
+.erp-shell {
+  width: 100%;
+  height: 100dvh !important;
+  min-height: 0 !important;
+
+  background: var(--erp-bg) !important;
+
+  overflow: hidden;
+}
+
+.erp-workspace {
+  min-width: 0;
+  min-height: 0;
+
+  background: var(--erp-bg) !important;
+
+  overflow: hidden;
+}
+
+/* =========================================================
+   DESKTOP SIDEBAR
+========================================================= */
+
 .erp-sider {
-  background: #111b31 !important;
-  box-shadow: 4px 0 24px rgba(14, 26, 49, 0.08);
-  height: 100vh;
-  position: sticky !important;
-  top: 0;
+  position: relative !important;
+
+  height: 100dvh !important;
+  max-height: 100dvh;
+
+  flex: 0 0 auto;
+
+  background: var(--erp-sidebar) !important;
+
+  box-shadow:
+    4px 0 24px rgba(14, 26, 49, 0.08),
+    1px 0 0 rgba(255, 255, 255, 0.02);
+
+  overflow: hidden;
+
   z-index: 20;
 }
+
 .erp-sider .ant-layout-sider-children {
   display: flex;
   flex-direction: column;
+
+  width: 100%;
   height: 100%;
+
+  min-height: 0;
+
   overflow: hidden;
 }
+
+/* =========================================================
+   BRAND
+========================================================= */
+
 .erp-brand {
-  align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  gap: 12px;
   height: 76px;
-  padding: 0 20px;
-}
-.erp-brand-mark {
-  align-items: center;
-  background: linear-gradient(135deg, #4c8cff, #6c5ce7);
-  border-radius: 12px;
-  box-shadow: 0 6px 16px rgba(76, 140, 255, 0.28);
-  color: #fff;
+  min-height: 76px;
+
   display: flex;
-  flex: 0 0 auto;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 0 20px;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  flex-shrink: 0;
+}
+
+.erp-brand-mark {
+  width: 36px;
+  height: 36px;
+
+  flex: 0 0 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+
+  background: linear-gradient(
+    135deg,
+    #3977f6 0%,
+    #6c5ce7 100%
+  );
+
+  box-shadow:
+    0 6px 16px rgba(76, 140, 255, 0.28);
+
+  color: #fff;
+
   font-size: 18px;
   font-weight: 850;
-  height: 36px;
-  justify-content: center;
-  width: 36px;
 }
+
 .erp-brand strong {
-  color: #fff;
   display: block;
+
+  color: #fff;
+
   font-size: 15px;
+  font-weight: 800;
+
   letter-spacing: 0.06em;
+
   line-height: 18px;
 }
+
 .erp-brand span {
-  color: #8794ad;
   display: block;
+
+  margin-top: 3px;
+
+  color: #8794ad;
+
   font-size: 9px;
   font-weight: 700;
+
   letter-spacing: 0.16em;
-  margin-top: 3px;
+
+  line-height: 1;
 }
+
+/* =========================================================
+   SIDEBAR LABEL
+========================================================= */
+
 .erp-nav-label {
+  flex-shrink: 0;
+
+  padding: 24px 20px 8px;
+
   color: #71809a;
+
   font-size: 10px;
   font-weight: 800;
+
   letter-spacing: 0.12em;
-  padding: 24px 20px 8px;
+
   text-transform: uppercase;
 }
-.ant-layout-sider-collapsed .erp-nav-label {
-  opacity: 0;
-}
+
+/* =========================================================
+   SIDEBAR NAV
+========================================================= */
+
 .erp-nav {
-  padding: 0 12px;
+  flex: 1 1 auto;
+
+  min-height: 0;
+
+  padding: 0 12px 12px;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
+
+.erp-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.erp-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.erp-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+
 .erp-nav-item,
 .erp-logout {
+  width: 100%;
+  min-height: 46px;
+
+  display: flex;
   align-items: center;
-  background: transparent;
+
+  gap: 12px;
+
+  padding: 0 12px;
+
   border: 0;
   border-radius: 10px;
-  color: #aab6ca;
+
+  background: transparent;
+
+  color: var(--erp-sidebar-text);
+
   cursor: pointer;
-  display: flex;
+
   font-size: 14px;
   font-weight: 600;
-  gap: 12px;
-  min-height: 46px;
-  padding: 0 12px;
+
   text-align: left;
+
   transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
-  width: 100%;
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
 }
+
+.erp-nav-item + .erp-nav-item {
+  margin-top: 3px;
+}
+
 .erp-nav-item:hover {
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
+
   transform: translateX(2px);
 }
+
 .erp-nav-item.is-active {
-  background: linear-gradient(
-    90deg,
-    rgba(75, 139, 255, 0.24),
-    rgba(75, 139, 255, 0.09)
-  );
+  background:
+    linear-gradient(
+      90deg,
+      rgba(57, 119, 246, 0.25),
+      rgba(57, 119, 246, 0.08)
+    );
+
   color: #fff;
 }
+
 .erp-nav-icon {
+  width: 22px;
+  min-width: 22px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
   font-size: 18px;
   line-height: 1;
 }
+
+/* =========================================================
+   SIDEBAR BOTTOM
+========================================================= */
+
 .erp-side-bottom {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  margin-top: auto;
+  flex-shrink: 0;
+
   padding: 12px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
+
 .erp-side-help {
-  color: #71809a;
   display: flex;
-  font-size: 12px;
+  align-items: center;
+
   gap: 10px;
+
   padding: 10px 12px 14px;
+
+  color: #71809a;
+
+  font-size: 12px;
+
   white-space: nowrap;
 }
+
 .erp-logout {
   color: #ff9ca8;
 }
+
 .erp-logout:hover {
   background: rgba(255, 104, 119, 0.1);
+
   color: #ffb2bb;
 }
-.erp-workspace {
-  background: #f5f7fb !important;
-  min-width: 0;
-}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
 .erp-header {
-  align-items: center;
-  background: rgba(255, 255, 255, 0.92) !important;
-  border-bottom: 1px solid #e7ebf1;
+  position: relative !important;
+
+  z-index: 100;
+
+  flex: 0 0 64px !important;
+
+  height: 64px !important;
+  min-height: 64px !important;
+
   display: flex;
-  height: 76px !important;
-  justify-content: space-between;
-  line-height: normal !important;
-  padding: 0 28px !important;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-.erp-menu-button {
   align-items: center;
-  border-radius: 10px !important;
-  color: #516078 !important;
-  display: inline-flex;
-  font-size: 18px !important;
-  height: 40px !important;
-  justify-content: center;
-  width: 40px !important;
+  justify-content: space-between;
+
+  padding: 0 24px !important;
+
+  background: rgba(255, 255, 255, 0.94) !important;
+
+  border-bottom: 1px solid #e7ebf1;
+
+  line-height: normal !important;
+
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
+
+.erp-menu-button {
+  width: 40px !important;
+  height: 40px !important;
+
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 !important;
+
+  border-radius: 10px !important;
+
+  color: #516078 !important;
+
+  font-size: 18px !important;
+}
+
 .erp-menu-button:hover {
   background: #f0f4fa !important;
-  color: #3172f5 !important;
+  color: var(--erp-primary) !important;
 }
+
 .erp-header-context {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+
   line-height: 1.2;
 }
+
 .erp-header-context span {
   color: #8b98aa;
+
   font-size: 11px;
 }
+
 .erp-header-context strong {
-  color: #27344b;
-  font-size: 14px;
   margin-top: 3px;
+
+  color: #27344b;
+
+  font-size: 14px;
+  font-weight: 700;
 }
+
+/* =========================================================
+   HEADER USER
+========================================================= */
+
 .erp-user-menu {
+  display: flex;
   align-items: center;
-  background: transparent;
+
+  gap: 9px;
+
+  padding: 5px 7px;
+
   border: 0;
   border-radius: 12px;
+
+  background: transparent;
+
   cursor: pointer;
-  display: flex;
-  gap: 9px;
-  padding: 5px 7px;
+
   text-align: left;
-  transition: background 0.2s;
+
+  transition: background 0.18s ease;
 }
+
 .erp-user-menu:hover {
   background: #f4f7fb;
 }
+
 .erp-avatar {
-  background: linear-gradient(135deg, #397cf6, #7a65db) !important;
+  background:
+    linear-gradient(
+      135deg,
+      #397cf6,
+      #7a65db
+    ) !important;
+
   font-weight: 700;
 }
+
 .erp-user-copy {
-  display: grid;
-  line-height: 1.2;
-}
-.erp-user-copy strong {
-  color: #344158;
-  font-size: 13px;
-}
-.erp-user-copy small {
-  color: #8895a8;
-  font-size: 11px;
-  margin-top: 3px;
-  text-transform: capitalize;
-}
-.erp-content {
-  background: #f5f7fb !important;
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 76px);
+
+  line-height: 1.2;
 }
-.erp-page {
-  flex: 1;
-  margin: 0 auto;
-  max-width: 1600px;
-  padding: 28px;
-  width: 100%;
+
+.erp-user-copy strong {
+  color: #344158;
+
+  font-size: 13px;
+  font-weight: 700;
 }
-.erp-footer {
-  border-top: 1px solid #e7ebf1;
-  color: #95a0b0;
-  display: flex;
+
+.erp-user-copy small {
+  margin-top: 3px;
+
+  color: #8895a8;
+
   font-size: 11px;
-  gap: 16px;
-  justify-content: space-between;
-  padding: 14px 28px;
+
+  text-transform: capitalize;
 }
-.erp-mobile-nav {
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+.erp-content {
+  flex: 1 1 auto;
+
+  min-width: 0;
+  min-height: 0;
+
+  height: auto !important;
+
+  display: flex;
+  flex-direction: column;
+
+  background: var(--erp-bg) !important;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* =========================================================
+   PAGE
+========================================================= */
+
+.erp-page {
+  width: 100%;
+  max-width: 1600px;
+
+  flex: 1 0 auto;
+
+  margin: 0 auto;
+
+  padding: 28px;
+}
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.erp-footer {
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  padding: 14px 28px;
+
+  border-top: 1px solid #e7ebf1;
+
+  color: #95a0b0;
+
+  font-size: 11px;
+}
+
+.erp-footer-left,
+.erp-footer-center,
+.erp-footer-right {
+  display: flex;
+  align-items: center;
+}
+
+.erp-footer-left {
+  min-width: 0;
+}
+
+.erp-footer-center {
+  gap: 7px;
+}
+
+.erp-footer-right {
+  gap: 10px;
+}
+
+.erp-footer-brand {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+}
+
+.erp-footer-brand > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.erp-footer-brand strong {
+  color: #667085;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 0.06em;
+}
+
+.erp-footer-brand span {
+  margin-top: 2px;
+
+  color: #98a2b3;
+
+  font-size: 8px;
+
+  letter-spacing: 0.1em;
+}
+
+.erp-footer-mark {
+  width: 24px;
+  height: 24px;
+
+  display: inline-block;
+
+  border-radius: 7px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #3977f6,
+      #6c5ce7
+    );
+}
+
+.erp-footer-dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #31a24c;
+}
+
+.erp-footer-divider {
+  width: 1px;
+  height: 12px;
+
+  background: #d9dee8;
+}
+
+/* =========================================================
+   MOBILE TASKBAR
+========================================================= */
+
+.erp-mobile-taskbar {
   display: none;
 }
-.ant-message-notice-content {
-  border-radius: 12px !important;
-  box-shadow: 0 12px 32px rgba(16, 31, 56, 0.16) !important;
-  font-weight: 600;
-  padding: 12px 16px !important;
-}
-.ant-modal-content {
-  border-radius: 18px !important;
-  overflow: hidden;
-}
-.ant-modal-header {
-  padding-top: 24px !important;
-}
+
+/* =========================================================
+   ANT DESIGN GLOBAL
+========================================================= */
+
 .ant-btn {
   font-weight: 600;
 }
+
 .ant-btn-primary {
-  box-shadow: 0 5px 12px rgba(49, 114, 245, 0.22);
+  box-shadow:
+    0 5px 12px rgba(49, 114, 245, 0.22);
 }
-@media (max-width: 991px) {
-  .erp-sider {
-    display: none !important;
-  }
-  .erp-mobile-nav {
-    display: block;
-  }
-  .erp-mobile-backdrop {
-    background: rgba(10, 20, 38, 0.46);
-    inset: 0;
-    position: fixed;
-    z-index: 50;
-  }
-  .erp-mobile-panel {
-    background: #111b31;
-    box-shadow: 10px 0 30px rgba(8, 15, 28, 0.28);
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    left: 0;
-    position: fixed;
-    top: 0;
-    width: 264px;
-    z-index: 51;
-  }
-  .erp-header {
-    padding: 0 16px !important;
-  }
-  .erp-page {
-    padding: 20px 16px;
-  }
-  .erp-footer {
-    padding: 13px 16px;
-  }
-  .erp-footer span:nth-child(2) {
-    display: none;
-  }
+
+.ant-message-notice-content {
+  padding: 12px 16px !important;
+
+  border-radius: 12px !important;
+
+  box-shadow:
+    0 12px 32px rgba(16, 31, 56, 0.16) !important;
+
+  font-weight: 600;
 }
-@media (max-width: 560px) {
-  .erp-header-context,
-  .erp-user-copy {
-    display: none;
-  }
-  .erp-footer {
-    font-size: 10px;
-  }
-  .erp-page {
-    padding: 18px 12px;
-  }
+
+.ant-modal-content {
+  overflow: hidden;
+
+  border-radius: 18px !important;
 }
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *:before,
-  *:after {
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
-  }
+
+.ant-modal-header {
+  padding-top: 24px !important;
 }
-/* =====================================================
+
+/* =========================================================
    YAKIUO SOCIAL PROFILE
-===================================================== */
+========================================================= */
 
 .yakiuo-profile {
   width: 100%;
   max-width: 1200px;
+
   margin: 0 auto;
+
   padding: 0 16px 40px;
 }
 
-/* =====================================================
+/* =========================================================
    PROFILE HEADER
-===================================================== */
+========================================================= */
 
 .yakiuo-profile-header {
   overflow: hidden;
 
   background: #fff;
 
-  border: 1px solid #e4e6eb;
+  border: 1px solid var(--erp-border);
   border-radius: 0 0 12px 12px;
 
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-/* =====================================================
-   COVER
-===================================================== */
+/* =========================================================
+   PROFILE COVER
+========================================================= */
 
 .yakiuo-cover {
   position: relative;
@@ -422,6 +781,7 @@ button {
 
   display: flex;
   align-items: center;
+
   gap: 10px;
 
   color: #fff;
@@ -444,10 +804,10 @@ button {
 
   background: rgba(255, 255, 255, 0.16);
 
-  border: 1px solid
-    rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 
   font-size: 16px;
   font-weight: 800;
@@ -467,9 +827,9 @@ button {
     0 4px 12px rgba(0, 0, 0, 0.16);
 }
 
-/* =====================================================
+/* =========================================================
    PROFILE INFO
-===================================================== */
+========================================================= */
 
 .yakiuo-profile-info {
   position: relative;
@@ -538,17 +898,21 @@ button {
 
   cursor: pointer;
 
-  transition: 0.2s ease;
+  transition:
+    background 0.18s ease,
+    transform 0.18s ease;
 }
 
 .yakiuo-avatar-camera:hover {
   background: #d8dadf;
+
+  transform: scale(1.04);
 }
 
 .yakiuo-profile-identity {
-  min-width: 0;
-
   flex: 1;
+
+  min-width: 0;
 
   padding-bottom: 22px;
 }
@@ -556,6 +920,7 @@ button {
 .yakiuo-profile-name-row {
   display: flex;
   align-items: center;
+
   gap: 6px;
 }
 
@@ -571,7 +936,7 @@ button {
 }
 
 .yakiuo-verified {
-  color: #3977f6;
+  color: var(--erp-primary);
 
   font-size: 18px;
 }
@@ -579,7 +944,7 @@ button {
 .yakiuo-profile-username {
   margin-top: 5px;
 
-  color: #65676b;
+  color: var(--erp-muted);
 
   font-size: 14px;
 }
@@ -593,7 +958,7 @@ button {
 
   margin-top: 10px;
 
-  color: #65676b;
+  color: var(--erp-muted);
 
   font-size: 12px;
 }
@@ -601,6 +966,7 @@ button {
 .yakiuo-profile-meta > span {
   display: flex;
   align-items: center;
+
   gap: 5px;
 }
 
@@ -617,9 +983,9 @@ button {
   padding-bottom: 22px;
 }
 
-/* =====================================================
-   TABS
-===================================================== */
+/* =========================================================
+   PROFILE TABS
+========================================================= */
 
 .yakiuo-profile-tabs {
   display: flex;
@@ -627,7 +993,7 @@ button {
 
   gap: 4px;
 
-  border-top: 1px solid #e4e6eb;
+  border-top: 1px solid var(--erp-border);
 }
 
 .yakiuo-profile-tabs button {
@@ -639,7 +1005,7 @@ button {
 
   background: transparent;
 
-  color: #65676b;
+  color: var(--erp-muted);
 
   font-size: 14px;
   font-weight: 600;
@@ -652,7 +1018,7 @@ button {
 }
 
 .yakiuo-profile-tabs button.is-active {
-  color: #3977f6;
+  color: var(--erp-primary);
 }
 
 .yakiuo-profile-tabs button.is-active::after {
@@ -668,12 +1034,12 @@ button {
 
   border-radius: 3px 3px 0 0;
 
-  background: #3977f6;
+  background: var(--erp-primary);
 }
 
-/* =====================================================
-   BODY
-===================================================== */
+/* =========================================================
+   PROFILE BODY
+========================================================= */
 
 .yakiuo-profile-body {
   padding-top: 16px;
@@ -693,29 +1059,27 @@ button {
 
 .yakiuo-profile-left,
 .yakiuo-profile-right {
-  display: flex;
+  min-width: 0;
 
+  display: flex;
   flex-direction: column;
 
   gap: 16px;
-
-  min-width: 0;
 }
 
-/* =====================================================
-   CARD
-===================================================== */
+/* =========================================================
+   PROFILE CARD
+========================================================= */
 
 .yakiuo-social-card {
-  border: 1px solid #e4e6eb !important;
+  border: 1px solid var(--erp-border) !important;
   border-radius: 10px !important;
 
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-.yakiuo-social-card
-  .ant-card-body {
+.yakiuo-social-card .ant-card-body {
   padding: 20px;
 }
 
@@ -737,20 +1101,20 @@ button {
 .yakiuo-card-subtitle {
   margin-top: 4px;
 
-  color: #65676b;
+  color: var(--erp-muted);
 
   font-size: 13px;
 }
 
 .yakiuo-card-icon {
-  color: #3977f6;
+  color: var(--erp-primary);
 
   font-size: 20px;
 }
 
-/* =====================================================
-   INTRO
-===================================================== */
+/* =========================================================
+   PROFILE INTRO
+========================================================= */
 
 .yakiuo-intro-role {
   margin-top: 14px;
@@ -771,7 +1135,6 @@ button {
 
 .yakiuo-intro-list {
   display: flex;
-
   flex-direction: column;
 
   gap: 16px;
@@ -781,12 +1144,11 @@ button {
 
 .yakiuo-intro-list > div {
   display: flex;
-
   align-items: center;
 
   gap: 12px;
 
-  color: #65676b;
+  color: var(--erp-muted);
 
   font-size: 14px;
 
@@ -794,18 +1156,18 @@ button {
 }
 
 .yakiuo-intro-list svg {
-  flex-shrink: 0;
-
   width: 20px;
+
+  flex-shrink: 0;
 
   color: #8a8d91;
 
   font-size: 17px;
 }
 
-/* =====================================================
-   INFO
-===================================================== */
+/* =========================================================
+   PROFILE INFO
+========================================================= */
 
 .yakiuo-info-grid {
   display: grid;
@@ -833,9 +1195,9 @@ button {
 
   font-size: 11px;
 
-  text-transform: uppercase;
-
   letter-spacing: 0.5px;
+
+  text-transform: uppercase;
 }
 
 .yakiuo-info-box strong {
@@ -848,9 +1210,9 @@ button {
   word-break: break-word;
 }
 
-/* =====================================================
-   COMMISSION EMPTY
-===================================================== */
+/* =========================================================
+   EMPTY COMMISSION
+========================================================= */
 
 .yakiuo-empty-commission {
   display: flex;
@@ -869,11 +1231,11 @@ button {
   width: 46px;
   height: 46px;
 
+  flex-shrink: 0;
+
   display: flex;
   align-items: center;
   justify-content: center;
-
-  flex-shrink: 0;
 
   border-radius: 12px;
 
@@ -885,10 +1247,8 @@ button {
   font-weight: 700;
 }
 
-.yakiuo-empty-commission
-  div:last-child {
+.yakiuo-empty-commission div:last-child {
   display: flex;
-
   flex-direction: column;
 
   gap: 3px;
@@ -920,12 +1280,205 @@ button {
 
   background: #f0f2f5;
 
-  color: #65676b;
+  color: var(--erp-muted);
 }
 
-/* =====================================================
+/* =========================================================
    MOBILE
-===================================================== */
+========================================================= */
+
+@media (max-width: 991px) {
+  /* -------------------------------------------------------
+     SIDEBAR
+  ------------------------------------------------------- */
+
+  .erp-sider {
+    display: none !important;
+  }
+
+  /* -------------------------------------------------------
+     HEADER
+  ------------------------------------------------------- */
+
+  .erp-header {
+    flex-basis: 60px !important;
+
+    height: 60px !important;
+    min-height: 60px !important;
+
+    padding:
+      0 14px
+      !important;
+  }
+
+  /* -------------------------------------------------------
+     CONTENT
+  ------------------------------------------------------- */
+
+  .erp-content {
+    padding-bottom:
+      calc(
+        82px + env(safe-area-inset-bottom)
+      ) !important;
+  }
+
+  .erp-page {
+    padding: 20px 16px;
+  }
+
+  /* -------------------------------------------------------
+     FOOTER
+  ------------------------------------------------------- */
+
+  .erp-footer {
+    padding: 13px 16px;
+
+    margin-bottom:
+      calc(0px + env(safe-area-inset-bottom));
+  }
+
+  /* -------------------------------------------------------
+     MOBILE TASKBAR
+  ------------------------------------------------------- */
+
+  .erp-mobile-taskbar {
+    position: fixed;
+
+    left: 12px;
+    right: 12px;
+
+    bottom:
+      calc(
+        10px + env(safe-area-inset-bottom)
+      );
+
+    z-index: 9999;
+
+    width: auto;
+    height: 64px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+
+    padding: 6px;
+
+    border: 1px solid rgba(255, 255, 255, 0.7);
+
+    border-radius: 22px;
+
+    background:
+      linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.9),
+        rgba(245, 248, 255, 0.82)
+      );
+
+    box-shadow:
+      0 12px 40px rgba(15, 23, 42, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+    backdrop-filter:
+      blur(24px)
+      saturate(180%);
+
+    -webkit-backdrop-filter:
+      blur(24px)
+      saturate(180%);
+
+    overflow: hidden;
+  }
+
+  .erp-mobile-task-item {
+    position: relative;
+
+    width: 20%;
+    height: 52px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 2px;
+
+    padding: 0;
+
+    border: 0;
+
+    background: transparent;
+
+    color: #64748b;
+
+    cursor: pointer;
+
+    transition:
+      transform 0.18s ease,
+      color 0.18s ease;
+  }
+
+  .erp-mobile-task-item:active {
+    transform: scale(0.9);
+  }
+
+  .erp-mobile-task-icon,
+  .erp-mobile-task-avatar {
+    width: 38px;
+    height: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 13px;
+  }
+
+  .erp-mobile-task-icon {
+    font-size: 21px;
+
+    transition:
+      background 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .erp-mobile-task-item.is-active {
+    color: #1877f2;
+  }
+
+  .erp-mobile-task-item.is-active .erp-mobile-task-icon,
+  .erp-mobile-task-item.is-active .erp-mobile-task-avatar {
+    background:
+      rgba(24, 119, 242, 0.12);
+
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.9),
+      0 5px 16px rgba(24, 119, 242, 0.1);
+
+    transform: translateY(-1px);
+  }
+
+  .erp-mobile-task-label {
+    max-width: 100%;
+
+    color: inherit;
+
+    font-size: 9px;
+    font-weight: 600;
+
+    line-height: 1;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+  }
+}
+
+/* =========================================================
+   MOBILE PROFILE
+========================================================= */
 
 @media (max-width: 768px) {
   .yakiuo-profile {
@@ -982,17 +1535,17 @@ button {
     width: 108px !important;
     height: 108px !important;
 
-    font-size: 38px;
-
     border-width: 4px;
+
+    font-size: 38px;
   }
 
   .yakiuo-avatar-camera {
-    width: 34px;
-    height: 34px;
-
     right: 3px;
     bottom: 3px;
+
+    width: 34px;
+    height: 34px;
   }
 
   .yakiuo-profile-identity {
@@ -1008,8 +1561,7 @@ button {
     padding-bottom: 14px;
   }
 
-  .yakiuo-profile-actions
-    .ant-btn {
+  .yakiuo-profile-actions .ant-btn {
     width: 100%;
   }
 
@@ -1039,7 +1591,6 @@ button {
 
   .yakiuo-profile-grid {
     display: flex;
-
     flex-direction: column;
 
     gap: 10px;
@@ -1053,14 +1604,13 @@ button {
   }
 
   .yakiuo-social-card {
-    border-radius: 0 !important;
-
     border-right: 0 !important;
     border-left: 0 !important;
+
+    border-radius: 0 !important;
   }
 
-  .yakiuo-social-card
-    .ant-card-body {
+  .yakiuo-social-card .ant-card-body {
     padding: 16px;
   }
 
@@ -1073,11 +1623,74 @@ button {
   }
 }
 
-/* =====================================================
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 560px) {
+  .erp-header-context,
+  .erp-user-copy {
+    display: none;
+  }
+
+  .erp-header {
+    padding: 0 10px !important;
+  }
+
+  .erp-page {
+    padding: 18px 12px;
+  }
+
+  .erp-footer {
+    font-size: 10px;
+  }
+
+  .erp-footer-center {
+    display: none;
+  }
+
+  .yakiuo-profile-name-row h1 {
+    font-size: 21px;
+  }
+}
+
+/* =========================================================
    VERY SMALL MOBILE
-===================================================== */
+========================================================= */
 
 @media (max-width: 420px) {
+  .erp-mobile-taskbar {
+    left: 8px;
+    right: 8px;
+
+    bottom:
+      calc(
+        8px + env(safe-area-inset-bottom)
+      );
+
+    height: 62px;
+
+    border-radius: 20px;
+  }
+
+  .erp-mobile-task-item {
+    height: 50px;
+  }
+
+  .erp-mobile-task-icon,
+  .erp-mobile-task-avatar {
+    width: 36px;
+    height: 30px;
+  }
+
+  .erp-mobile-task-icon {
+    font-size: 20px;
+  }
+
+  .erp-mobile-task-label {
+    font-size: 8px;
+  }
+
   .yakiuo-cover {
     height: 160px;
   }
@@ -1087,12 +1700,60 @@ button {
     height: 96px !important;
   }
 
-  .yakiuo-profile-name-row h1 {
-    font-size: 21px;
+  .yakiuo-profile-tabs button {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+
+    transition-duration: 0.01ms !important;
+  }
+}
+/* =====================================================
+   MOBILE BOTTOM TASKBAR
+===================================================== */
+
+@media (max-width: 991px) {
+  .erp-footer {
+    display: none !important;
   }
 
-  .yakiuo-profile-tabs button {
-    padding-left: 14px;
-    padding-right: 14px;
+  .erp-content {
+    padding-bottom: 88px;
+  }
+}
+.login-page {
+  min-height: 100dvh;
+  padding-top: 56px;
+  padding-bottom: 24px;
+}
+
+@media (min-width: 640px) {
+  .login-page {
+    align-items: center;
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
+}
+@media (max-width: 640px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .login-page {
+    overscroll-behavior: none;
   }
 }

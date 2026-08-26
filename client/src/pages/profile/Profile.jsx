@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../../store/AuthContext";
 
 import {
   Avatar,
@@ -31,17 +32,14 @@ import {
 
 import api from "../../services/api";
 
-import {
-  getMe,
-  updateUser,
-  changePassword,
-} from "../../services/user.service";
+import { getMe, updateUser, changePassword } from "../../services/user.service";
 
 import Commission from "../commission/Commission";
 
 const Profile = () => {
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
+  const { user: authUser, updateUser } = useAuth();
 
   const [user, setUser] = useState(null);
 
@@ -73,6 +71,7 @@ const Profile = () => {
       }
 
       setUser(currentUser);
+      updateUser(currentUser);
 
       form.setFieldsValue({
         fullName: currentUser.fullName || "",
@@ -99,11 +98,7 @@ const Profile = () => {
   // UPLOAD AVATAR
   // =====================================================
 
-  const handleUploadAvatar = async ({
-    file,
-    onSuccess,
-    onError,
-  }) => {
+  const handleUploadAvatar = async ({ file, onSuccess, onError }) => {
     try {
       if (!file.type?.startsWith("image/")) {
         throw new Error("Chỉ được upload file hình ảnh");
@@ -116,38 +111,36 @@ const Profile = () => {
       setUploading(true);
 
       const formData = new FormData();
-
       formData.append("image", file);
 
-      const response = await api.post(
-        "/upload/image",
-        formData,
-      );
+      const response = await api.post("/upload/image", formData);
 
-      const avatar =
-        response?.data?.data?.avatar;
+      const avatar = response?.data?.data?.avatar;
 
       if (!avatar) {
-        throw new Error(
-          "Không nhận được URL avatar",
-        );
+        throw new Error("Không nhận được URL avatar");
       }
 
+      // Cập nhật Profile
       setUser((prev) => ({
         ...prev,
         avatar,
       }));
 
-      message.success(
-        "Đã cập nhật ảnh đại diện",
-      );
+      // Cập nhật AuthContext
+      // => Navbar desktop/mobile đổi ngay
+      updateUser({
+        avatar,
+      });
+
+      // Nếu đang mở avatar modal thì cũng dùng
+      // user mới ở lần render tiếp theo
+
+      message.success("Đã cập nhật ảnh đại diện");
 
       onSuccess?.(response.data);
     } catch (error) {
-      console.error(
-        "Upload avatar failed:",
-        error,
-      );
+      console.error("Upload avatar failed:", error);
 
       message.error(
         error.response?.data?.message ||
@@ -167,53 +160,36 @@ const Profile = () => {
 
   const handleSave = async (values) => {
     if (!user?._id) {
-      message.error(
-        "Không tìm thấy người dùng",
-      );
+      message.error("Không tìm thấy người dùng");
       return;
     }
 
     try {
       setSaving(true);
 
-      const response = await updateUser(
-        user._id,
-        {
-          fullName:
-            values.fullName?.trim() || "",
-          phone:
-            values.phone?.trim() || "",
-        },
-      );
+      const response = await updateUser(user._id, {
+        fullName: values.fullName?.trim() || "",
+        phone: values.phone?.trim() || "",
+      });
 
-      const updatedUser =
-        response?.data?.user;
+      const updatedUser = response?.data?.user;
 
       if (!updatedUser) {
-        throw new Error(
-          "Không nhận được dữ liệu người dùng",
-        );
+        throw new Error("Không nhận được dữ liệu người dùng");
       }
 
       setUser(updatedUser);
 
       form.setFieldsValue({
-        fullName:
-          updatedUser.fullName || "",
-        phone:
-          updatedUser.phone || "",
+        fullName: updatedUser.fullName || "",
+        phone: updatedUser.phone || "",
       });
 
-      message.success(
-        "Đã cập nhật thông tin cá nhân",
-      );
+      message.success("Đã cập nhật thông tin cá nhân");
 
       setShowEditForm(false);
     } catch (error) {
-      console.error(
-        "Update profile failed:",
-        error,
-      );
+      console.error("Update profile failed:", error);
 
       message.error(
         error.response?.data?.message ||
@@ -229,31 +205,22 @@ const Profile = () => {
   // CHANGE PASSWORD
   // =====================================================
 
-  const handleChangePassword = async (
-    values,
-  ) => {
+  const handleChangePassword = async (values) => {
     try {
       setChangingPassword(true);
 
       await changePassword({
-        currentPassword:
-          values.currentPassword,
-        newPassword:
-          values.newPassword,
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
       });
 
-      message.success(
-        "Đã cập nhật mật khẩu thành công",
-      );
+      message.success("Đã cập nhật mật khẩu thành công");
 
       passwordForm.resetFields();
 
       setShowPasswordModal(false);
     } catch (error) {
-      console.error(
-        "Change password failed:",
-        error,
-      );
+      console.error("Change password failed:", error);
 
       message.error(
         error.response?.data?.message ||
@@ -302,13 +269,10 @@ const Profile = () => {
     },
   };
 
-  const role =
-    roleConfig[user?.role] || {
-      label:
-        user?.role?.toUpperCase() ||
-        "USER",
-      color: "default",
-    };
+  const role = roleConfig[user?.role] || {
+    label: user?.role?.toUpperCase() || "USER",
+    color: "default",
+  };
 
   // =====================================================
   // LOADING
@@ -331,17 +295,14 @@ const Profile = () => {
   return (
     <>
       <div className="yakiuo-profile pb-28 lg:pb-0">
-
         {/* =================================================
             PROFILE HEADER
         ================================================= */}
 
         <section className="yakiuo-profile-header">
-
           {/* COVER */}
 
           <div className="yakiuo-cover relative">
-
             <div className="yakiuo-cover-overlay" />
 
             {/* CENTER TITLE */}
@@ -351,29 +312,21 @@ const Profile = () => {
                 NÔ LỆ TƯ BẢN
               </span>
             </div>
-
           </div>
 
           {/* PROFILE INFO */}
 
           <div className="yakiuo-profile-info">
-
             <div className="yakiuo-profile-main">
-
               {/* =================================================
                   AVATAR
               ================================================= */}
 
               <div className="yakiuo-avatar-wrapper">
-
                 {/* AVATAR */}
 
                 <div
-                  className={
-                    user?.avatar
-                      ? "cursor-pointer"
-                      : "cursor-default"
-                  }
+                  className={user?.avatar ? "cursor-pointer" : "cursor-default"}
                   onClick={() => {
                     if (user?.avatar) {
                       setShowAvatarModal(true);
@@ -382,20 +335,10 @@ const Profile = () => {
                 >
                   <Avatar
                     className="yakiuo-profile-avatar"
-                    src={
-                      user?.avatar ||
-                      undefined
-                    }
-                    icon={
-                      !user?.avatar && (
-                        <UserOutlined />
-                      )
-                    }
+                    src={user?.avatar || undefined}
+                    icon={!user?.avatar && <UserOutlined />}
                   >
-                    {!user?.avatar &&
-                      user?.fullName
-                        ?.charAt(0)
-                        ?.toUpperCase()}
+                    {!user?.avatar && user?.fullName?.charAt(0)?.toUpperCase()}
                   </Avatar>
                 </div>
 
@@ -404,9 +347,7 @@ const Profile = () => {
                 <Upload
                   showUploadList={false}
                   accept="image/png,image/jpeg,image/webp"
-                  customRequest={
-                    handleUploadAvatar
-                  }
+                  customRequest={handleUploadAvatar}
                 >
                   <button
                     type="button"
@@ -417,7 +358,6 @@ const Profile = () => {
                     <CameraOutlined />
                   </button>
                 </Upload>
-
               </div>
 
               {/* =================================================
@@ -425,44 +365,29 @@ const Profile = () => {
               ================================================= */}
 
               <div className="yakiuo-profile-identity">
-
                 <div className="yakiuo-profile-name-row">
+                  <h1>{user?.fullName || "Chưa cập nhật"}</h1>
 
-                  <h1>
-                    {user?.fullName ||
-                      "Chưa cập nhật"}
-                  </h1>
-
-                  {user?.status ===
-                    "active" && (
+                  {user?.status === "active" && (
                     <CheckCircleFilled className="yakiuo-verified" />
                   )}
-
                 </div>
 
                 <div className="yakiuo-profile-username">
-                  @
-                  {user?.username ||
-                    "username"}
+                  @{user?.username || "username"}
                 </div>
 
                 <div className="yakiuo-profile-meta">
-
-                  <Tag color={role.color}>
-                    {role.label}
-                  </Tag>
+                  <Tag color={role.color}>{role.label}</Tag>
 
                   <span>
                     <span className="yakiuo-online-dot" />
 
-                    {user?.status ===
-                    "active"
+                    {user?.status === "active"
                       ? "Đang hoạt động"
                       : "Tài khoản bị khóa"}
                   </span>
-
                 </div>
-
               </div>
 
               {/* =================================================
@@ -470,45 +395,22 @@ const Profile = () => {
               ================================================= */}
 
               <div className="yakiuo-profile-actions">
-
                 <Button
-                  type={
-                    showEditForm
-                      ? "default"
-                      : "primary"
-                  }
-                  icon={
-                    showEditForm ? (
-                      <CloseOutlined />
-                    ) : (
-                      <EditOutlined />
-                    )
-                  }
-                  onClick={() =>
-                    setShowEditForm(
-                      (prev) => !prev,
-                    )
-                  }
+                  type={showEditForm ? "default" : "primary"}
+                  icon={showEditForm ? <CloseOutlined /> : <EditOutlined />}
+                  onClick={() => setShowEditForm((prev) => !prev)}
                 >
                   <span className="hidden sm:inline">
-                    {showEditForm
-                      ? "Đóng"
-                      : "Chỉnh sửa"}
+                    {showEditForm ? "Đóng" : "Chỉnh sửa"}
                   </span>
 
                   <span className="sm:hidden">
-                    {showEditForm
-                      ? "Đóng"
-                      : "Sửa"}
+                    {showEditForm ? "Đóng" : "Sửa"}
                   </span>
                 </Button>
-
               </div>
-
             </div>
-
           </div>
-
         </section>
 
         {/* =================================================
@@ -516,57 +418,36 @@ const Profile = () => {
         ================================================= */}
 
         <div className="yakiuo-profile-body">
-
           <div className="yakiuo-profile-grid">
-
             {/* =================================================
                 LEFT
             ================================================= */}
 
             <div className="yakiuo-profile-left">
-
               {/* INTRO */}
 
-              <Card
-                bordered={false}
-                className="yakiuo-social-card"
-              >
-                <div className="yakiuo-card-title">
-                  Giới thiệu
-                </div>
+              <Card bordered={false} className="yakiuo-social-card">
+                <div className="yakiuo-card-title">Giới thiệu</div>
 
-                <div className="yakiuo-intro-role">
-                  {role.label}
-                </div>
+                <div className="yakiuo-intro-role">{role.label}</div>
 
                 <div className="yakiuo-intro-list">
-
                   <div>
                     <UserOutlined />
 
-                    <span>
-                      @
-                      {user?.username ||
-                        "—"}
-                    </span>
+                    <span>@{user?.username || "—"}</span>
                   </div>
 
                   <div>
                     <MailOutlined />
 
-                    <span>
-                      {user?.email ||
-                        "Chưa cập nhật"}
-                    </span>
+                    <span>{user?.email || "Chưa cập nhật"}</span>
                   </div>
 
                   <div>
                     <PhoneOutlined />
 
-                    <span>
-                      {user?.phone ||
-                        "Chưa cập nhật"}
-                    </span>
+                    <span>{user?.phone || "Chưa cập nhật"}</span>
                   </div>
 
                   <div>
@@ -574,38 +455,28 @@ const Profile = () => {
 
                     <span>
                       Tài khoản{" "}
-                      {user?.status ===
-                      "active"
+                      {user?.status === "active"
                         ? "đang hoạt động"
                         : "đã bị khóa"}
                     </span>
                   </div>
-
                 </div>
               </Card>
 
               {/* EDIT PROFILE */}
 
               {showEditForm && (
-                <Card
-                  bordered={false}
-                  className="yakiuo-social-card"
-                >
+                <Card bordered={false} className="yakiuo-social-card">
                   <div className="yakiuo-card-heading">
-
                     <div>
-
                       <div className="yakiuo-card-title">
                         Chỉnh sửa thông tin
                       </div>
 
                       <div className="yakiuo-card-subtitle">
-                        Cập nhật thông tin cá nhân
-                        của bạn.
+                        Cập nhật thông tin cá nhân của bạn.
                       </div>
-
                     </div>
-
                   </div>
 
                   <Divider />
@@ -616,65 +487,49 @@ const Profile = () => {
                     onFinish={handleSave}
                     requiredMark={false}
                   >
-
                     <Form.Item
                       label="Họ và tên"
                       name="fullName"
                       rules={[
                         {
                           required: true,
-                          message:
-                            "Vui lòng nhập họ và tên",
+                          message: "Vui lòng nhập họ và tên",
                         },
                         {
                           min: 2,
-                          message:
-                            "Họ và tên phải có ít nhất 2 ký tự",
+                          message: "Họ và tên phải có ít nhất 2 ký tự",
                         },
                       ]}
                     >
                       <Input
                         size="large"
-                        prefix={
-                          <UserOutlined />
-                        }
+                        prefix={<UserOutlined />}
                         placeholder="Nhập họ và tên"
                       />
                     </Form.Item>
 
-                    <Form.Item
-                      label="Số điện thoại"
-                      name="phone"
-                    >
+                    <Form.Item label="Số điện thoại" name="phone">
                       <Input
                         size="large"
-                        prefix={
-                          <PhoneOutlined />
-                        }
+                        prefix={<PhoneOutlined />}
                         placeholder="Nhập số điện thoại"
                       />
                     </Form.Item>
 
                     <div className="flex justify-end">
-
                       <Button
                         type="primary"
                         size="large"
                         htmlType="submit"
-                        icon={
-                          <SaveOutlined />
-                        }
+                        icon={<SaveOutlined />}
                         loading={saving}
                       >
                         Lưu thay đổi
                       </Button>
-
                     </div>
-
                   </Form>
                 </Card>
               )}
-
             </div>
 
             {/* =================================================
@@ -682,109 +537,66 @@ const Profile = () => {
             ================================================= */}
 
             <div className="yakiuo-profile-right">
-
               {/* SECURITY */}
 
-              <Card
-                bordered={false}
-                className="yakiuo-social-card"
-              >
-
+              <Card bordered={false} className="yakiuo-social-card">
                 <div className="yakiuo-card-heading">
-
                   <div className="flex items-center gap-3">
-
                     <div className="yakiuo-small-icon">
                       <LockOutlined />
                     </div>
 
                     <div>
-
-                      <div className="yakiuo-card-title">
-                        Bảo mật tài khoản
-                      </div>
+                      <div className="yakiuo-card-title">Bảo mật tài khoản</div>
 
                       <div className="yakiuo-card-subtitle">
                         Quản lý mật khẩu đăng nhập.
                       </div>
-
                     </div>
-
                   </div>
 
                   <SafetyOutlined className="yakiuo-card-icon" />
-
                 </div>
 
                 <Divider />
 
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
                   <div>
-
-                    <div className="font-semibold text-slate-900">
-                      Mật khẩu
-                    </div>
+                    <div className="font-semibold text-slate-900">Mật khẩu</div>
 
                     <div className="mt-1 text-sm text-slate-500">
-                      Nên thay đổi mật khẩu định kỳ
-                      để bảo vệ tài khoản.
+                      Nên thay đổi mật khẩu định kỳ để bảo vệ tài khoản.
                     </div>
-
                   </div>
 
-                  <Button
-                    icon={
-                      <LockOutlined />
-                    }
-                    onClick={
-                      openPasswordModal
-                    }
-                  >
+                  <Button icon={<LockOutlined />} onClick={openPasswordModal}>
                     Đổi mật khẩu
                   </Button>
-
                 </div>
-
               </Card>
 
               {/* COMMISSION */}
 
-              <Card
-                bordered={false}
-                className="yakiuo-social-card"
-              >
-
+              <Card bordered={false} className="yakiuo-social-card">
                 <div className="yakiuo-card-heading">
-
                   <div>
-
-                    <div className="yakiuo-card-title">
-                      Hoa hồng
-                    </div>
+                    <div className="yakiuo-card-title">Hoa hồng</div>
 
                     <div className="yakiuo-card-subtitle">
                       Theo dõi hoa hồng của bạn.
                     </div>
-
                   </div>
 
                   <DollarOutlined className="yakiuo-card-icon" />
-
                 </div>
 
                 <Divider />
 
                 <Commission />
-
               </Card>
-
             </div>
-
           </div>
-
         </div>
-
       </div>
 
       {/* =====================================================
@@ -793,9 +605,7 @@ const Profile = () => {
 
       <Modal
         open={showAvatarModal}
-        onCancel={() =>
-          setShowAvatarModal(false)
-        }
+        onCancel={() => setShowAvatarModal(false)}
         footer={null}
         centered
         destroyOnHidden
@@ -811,18 +621,13 @@ const Profile = () => {
         }}
       >
         <div className="flex max-h-[80vh] min-h-[200px] items-center justify-center overflow-hidden rounded-lg bg-black">
-
           {user?.avatar && (
             <img
               src={user.avatar}
-              alt={
-                user?.fullName ||
-                "Avatar"
-              }
+              alt={user?.fullName || "Avatar"}
               className="max-h-[80vh] w-auto max-w-full object-contain"
             />
           )}
-
         </div>
       </Modal>
 
@@ -833,13 +638,11 @@ const Profile = () => {
       <Modal
         title={
           <div className="flex items-center gap-3">
-
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
               <LockOutlined />
             </div>
 
             <div>
-
               <div className="text-base font-semibold text-slate-900">
                 Đổi mật khẩu
               </div>
@@ -847,9 +650,7 @@ const Profile = () => {
               <div className="text-xs font-normal text-slate-500">
                 Cập nhật mật khẩu tài khoản
               </div>
-
             </div>
-
           </div>
         }
         open={showPasswordModal}
@@ -859,41 +660,30 @@ const Profile = () => {
         centered
         width={460}
       >
-
         <Divider />
 
         <Form
           form={passwordForm}
           layout="vertical"
           requiredMark={false}
-          onFinish={
-            handleChangePassword
-          }
+          onFinish={handleChangePassword}
         >
-
           <Form.Item
             label="Mật khẩu hiện tại"
             name="currentPassword"
             rules={[
               {
                 required: true,
-                message:
-                  "Vui lòng nhập mật khẩu hiện tại",
+                message: "Vui lòng nhập mật khẩu hiện tại",
               },
             ]}
           >
             <Input.Password
               size="large"
-              prefix={
-                <LockOutlined />
-              }
+              prefix={<LockOutlined />}
               placeholder="Nhập mật khẩu hiện tại"
               iconRender={(visible) =>
-                visible ? (
-                  <EyeOutlined />
-                ) : (
-                  <EyeInvisibleOutlined />
-                )
+                visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
               }
             />
           </Form.Item>
@@ -904,29 +694,21 @@ const Profile = () => {
             rules={[
               {
                 required: true,
-                message:
-                  "Vui lòng nhập mật khẩu mới",
+                message: "Vui lòng nhập mật khẩu mới",
               },
               {
                 min: 6,
-                message:
-                  "Mật khẩu phải có ít nhất 6 ký tự",
+                message: "Mật khẩu phải có ít nhất 6 ký tự",
               },
             ]}
             hasFeedback
           >
             <Input.Password
               size="large"
-              prefix={
-                <LockOutlined />
-              }
+              prefix={<LockOutlined />}
               placeholder="Nhập mật khẩu mới"
               iconRender={(visible) =>
-                visible ? (
-                  <EyeOutlined />
-                ) : (
-                  <EyeInvisibleOutlined />
-                )
+                visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
               }
             />
           </Form.Item>
@@ -934,30 +716,20 @@ const Profile = () => {
           <Form.Item
             label="Xác nhận mật khẩu mới"
             name="confirmPassword"
-            dependencies={[
-              "newPassword",
-            ]}
+            dependencies={["newPassword"]}
             rules={[
               {
                 required: true,
-                message:
-                  "Vui lòng xác nhận mật khẩu mới",
+                message: "Vui lòng xác nhận mật khẩu mới",
               },
               ({ getFieldValue }) => ({
                 validator(_, value) {
-                  if (
-                    !value ||
-                    getFieldValue(
-                      "newPassword",
-                    ) === value
-                  ) {
+                  if (!value || getFieldValue("newPassword") === value) {
                     return Promise.resolve();
                   }
 
                   return Promise.reject(
-                    new Error(
-                      "Mật khẩu xác nhận không khớp",
-                    ),
+                    new Error("Mật khẩu xác nhận không khớp"),
                   );
                 },
               }),
@@ -966,30 +738,19 @@ const Profile = () => {
           >
             <Input.Password
               size="large"
-              prefix={
-                <LockOutlined />
-              }
+              prefix={<LockOutlined />}
               placeholder="Nhập lại mật khẩu mới"
               iconRender={(visible) =>
-                visible ? (
-                  <EyeOutlined />
-                ) : (
-                  <EyeInvisibleOutlined />
-                )
+                visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
               }
             />
           </Form.Item>
 
           <div className="mt-6 flex justify-end gap-2">
-
             <Button
               size="large"
-              onClick={
-                closePasswordModal
-              }
-              disabled={
-                changingPassword
-              }
+              onClick={closePasswordModal}
+              disabled={changingPassword}
             >
               Hủy
             </Button>
@@ -998,20 +759,13 @@ const Profile = () => {
               type="primary"
               size="large"
               htmlType="submit"
-              icon={
-                <SaveOutlined />
-              }
-              loading={
-                changingPassword
-              }
+              icon={<SaveOutlined />}
+              loading={changingPassword}
             >
               Cập nhật mật khẩu
             </Button>
-
           </div>
-
         </Form>
-
       </Modal>
     </>
   );

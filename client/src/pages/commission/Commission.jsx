@@ -7,6 +7,7 @@ import {
   Form,
   Input,
   InputNumber,
+  Modal,
   Select,
   Spin,
   Tag,
@@ -30,6 +31,7 @@ import dayjs from "dayjs";
 import {
   createCommission,
   deleteCommission,
+  deleteMyCommissionsByMonth,
   getMyCommissions,
   updateCommission,
 } from "../../services/commission.service";
@@ -290,7 +292,80 @@ const Commission = () => {
       );
     }
   };
+  // =========================
+  // DELETE ALL COMMISSIONS BY MONTH
+  // =========================
 
+  const handleDeleteMonth = () => {
+    if (!commissions.length) {
+      message.info("Không có commission để xóa");
+      return;
+    }
+
+    const latestCommission = commissions[0];
+
+    const targetDate = dayjs(latestCommission.date);
+
+    const month = targetDate.month() + 1;
+    const year = targetDate.year();
+
+    const monthCommissions = commissions.filter((item) => {
+      const date = dayjs(item.date);
+
+      return date.month() + 1 === month && date.year() === year;
+    });
+
+    if (!monthCommissions.length) {
+      message.info("Không có commission trong tháng này");
+      return;
+    }
+
+    Modal.confirm({
+      title: `Xóa commission tháng ${month}/${year}?`,
+
+      content: (
+        <div className="space-y-2">
+          <p>
+            Bạn đang chuẩn bị xóa{" "}
+            <strong>{monthCommissions.length} commission</strong>.
+          </p>
+
+          <p className="text-red-500">
+            Toàn bộ commission của tháng {month}/{year} sẽ bị xóa.
+          </p>
+
+          <p className="mb-0 font-medium">Hành động này không thể hoàn tác.</p>
+        </div>
+      ),
+
+      okText: "Xóa tất cả",
+      cancelText: "Hủy",
+      okType: "danger",
+
+      async onOk() {
+        try {
+          setLoadingCommissions(true);
+
+          await deleteMyCommissionsByMonth(month, year);
+
+          message.success(
+            `Đã xóa ${monthCommissions.length} commission tháng ${month}/${year}`,
+          );
+
+          await loadCommissions();
+        } catch (error) {
+          console.error("DELETE MONTH COMMISSION ERROR:", error);
+
+          message.error(
+            error?.response?.data?.message ||
+              "Không thể xóa commission của tháng",
+          );
+        } finally {
+          setLoadingCommissions(false);
+        }
+      },
+    });
+  };
   // =========================
   // TYPE LABEL
   // =========================
@@ -723,12 +798,39 @@ const Commission = () => {
         )}
       </Card>
 
-      <CommissionHistory
-        commissions={commissions}
-        loading={loadingCommissions}
-        onEdit={handleEdit}
-        onDelete={(item) => handleDelete(item._id)}
-      />
+      <div className="space-y-3">
+        {/* TOOLBAR */}
+
+        {commissions.length > 0 && (
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="font-semibold text-slate-800">
+                Lịch sử commission
+              </div>
+
+              <div className="mt-1 text-xs text-slate-400">
+                Tổng cộng {commissions.length} commission
+              </div>
+            </div>
+
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={handleDeleteMonth}
+              disabled={loadingCommissions}
+            >
+              Xóa commission tháng
+            </Button>
+          </div>
+        )}
+
+        <CommissionHistory
+          commissions={commissions}
+          loading={loadingCommissions}
+          onEdit={handleEdit}
+          onDelete={(item) => handleDelete(item._id)}
+        />
+      </div>
     </div>
   );
 };

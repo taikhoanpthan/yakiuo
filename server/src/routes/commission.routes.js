@@ -9,70 +9,76 @@ const {
   updateCommission,
   deleteCommission,
   getCommissionsByUser,
+  deleteMyCommissionsByMonth,
 } = require("../controllers/commission.controller");
 
-const {
-  authenticate,
-} = require("../middleware/auth.middleware");
+const { authenticate } = require("../middleware/auth.middleware");
 
-// =========================
+// =====================================================
 // MY COMMISSIONS
-// =========================
+// =====================================================
 
 router.get(
   "/my",
   authenticate,
-  getMyCommissions
+  getMyCommissions,
 );
 
-// =========================
+// Xóa toàn bộ commission của user hiện tại trong tháng
+router.delete(
+  "/my/month",
+  authenticate,
+  deleteMyCommissionsByMonth,
+);
+
+// =====================================================
 // COMMISSION OF USER
-// =========================
+// =====================================================
 
 router.get(
   "/user/:userId",
   authenticate,
-  getCommissionsByUser
+  getCommissionsByUser,
 );
 
-// =========================
+// =====================================================
 // CREATE
-// =========================
+// =====================================================
 
 router.post(
   "/",
   authenticate,
-  createCommission
+  createCommission,
 );
 
-// =========================
+// =====================================================
 // GET ONE
-// =========================
+// =====================================================
 
 router.get(
   "/:id",
   authenticate,
-  getCommissionById
+  getCommissionById,
 );
 
-// =========================
+// =====================================================
 // UPDATE
-// =========================
+// =====================================================
 
 router.put(
   "/:id",
   authenticate,
-  updateCommission
+  updateCommission,
 );
 
-// =========================
-// DELETE
-// =========================
+// =====================================================
+// DELETE ONE
+// =====================================================
 
 router.delete(
   "/:id",
   authenticate,
-  deleteCommission
+  deleteCommission,
 );
 
 module.exports = router;

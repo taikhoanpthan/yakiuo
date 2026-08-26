@@ -1,12 +1,6 @@
 import { Form, Input, Modal, Select } from "antd";
 
-const TodoModal = ({
-  open,
-  editingTodo,
-  loading,
-  onClose,
-  onSubmit,
-}) => {
+const TodoModal = ({ open, editingTodo, loading, onClose, onSubmit }) => {
   const [form] = Form.useForm();
 
   const handleSubmit = (values) => {
@@ -42,11 +36,7 @@ const TodoModal = ({
       }}
       destroyOnClose
     >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleSubmit}
-      >
+      <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <Form.Item
           label="Công việc"
           name="description"
@@ -61,6 +51,11 @@ const TodoModal = ({
             rows={5}
             showCount
             maxLength={1000}
+            autoSize={false}
+            style={{
+              maxHeight: 160,
+              overflowY: "auto",
+            }}
             placeholder="Ví dụ: Kiểm tra toàn bộ bàn khu A, bổ sung khăn giấy và setup lại bàn..."
           />
         </Form.Item>

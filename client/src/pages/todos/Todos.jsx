@@ -62,7 +62,7 @@ const Todos = () => {
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState("pending");
   const [priority, setPriority] = useState(undefined);
   const [search, setSearch] = useState("");
 
@@ -394,9 +394,7 @@ const Todos = () => {
                             ? "text-slate-400 line-through"
                             : "text-slate-800"
                         }`}
-                      >
-                       
-                      </div>
+                      ></div>
 
                       {/* DESCRIPTION PREVIEW */}
 
@@ -574,7 +572,7 @@ const Todos = () => {
                 NỘI DUNG
               </div>
 
-              <div className="whitespace-pre-wrap rounded-xl bg-slate-50 p-4 text-sm leading-7 text-slate-700">
+              <div className="max-h-[220px] overflow-y-auto whitespace-pre-wrap break-words rounded-xl bg-slate-50 p-4 text-sm leading-7 text-slate-700 md:max-h-[300px]">
                 {selectedTodo.description || "Không có nội dung chi tiết."}
               </div>
             </div>

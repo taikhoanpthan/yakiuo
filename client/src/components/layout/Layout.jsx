@@ -52,25 +52,21 @@ const Layout = ({ children }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   const [notifications, setNotifications] = useState([]);
-  const [notificationLoading, setNotificationLoading] =
-    useState(false);
+  const [notificationLoading, setNotificationLoading] = useState(false);
 
   // =====================================================
   // ROUTE STATE
   // =====================================================
 
   const isChatPage =
-    location.pathname === "/chat" ||
-    location.pathname.startsWith("/chat/");
+    location.pathname === "/chat" || location.pathname.startsWith("/chat/");
 
   // =====================================================
   // NOTIFICATION
   // =====================================================
 
-  const [
-    notificationApi,
-    notificationContextHolder,
-  ] = notification.useNotification();
+  const [notificationApi, notificationContextHolder] =
+    notification.useNotification();
 
   // =====================================================
   // MENU
@@ -130,34 +126,15 @@ const Layout = ({ children }) => {
   // =====================================================
 
   const mobileMenuItems = useMemo(() => {
-    const baseItems = [
-      "/dashboard",
-      "/chat",
-      "/todos",
-    ];
+    const items = ["/dashboard", "/feedback", "/chat", "/todos"];
 
+    // Admin có thêm Thông báo
     if (user?.role === "admin") {
-      return [
-        "/dashboard",
-        "/users",
-        "/chat",
-        "/todos",
-        "/notifications",
-      ]
-        .map((key) =>
-          menuItems.find(
-            (item) => item.key === key,
-          ),
-        )
-        .filter(Boolean);
+      items.push("/notifications");
     }
 
-    return baseItems
-      .map((key) =>
-        menuItems.find(
-          (item) => item.key === key,
-        ),
-      )
+    return items
+      .map((key) => menuItems.find((item) => item.key === key))
       .filter(Boolean);
   }, [menuItems, user?.role]);
 
@@ -180,22 +157,15 @@ const Layout = ({ children }) => {
     try {
       await logout();
 
-      message.success(
-        "Bạn đã đăng xuất an toàn",
-      );
+      message.success("Bạn đã đăng xuất an toàn");
 
       navigate("/login", {
         replace: true,
       });
     } catch (error) {
-      console.error(
-        "Logout error:",
-        error,
-      );
+      console.error("Logout error:", error);
 
-      message.error(
-        "Đăng xuất thất bại",
-      );
+      message.error("Đăng xuất thất bại");
     }
   };
 
@@ -203,258 +173,215 @@ const Layout = ({ children }) => {
   // NOTIFICATION POPUP
   // =====================================================
 
-  const showNotificationPopup =
-    useCallback(
-      (notificationItem) => {
-        if (!notificationItem?._id) {
-          return;
-        }
+  const showNotificationPopup = useCallback(
+    (notificationItem) => {
+      if (!notificationItem?._id) {
+        return;
+      }
 
-        const title =
-          notificationItem.title ||
-          "Thông báo mới";
+      const title = notificationItem.title || "Thông báo mới";
 
-        const content =
-          notificationItem.content || "";
+      const content = notificationItem.content || "";
 
-        notificationApi.open({
-          message: (
+      notificationApi.open({
+        message: (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              paddingRight: 24,
+            }}
+          >
             <div
               style={{
+                width: 38,
+                height: 38,
+                minWidth: 38,
+                borderRadius: 12,
+                background: "linear-gradient(135deg, #3977f6 0%, #6c9cff 100%)",
                 display: "flex",
                 alignItems: "center",
-                gap: 10,
-                paddingRight: 24,
+                justifyContent: "center",
+                boxShadow: "0 6px 16px rgba(57, 119, 246, 0.25)",
               }}
             >
-              <div
+              <BellOutlined
                 style={{
-                  width: 38,
-                  height: 38,
-                  minWidth: 38,
-                  borderRadius: 12,
-                  background:
-                    "linear-gradient(135deg, #3977f6 0%, #6c9cff 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow:
-                    "0 6px 16px rgba(57, 119, 246, 0.25)",
+                  color: "#fff",
+                  fontSize: 18,
                 }}
-              >
-                <BellOutlined
-                  style={{
-                    color: "#fff",
-                    fontSize: 18,
-                  }}
-                />
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
-                  minWidth: 0,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: "#3977f6",
-                    textTransform:
-                      "uppercase",
-                    letterSpacing:
-                      "0.5px",
-                  }}
-                >
-                  Thông báo mới
-                </span>
-
-                <span
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: "#172033",
-                    lineHeight: 1.3,
-                  }}
-                >
-                  {title}
-                </span>
-              </div>
+              />
             </div>
-          ),
 
-          description: (
-            <div
-              style={{
-                marginTop: 10,
-                marginLeft: 48,
-                marginRight: 4,
-                color: "#667085",
-                fontSize: 13,
-                lineHeight: 1.6,
-                wordBreak: "break-word",
-              }}
-            >
-              {content}
-            </div>
-          ),
-
-          placement: "topRight",
-          duration: 5,
-
-          closeIcon: (
-            <span
-              style={{
-                color: "#98A2B3",
-                fontSize: 14,
-              }}
-            >
-              ×
-            </span>
-          ),
-
-          style: {
-            width: 380,
-            maxWidth:
-              "calc(100vw - 24px)",
-            padding: "16px",
-            borderRadius: 18,
-            background: "#fff",
-            border:
-              "1px solid #E9EEF7",
-            boxShadow:
-              "0 18px 45px rgba(16, 24, 40, 0.14), 0 4px 12px rgba(16, 24, 40, 0.06)",
-          },
-
-          btn: (
             <div
               style={{
                 display: "flex",
-                justifyContent:
-                  "flex-end",
-                marginTop: 8,
+                flexDirection: "column",
+                gap: 2,
+                minWidth: 0,
               }}
             >
-              <Button
-                type="text"
-                size="small"
-                onClick={() =>
-                  notificationApi.destroy()
-                }
+              <span
                 style={{
-                  color: "#667085",
-                  fontWeight: 500,
-                  borderRadius: 8,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#3977f6",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
                 }}
               >
-                Đóng
-              </Button>
+                Thông báo mới
+              </span>
+
+              <span
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: "#172033",
+                  lineHeight: 1.3,
+                }}
+              >
+                {title}
+              </span>
             </div>
-          ),
-        });
-      },
-      [notificationApi],
-    );
+          </div>
+        ),
+
+        description: (
+          <div
+            style={{
+              marginTop: 10,
+              marginLeft: 48,
+              marginRight: 4,
+              color: "#667085",
+              fontSize: 13,
+              lineHeight: 1.6,
+              wordBreak: "break-word",
+            }}
+          >
+            {content}
+          </div>
+        ),
+
+        placement: "topRight",
+        duration: 5,
+
+        closeIcon: (
+          <span
+            style={{
+              color: "#98A2B3",
+              fontSize: 14,
+            }}
+          >
+            ×
+          </span>
+        ),
+
+        style: {
+          width: 380,
+          maxWidth: "calc(100vw - 24px)",
+          padding: "16px",
+          borderRadius: 18,
+          background: "#fff",
+          border: "1px solid #E9EEF7",
+          boxShadow:
+            "0 18px 45px rgba(16, 24, 40, 0.14), 0 4px 12px rgba(16, 24, 40, 0.06)",
+        },
+
+        btn: (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: 8,
+            }}
+          >
+            <Button
+              type="text"
+              size="small"
+              onClick={() => notificationApi.destroy()}
+              style={{
+                color: "#667085",
+                fontWeight: 500,
+                borderRadius: 8,
+              }}
+            >
+              Đóng
+            </Button>
+          </div>
+        ),
+      });
+    },
+    [notificationApi],
+  );
 
   // =====================================================
   // LOAD NOTIFICATIONS
   // =====================================================
 
-  const loadNotifications =
-    useCallback(
-      async (showPopup = false) => {
+  const loadNotifications = useCallback(
+    async (showPopup = false) => {
+      try {
+        setNotificationLoading(true);
+
+        const response = await getNotifications();
+
+        const data = response?.data?.data?.notifications || [];
+
+        const list = Array.isArray(data) ? data : [];
+
+        setNotifications(list);
+
+        if (!showPopup || list.length === 0) {
+          return;
+        }
+
+        const latest = list[0];
+
+        if (!latest?._id) {
+          return;
+        }
+
+        let shownNotifications = [];
+
         try {
-          setNotificationLoading(true);
+          shownNotifications = JSON.parse(
+            localStorage.getItem("shownNotificationIds") || "[]",
+          );
 
-          const response =
-            await getNotifications();
-
-          const data =
-            response?.data?.data
-              ?.notifications || [];
-
-          const list = Array.isArray(data)
-            ? data
-            : [];
-
-          setNotifications(list);
-
-          if (
-            !showPopup ||
-            list.length === 0
-          ) {
-            return;
-          }
-
-          const latest = list[0];
-
-          if (!latest?._id) {
-            return;
-          }
-
-          let shownNotifications = [];
-
-          try {
-            shownNotifications =
-              JSON.parse(
-                localStorage.getItem(
-                  "shownNotificationIds",
-                ) || "[]",
-              );
-
-            if (
-              !Array.isArray(
-                shownNotifications,
-              )
-            ) {
-              shownNotifications = [];
-            }
-          } catch {
+          if (!Array.isArray(shownNotifications)) {
             shownNotifications = [];
           }
-
-          if (
-            shownNotifications.includes(
-              latest._id,
-            )
-          ) {
-            return;
-          }
-
-          const updatedShownNotifications =
-            [
-              latest._id,
-              ...shownNotifications,
-            ].slice(0, 50);
-
-          localStorage.setItem(
-            "shownNotificationIds",
-            JSON.stringify(
-              updatedShownNotifications,
-            ),
-          );
-
-          showNotificationPopup(
-            latest,
-          );
-        } catch (error) {
-          console.error(
-            "Load notifications error:",
-            error,
-          );
-
-          setNotifications([]);
-        } finally {
-          setNotificationLoading(
-            false,
-          );
+        } catch {
+          shownNotifications = [];
         }
-      },
-      [showNotificationPopup],
-    );
+
+        if (shownNotifications.includes(latest._id)) {
+          return;
+        }
+
+        const updatedShownNotifications = [
+          latest._id,
+          ...shownNotifications,
+        ].slice(0, 50);
+
+        localStorage.setItem(
+          "shownNotificationIds",
+          JSON.stringify(updatedShownNotifications),
+        );
+
+        showNotificationPopup(latest);
+      } catch (error) {
+        console.error("Load notifications error:", error);
+
+        setNotifications([]);
+      } finally {
+        setNotificationLoading(false);
+      }
+    },
+    [showNotificationPopup],
+  );
 
   // =====================================================
   // NOTIFICATION POLLING
@@ -468,12 +395,9 @@ const Layout = ({ children }) => {
 
     loadNotifications(true);
 
-    const interval = setInterval(
-      () => {
-        loadNotifications(true);
-      },
-      10000,
-    );
+    const interval = setInterval(() => {
+      loadNotifications(true);
+    }, 10000);
 
     return () => {
       clearInterval(interval);
@@ -485,10 +409,7 @@ const Layout = ({ children }) => {
   // =====================================================
 
   useEffect(() => {
-    const mediaQuery =
-      window.matchMedia(
-        "(max-width: 991px)",
-      );
+    const mediaQuery = window.matchMedia("(max-width: 991px)");
 
     const handleChange = (event) => {
       setIsMobile(event.matches);
@@ -500,16 +421,10 @@ const Layout = ({ children }) => {
 
     setIsMobile(mediaQuery.matches);
 
-    mediaQuery.addEventListener(
-      "change",
-      handleChange,
-    );
+    mediaQuery.addEventListener("change", handleChange);
 
     return () => {
-      mediaQuery.removeEventListener(
-        "change",
-        handleChange,
-      );
+      mediaQuery.removeEventListener("change", handleChange);
     };
   }, []);
 
@@ -517,11 +432,9 @@ const Layout = ({ children }) => {
   // NOTIFICATION DATA
   // =====================================================
 
-  const recentNotifications =
-    notifications.slice(0, 5);
+  const recentNotifications = notifications.slice(0, 5);
 
-  const notificationCount =
-    notifications.length;
+  const notificationCount = notifications.length;
 
   // =====================================================
   // NOTIFICATION POPOVER
@@ -530,19 +443,16 @@ const Layout = ({ children }) => {
   const notificationContent = (
     <div
       style={{
-        width:
-          "min(360px, calc(100vw - 56px))",
+        width: "min(360px, calc(100vw - 56px))",
       }}
     >
       <div
         style={{
           display: "flex",
-          justifyContent:
-            "space-between",
+          justifyContent: "space-between",
           alignItems: "center",
           paddingBottom: 12,
-          borderBottom:
-            "1px solid #f1f5f9",
+          borderBottom: "1px solid #f1f5f9",
           marginBottom: 4,
         }}
       >
@@ -582,8 +492,7 @@ const Layout = ({ children }) => {
         <div
           style={{
             display: "flex",
-            justifyContent:
-              "center",
+            justifyContent: "center",
             padding: "30px 0",
           }}
         >
@@ -591,134 +500,105 @@ const Layout = ({ children }) => {
         </div>
       )}
 
-      {!notificationLoading &&
-        recentNotifications.length ===
-          0 && (
-          <Empty
-            image={
-              Empty.PRESENTED_IMAGE_SIMPLE
-            }
-            description="Chưa có thông báo"
-            style={{
-              margin: "25px 0",
-            }}
-          />
-        )}
+      {!notificationLoading && recentNotifications.length === 0 && (
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description="Chưa có thông báo"
+          style={{
+            margin: "25px 0",
+          }}
+        />
+      )}
 
-      {!notificationLoading &&
-        recentNotifications.length >
-          0 && (
-          <div
-            style={{
-              maxHeight: 400,
-              overflowY: "auto",
-              overflowX: "hidden",
-            }}
-          >
-            {recentNotifications.map(
-              (item) => (
-                <div
-                  key={item._id}
+      {!notificationLoading && recentNotifications.length > 0 && (
+        <div
+          style={{
+            maxHeight: 400,
+            overflowY: "auto",
+            overflowX: "hidden",
+          }}
+        >
+          {recentNotifications.map((item) => (
+            <div
+              key={item._id}
+              style={{
+                display: "flex",
+                gap: 12,
+                padding: "12px 8px",
+                borderRadius: 8,
+                cursor: "pointer",
+              }}
+            >
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  minWidth: 36,
+                  borderRadius: "50%",
+                  background: "#f1f5f9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <BellOutlined
                   style={{
-                    display: "flex",
-                    gap: 12,
-                    padding: "12px 8px",
-                    borderRadius: 8,
-                    cursor: "pointer",
+                    color: "#3977f6",
+                    fontSize: 16,
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  <div
-                    style={{
-                      width: 36,
-                      height: 36,
-                      minWidth: 36,
-                      borderRadius:
-                        "50%",
-                      background:
-                        "#f1f5f9",
-                      display: "flex",
-                      alignItems:
-                        "center",
-                      justifyContent:
-                        "center",
-                    }}
-                  >
-                    <BellOutlined
-                      style={{
-                        color:
-                          "#3977f6",
-                        fontSize: 16,
-                      }}
-                    />
-                  </div>
-
-                  <div
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 600,
-                        color:
-                          "#1e293b",
-                        overflow:
-                          "hidden",
-                        textOverflow:
-                          "ellipsis",
-                        whiteSpace:
-                          "nowrap",
-                      }}
-                    >
-                      {item.title ||
-                        "Thông báo"}
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color:
-                          "#64748b",
-                        marginTop: 4,
-                        display:
-                          "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient:
-                          "vertical",
-                        overflow:
-                          "hidden",
-                        wordBreak:
-                          "break-word",
-                      }}
-                    >
-                      {item.content ||
-                        ""}
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color:
-                          "#94a3b8",
-                        marginTop: 5,
-                      }}
-                    >
-                      {item.createdAt
-                        ? dayjs(
-                            item.createdAt,
-                          ).format(
-                            "DD/MM/YYYY HH:mm",
-                          )
-                        : ""}
-                    </div>
-                  </div>
+                  {item.title || "Thông báo"}
                 </div>
-              ),
-            )}
-          </div>
-        )}
+
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "#64748b",
+                    marginTop: 4,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {item.content || ""}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "#94a3b8",
+                    marginTop: 5,
+                  }}
+                >
+                  {item.createdAt
+                    ? dayjs(item.createdAt).format("DD/MM/YYYY HH:mm")
+                    : ""}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -738,8 +618,7 @@ const Layout = ({ children }) => {
           {
             key: "users",
             icon: <TeamOutlined />,
-            label:
-              "Quản lý nhân viên",
+            label: "Quản lý nhân viên",
           },
         ]
       : []),
@@ -779,16 +658,12 @@ const Layout = ({ children }) => {
           flexShrink: 0,
         }}
       >
-        <div className="erp-brand-mark">
-          Y
-        </div>
+        <div className="erp-brand-mark">Y</div>
 
         {!collapsed && (
           <div>
             <strong>YAKIUO</strong>
-            <span>
-              ERP WORKSPACE
-            </span>
+            <span>ERP WORKSPACE</span>
           </div>
         )}
       </div>
@@ -821,44 +696,23 @@ const Layout = ({ children }) => {
       >
         {menuItems.map((item) => {
           const active =
-            location.pathname ===
-              item.key ||
-            location.pathname.startsWith(
-              `${item.key}/`,
-            );
+            location.pathname === item.key ||
+            location.pathname.startsWith(`${item.key}/`);
 
           return (
             <Tooltip
               key={item.key}
-              title={
-                collapsed
-                  ? item.label
-                  : undefined
-              }
+              title={collapsed ? item.label : undefined}
               placement="right"
             >
               <button
                 type="button"
-                className={`erp-nav-item ${
-                  active
-                    ? "is-active"
-                    : ""
-                }`}
-                onClick={() =>
-                  handleNavigate(
-                    item.key,
-                  )
-                }
+                className={`erp-nav-item ${active ? "is-active" : ""}`}
+                onClick={() => handleNavigate(item.key)}
               >
-                <span className="erp-nav-icon">
-                  {item.icon}
-                </span>
+                <span className="erp-nav-icon">{item.icon}</span>
 
-                {!collapsed && (
-                  <span>
-                    {item.label}
-                  </span>
-                )}
+                {!collapsed && <span>{item.label}</span>}
               </button>
             </Tooltip>
           );
@@ -876,31 +730,14 @@ const Layout = ({ children }) => {
         <div className="erp-side-help">
           <SettingOutlined />
 
-          {!collapsed && (
-            <span>
-              Hệ thống nội bộ
-            </span>
-          )}
+          {!collapsed && <span>Hệ thống nội bộ</span>}
         </div>
 
-        <Tooltip
-          title={
-            collapsed
-              ? "Đăng xuất"
-              : undefined
-          }
-          placement="right"
-        >
-          <button
-            type="button"
-            className="erp-logout"
-            onClick={handleLogout}
-          >
+        <Tooltip title={collapsed ? "Đăng xuất" : undefined} placement="right">
+          <button type="button" className="erp-logout" onClick={handleLogout}>
             <LogoutOutlined />
 
-            {!collapsed && (
-              <span>Đăng xuất</span>
-            )}
+            {!collapsed && <span>Đăng xuất</span>}
           </button>
         </Tooltip>
       </div>
@@ -909,6 +746,10 @@ const Layout = ({ children }) => {
 
   // =====================================================
   // MOBILE TASKBAR
+  // =====================================================
+
+  // =====================================================
+  // MOBILE TASKBAR — INSTAGRAM / LIQUID STYLE
   // =====================================================
 
   const renderMobileTaskbar = () => {
@@ -922,216 +763,302 @@ const Layout = ({ children }) => {
         aria-label="Điều hướng mobile"
         style={{
           position: "fixed",
-          left: 0,
-          right: 0,
-          bottom: 0,
+          left: 10,
+          right: 10,
+          bottom: "max(10px, env(safe-area-inset-bottom))",
           zIndex: 9999,
 
-          width: "100%",
-          minHeight: 64,
-
-          paddingTop: 7,
-          paddingLeft: 6,
-          paddingRight: 6,
-          paddingBottom:
-            "max(7px, env(safe-area-inset-bottom))",
+          width: "auto",
+          height: 66,
 
           display: "flex",
-          alignItems: "stretch",
+          alignItems: "center",
 
-          overflowX: "auto",
-          overflowY: "hidden",
+          padding: 5,
 
-          WebkitOverflowScrolling:
-            "touch",
+          overflow: "hidden",
 
-          background:
-            "rgba(255,255,255,0.96)",
-          backdropFilter:
-            "blur(20px)",
-          WebkitBackdropFilter:
-            "blur(20px)",
+          background: "rgba(255,255,255,0.82)",
+          backdropFilter: "blur(24px) saturate(180%)",
+          WebkitBackdropFilter: "blur(24px) saturate(180%)",
 
-          borderTop:
-            "1px solid rgba(15,23,42,0.08)",
+          border: "1px solid rgba(255,255,255,0.75)",
+
+          borderRadius: 24,
 
           boxShadow:
-            "0 -8px 30px rgba(15,23,42,0.08)",
+            "0 10px 35px rgba(15,23,42,0.12), 0 2px 8px rgba(15,23,42,0.06)",
+
+          WebkitTapHighlightColor: "transparent",
         }}
       >
-        {mobileMenuItems.map(
-          (item) => {
-            const active =
-              location.pathname ===
-                item.key ||
-              location.pathname.startsWith(
-                `${item.key}/`,
-              );
+        {mobileMenuItems.map((item) => {
+          const active =
+            location.pathname === item.key ||
+            location.pathname.startsWith(`${item.key}/`);
 
-            return (
-              <button
-                key={item.key}
-                type="button"
-                className={`erp-mobile-task-item ${
-                  active
-                    ? "is-active"
-                    : ""
-                }`}
-                onClick={() =>
-                  handleNavigate(
-                    item.key,
-                  )
-                }
+          return (
+            <button
+              key={item.key}
+              type="button"
+              className={`erp-mobile-task-item ${active ? "is-active" : ""}`}
+              onClick={() => handleNavigate(item.key)}
+              style={{
+                position: "relative",
+
+                flex: "1 1 0",
+                minWidth: 0,
+                height: "100%",
+
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+
+                gap: 2,
+
+                border: 0,
+                outline: "none",
+                background: "transparent",
+
+                borderRadius: 19,
+
+                cursor: "pointer",
+
+                padding: "4px 2px",
+
+                color: active ? "#111827" : "#8b95a7",
+
+                WebkitTapHighlightColor: "transparent",
+
+                transition: "color 180ms ease, transform 180ms ease",
+              }}
+            >
+              {/* LIQUID ACTIVE BACKGROUND */}
+              {active && (
+                <motion.span
+                  layoutId="mobile-nav-active"
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 32,
+                    mass: 0.7,
+                  }}
+                  style={{
+                    position: "absolute",
+                    inset: 2,
+
+                    borderRadius: 18,
+
+                    background:
+                      "linear-gradient(145deg, rgba(241,245,249,0.95), rgba(226,232,240,0.72))",
+
+                    boxShadow:
+                      "inset 0 1px 0 rgba(255,255,255,0.95), 0 3px 10px rgba(15,23,42,0.06)",
+
+                    zIndex: 0,
+                  }}
+                />
+              )}
+
+              {/* ICON */}
+              <motion.span
+                className="erp-mobile-task-icon"
+                animate={{
+                  scale: active ? 1.06 : 1,
+                  y: active ? -1 : 0,
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 500,
+                  damping: 25,
+                }}
                 style={{
-                  flex: "1 0 72px",
-                  minWidth: 72,
-                  minHeight: 50,
+                  position: "relative",
+                  zIndex: 1,
 
                   display: "flex",
-                  flexDirection:
-                    "column",
-                  alignItems:
-                    "center",
-                  justifyContent:
-                    "center",
+                  alignItems: "center",
+                  justifyContent: "center",
 
-                  gap: 3,
+                  width: 28,
+                  height: 28,
 
-                  border: 0,
-                  background:
-                    "transparent",
-                  cursor: "pointer",
+                  fontSize: 20,
+                  lineHeight: 1,
 
-                  padding:
-                    "3px 4px",
+                  color: "inherit",
+
+                  transition: "filter 180ms ease",
                 }}
               >
-                <span
-                  className="erp-mobile-task-icon"
-                  style={{
-                    display: "flex",
-                    alignItems:
-                      "center",
-                    justifyContent:
-                      "center",
-                    fontSize: 21,
-                    lineHeight: 1,
-                  }}
-                >
-                  {item.icon}
-                </span>
+                {item.icon}
+              </motion.span>
 
-                <span
-                  className="erp-mobile-task-label"
-                  style={{
-                    maxWidth: 68,
-                    overflow:
-                      "hidden",
-                    textOverflow:
-                      "ellipsis",
-                    whiteSpace:
-                      "nowrap",
-                    fontSize: 10,
-                    lineHeight:
-                      "14px",
-                  }}
-                >
-                  {item.shortLabel ||
-                    item.label}
-                </span>
-              </button>
-            );
-          },
-        )}
+              {/* LABEL */}
+              <motion.span
+                className="erp-mobile-task-label"
+                animate={{
+                  opacity: active ? 1 : 0.72,
+                  y: active ? 0 : 1,
+                }}
+                transition={{
+                  duration: 0.18,
+                }}
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+
+                  maxWidth: "100%",
+
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+
+                  fontSize: 9,
+                  fontWeight: active ? 650 : 500,
+                  lineHeight: "12px",
+
+                  letterSpacing: "-0.1px",
+
+                  color: "inherit",
+                }}
+              >
+                {item.shortLabel || item.label}
+              </motion.span>
+            </button>
+          );
+        })}
 
         {/* PROFILE */}
+        {(() => {
+          const active =
+            location.pathname === "/profile" ||
+            location.pathname.startsWith("/profile/");
 
-        <button
-          type="button"
-          className={`erp-mobile-task-item ${
-            location.pathname ===
-              "/profile" ||
-            location.pathname.startsWith(
-              "/profile/",
-            )
-              ? "is-active"
-              : ""
-          }`}
-          onClick={() =>
-            handleNavigate(
-              "/profile",
-            )
-          }
-          style={{
-            flex: "1 0 72px",
-            minWidth: 72,
-            minHeight: 50,
+          return (
+            <button
+              type="button"
+              className={`erp-mobile-task-item ${active ? "is-active" : ""}`}
+              onClick={() => handleNavigate("/profile")}
+              style={{
+                position: "relative",
 
-            display: "flex",
-            flexDirection:
-              "column",
-            alignItems:
-              "center",
-            justifyContent:
-              "center",
+                flex: "1 1 0",
+                minWidth: 0,
+                height: "100%",
 
-            gap: 3,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
 
-            border: 0,
-            background:
-              "transparent",
-            cursor: "pointer",
+                gap: 2,
 
-            padding: "3px 4px",
-          }}
-        >
-          <span
-            className="erp-mobile-task-avatar"
-            style={{
-              display: "flex",
-              alignItems:
-                "center",
-              justifyContent:
-                "center",
-              height: 24,
-            }}
-          >
-            <Avatar
-              size={24}
-              src={
-                user?.avatar ||
-                undefined
-              }
-              icon={
-                !user?.avatar && (
-                  <UserOutlined />
-                )
-              }
+                border: 0,
+                outline: "none",
+                background: "transparent",
+
+                borderRadius: 19,
+
+                cursor: "pointer",
+
+                padding: "4px 2px",
+
+                color: active ? "#111827" : "#8b95a7",
+
+                WebkitTapHighlightColor: "transparent",
+              }}
             >
-              {!user?.avatar &&
-                (
-                  user?.fullName?.charAt(
-                    0,
-                  ) || "Y"
-                ).toUpperCase()}
-            </Avatar>
-          </span>
+              {/* LIQUID ACTIVE */}
+              {active && (
+                <motion.span
+                  layoutId="mobile-nav-active"
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 32,
+                    mass: 0.7,
+                  }}
+                  style={{
+                    position: "absolute",
+                    inset: 2,
 
-          <span
-            className="erp-mobile-task-label"
-            style={{
-              fontSize: 10,
-              lineHeight:
-                "14px",
-            }}
-          >
-            Tôi
-          </span>
-        </button>
+                    borderRadius: 18,
+
+                    background:
+                      "linear-gradient(145deg, rgba(241,245,249,0.95), rgba(226,232,240,0.72))",
+
+                    boxShadow:
+                      "inset 0 1px 0 rgba(255,255,255,0.95), 0 3px 10px rgba(15,23,42,0.06)",
+
+                    zIndex: 0,
+                  }}
+                />
+              )}
+
+              {/* AVATAR */}
+              <motion.span
+                animate={{
+                  scale: active ? 1.08 : 1,
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 500,
+                  damping: 25,
+                }}
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+
+                  width: 28,
+                  height: 28,
+                }}
+              >
+                <Avatar
+                  size={24}
+                  src={user?.avatar || undefined}
+                  icon={!user?.avatar && <UserOutlined />}
+                  style={{
+                    border: active
+                      ? "2px solid #111827"
+                      : "2px solid rgba(148,163,184,0.35)",
+                    transition: "border 180ms ease",
+                  }}
+                >
+                  {!user?.avatar &&
+                    (user?.fullName?.charAt(0) || "Y").toUpperCase()}
+                </Avatar>
+              </motion.span>
+
+              {/* LABEL */}
+              <motion.span
+                animate={{
+                  opacity: active ? 1 : 0.72,
+                }}
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+
+                  fontSize: 9,
+                  fontWeight: active ? 650 : 500,
+                  lineHeight: "12px",
+
+                  color: "inherit",
+                }}
+              >
+                Tôi
+              </motion.span>
+            </button>
+          );
+        })()}
       </nav>
     );
   };
-
   // =====================================================
   // RENDER
   // =====================================================
@@ -1224,8 +1151,7 @@ const Layout = ({ children }) => {
                 className="erp-menu-button"
                 aria-label="Mở menu"
                 icon={
-                  collapsed ||
-                  isMobile ? (
+                  collapsed || isMobile ? (
                     <MenuUnfoldOutlined />
                   ) : (
                     <MenuFoldOutlined />
@@ -1236,21 +1162,14 @@ const Layout = ({ children }) => {
                     return;
                   }
 
-                  setCollapsed(
-                    (value) =>
-                      !value,
-                  );
+                  setCollapsed((value) => !value);
                 }}
               />
 
               <div className="erp-header-context">
-                <span>
-                  Không gian làm việc
-                </span>
+                <span>Không gian làm việc</span>
 
-                <strong>
-                  Yakiuo ERP
-                </strong>
+                <strong>Yakiuo ERP</strong>
               </div>
             </Space>
 
@@ -1263,24 +1182,19 @@ const Layout = ({ children }) => {
                 trigger="click"
                 placement="bottomRight"
                 arrow={false}
-                content={
-                  notificationContent
-                }
+                content={notificationContent}
                 align={{
                   offset: [40, 8],
                 }}
                 styles={{
                   root: {
-                    maxWidth:
-                      "calc(100vw - 24px)",
+                    maxWidth: "calc(100vw - 24px)",
                   },
                 }}
               >
                 <Tooltip title="Thông báo">
                   <Badge
-                    count={
-                      notificationCount
-                    }
+                    count={notificationCount}
                     overflowCount={99}
                     size="small"
                     offset={[-3, 5]}
@@ -1288,9 +1202,7 @@ const Layout = ({ children }) => {
                     <Button
                       type="text"
                       className="erp-menu-button"
-                      icon={
-                        <BellOutlined />
-                      }
+                      icon={<BellOutlined />}
                       aria-label="Thông báo"
                     />
                   </Badge>
@@ -1304,70 +1216,36 @@ const Layout = ({ children }) => {
                 menu={{
                   items: userMenu,
 
-                  onClick: ({
-                    key,
-                  }) => {
-                    if (
-                      key ===
-                      "profile"
-                    ) {
-                      navigate(
-                        "/profile",
-                      );
+                  onClick: ({ key }) => {
+                    if (key === "profile") {
+                      navigate("/profile");
                     }
 
-                    if (
-                      key === "users"
-                    ) {
-                      navigate(
-                        "/users",
-                      );
+                    if (key === "users") {
+                      navigate("/users");
                     }
 
-                    if (
-                      key ===
-                      "logout"
-                    ) {
+                    if (key === "logout") {
                       handleLogout();
                     }
                   },
                 }}
               >
-                <button
-                  type="button"
-                  className="erp-user-menu"
-                >
+                <button type="button" className="erp-user-menu">
                   <Avatar
                     className="erp-avatar"
-                    src={
-                      user?.avatar ||
-                      undefined
-                    }
-                    icon={
-                      !user?.avatar && (
-                        <UserOutlined />
-                      )
-                    }
+                    src={user?.avatar || undefined}
+                    icon={!user?.avatar && <UserOutlined />}
                   >
                     {!user?.avatar &&
-                      (
-                        user?.fullName?.charAt(
-                          0,
-                        ) || "Y"
-                      ).toUpperCase()}
+                      (user?.fullName?.charAt(0) || "Y").toUpperCase()}
                   </Avatar>
 
                   <span className="erp-user-copy">
-                    <strong>
-                      {user?.fullName ||
-                        "Người dùng"}
-                    </strong>
+                    <strong>{user?.fullName || "Người dùng"}</strong>
 
                     <small>
-                      {user?.role ===
-                      "admin"
-                        ? "Quản trị viên"
-                        : "Nhân viên"}
+                      {user?.role === "admin" ? "Quản trị viên" : "Nhân viên"}
                     </small>
                   </span>
                 </button>
@@ -1380,11 +1258,7 @@ const Layout = ({ children }) => {
           ================================================= */}
 
           <Content
-            className={`erp-content ${
-              isChatPage
-                ? "erp-content-chat"
-                : ""
-            }`}
+            className={`erp-content ${isChatPage ? "erp-content-chat" : ""}`}
             style={{
               flex: "1 1 auto",
               minHeight: 0,
@@ -1395,14 +1269,11 @@ const Layout = ({ children }) => {
                * Không cho Content scroll.
                * ChatPage tự quản lý scroll.
                */
-              overflowY: isChatPage
-                ? "hidden"
-                : "auto",
+              overflowY: isChatPage ? "hidden" : "auto",
 
               overflowX: "hidden",
 
-              WebkitOverflowScrolling:
-                "touch",
+              WebkitOverflowScrolling: "touch",
 
               /*
                * Các page bình thường phải
@@ -1419,11 +1290,7 @@ const Layout = ({ children }) => {
           >
             <motion.main
               key={location.pathname}
-              className={`erp-page ${
-                isChatPage
-                  ? "erp-page-chat"
-                  : ""
-              }`}
+              className={`erp-page ${isChatPage ? "erp-page-chat" : ""}`}
               initial={{
                 opacity: 0,
                 y: 8,
@@ -1451,8 +1318,7 @@ const Layout = ({ children }) => {
                       minHeight: 0,
                       overflow: "hidden",
                       display: "flex",
-                      flexDirection:
-                        "column",
+                      flexDirection: "column",
                     }
                   : {
                       minHeight: "100%",
@@ -1474,13 +1340,9 @@ const Layout = ({ children }) => {
                     <span className="erp-footer-mark"></span>
 
                     <div>
-                      <strong>
-                        YAKIUO ISHIKAWA
-                      </strong>
+                      <strong>YAKIUO ISHIKAWA</strong>
 
-                      <span>
-                        ERP WORKSPACE
-                      </span>
+                      <span>ERP WORKSPACE</span>
                     </div>
                   </div>
                 </div>
@@ -1489,24 +1351,16 @@ const Layout = ({ children }) => {
                   <span className="erp-footer-dot" />
 
                   <span>
-                    Developed by{" "}
-                    <strong>
-                      My
-                    </strong>
+                    Developed by <strong>My</strong>
                   </span>
                 </div>
 
                 <div className="erp-footer-right">
-                  <span>
-                    ©{" "}
-                    {new Date().getFullYear()}
-                  </span>
+                  <span>© {new Date().getFullYear()}</span>
 
                   <span className="erp-footer-divider" />
 
-                  <span>
-                    v1.0.0
-                  </span>
+                  <span>v1.0.0</span>
                 </div>
               </footer>
             )}

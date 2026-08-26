@@ -21,10 +21,7 @@ export const AuthProvider = ({ children }) => {
   const accessToken = localStorage.getItem("accessToken");
 
   const login = async (username, password) => {
-    const result = await loginRequest(
-      username,
-      password
-    );
+    const result = await loginRequest(username, password);
 
     localStorage.setItem(
       "accessToken",
@@ -65,6 +62,14 @@ export const AuthProvider = ({ children }) => {
     setPermissions([]);
   };
 
+  // Cập nhật user ngay lập tức sau khi sửa profile/avatar
+  const updateUser = (updatedUser) => {
+    setUser((currentUser) => ({
+      ...currentUser,
+      ...updatedUser,
+    }));
+  };
+
   const hasPermission = (permission) => {
     return permissions.includes(permission);
   };
@@ -86,6 +91,7 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
+
         setUser(null);
         setPermissions([]);
       } finally {
@@ -100,6 +106,8 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
+        setUser,
+        updateUser,
         permissions,
         loading,
         login,

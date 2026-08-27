@@ -1,32 +1,46 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL ||
-  "http://localhost:4000";
+// =====================================================
+// SOCKET CONFIG
+// =====================================================
+
+const SOCKET_URL = (
+  import.meta.env.VITE_SOCKET_URL || "http://localhost:4000"
+).replace(/\/$/, "");
+
+// =====================================================
+// SINGLETON
+// =====================================================
 
 let socket = null;
 
+// User mà client hiện tại muốn đăng nhập socket
+let currentUserId = null;
+
+// User đã thực sự join presence trên server
+let joinedUserId = null;
+
 // =====================================================
-// CONNECT SOCKET
+// CREATE SOCKET
 // =====================================================
 
-export const connectSocket = () => {
-  // Đã có socket và đang connected
-  if (socket?.connected) {
-    return socket;
-  }
+const createSocket = () => {
+  // -----------------------------------------------
+  // ĐÃ CÓ SOCKET
+  // -----------------------------------------------
 
-  // Socket đã được tạo nhưng đang reconnect
   if (socket) {
     return socket;
   }
 
+  console.log("🔌 CREATE SOCKET:", SOCKET_URL);
+
   socket = io(SOCKET_URL, {
+    autoConnect: false,
+
     transports: ["websocket", "polling"],
 
     withCredentials: true,
-
-    autoConnect: true,
 
     reconnection: true,
 
@@ -39,62 +53,203 @@ export const connectSocket = () => {
     timeout: 10000,
   });
 
-  // ===================================================
+  // =================================================
   // CONNECT
-  // ===================================================
+  // =================================================
 
   socket.on("connect", () => {
-    console.log(
-      "🟢 Frontend socket connected:",
-      socket.id,
-    );
+    console.log("=================================");
+    console.log("🟢 SOCKET CONNECTED:", socket.id);
+    console.log("👤 CURRENT USER:", currentUserId);
+    console.log("=================================");
+
+    // -----------------------------------------------
+    // Socket reconnect
+    // phải join lại presence
+    // -----------------------------------------------
+
+    if (currentUserId) {
+      console.log("📤 JOIN PRESENCE AFTER CONNECT:", currentUserId);
+
+      joinedUserId = null;
+
+      socket.emit("user:join", {
+        userId: currentUserId,
+      });
+    }
   });
 
-  // ===================================================
+  // =================================================
   // DISCONNECT
-  // ===================================================
+  // =================================================
 
   socket.on("disconnect", (reason) => {
-    console.log(
-      "🔴 Frontend socket disconnected:",
-      reason,
-    );
+    console.log("=================================");
+    console.log("🔴 SOCKET DISCONNECTED");
+    console.log("🔌 Socket:", socket?.id);
+    console.log("👤 User:", currentUserId);
+    console.log("📌 Reason:", reason);
+    console.log("=================================");
+
+    // Server đã mất socket
+    joinedUserId = null;
   });
 
-  // ===================================================
+  // =================================================
   // CONNECT ERROR
-  // ===================================================
+  // =================================================
 
   socket.on("connect_error", (error) => {
-    console.error(
-      "❌ Socket connection error:",
-      error?.message || error,
-    );
+    console.error("❌ SOCKET CONNECT ERROR:", error?.message || error);
   });
 
-  // ===================================================
-  // RECONNECT ATTEMPT
-  // ===================================================
+  // =================================================
+  // PRESENCE ERROR
+  // =================================================
 
-  socket.io.on("reconnect_attempt", (attempt) => {
-    console.log(
-      "🔄 Socket reconnect attempt:",
-      attempt,
-    );
+  socket.on("presence:error", (data) => {
+    console.error("❌ PRESENCE ERROR:", data);
   });
 
-  // ===================================================
-  // RECONNECT
-  // ===================================================
-
-  socket.io.on("reconnect", (attempt) => {
-    console.log(
-      "🟢 Socket reconnected after attempt:",
-      attempt,
-    );
-  });
+  // =================================================
+  // USER JOIN SUCCESS TRACK
+  //
+  // Server hiện tại không emit riêng event success
+  // nên phần này không cần thiết.
+  // =================================================
 
   return socket;
+};
+
+// =====================================================
+// CONNECT SOCKET
+// =====================================================
+
+export const connectSocket = () => {
+  const currentSocket = createSocket();
+
+  if (!currentSocket.connected) {
+    console.log("🔌 CONNECT SOCKET");
+
+    currentSocket.connect();
+  }
+
+  return currentSocket;
+};
+
+// =====================================================
+// SET SOCKET USER
+// =====================================================
+
+export const setSocketUser = (userId) => {
+  const id = userId ? String(userId) : null;
+
+  // ============================================
+  // CLEAR USER
+  // ============================================
+
+  if (!id) {
+    console.log("⚪ CLEAR SOCKET USER");
+
+    currentUserId = null;
+
+    return socket;
+  }
+
+  // ============================================
+  // GET SINGLETON SOCKET
+  // ============================================
+
+  const currentSocket = createSocket();
+
+  // ============================================
+  // SAME USER
+  // ============================================
+
+  if (currentUserId === id) {
+    console.log("ℹ️ SOCKET USER ALREADY SET:", id);
+
+    // Nếu socket chưa connect thì connect
+    if (!currentSocket.connected) {
+      console.log("🔌 SOCKET NOT CONNECTED → CONNECT:", id);
+
+      currentSocket.connect();
+    }
+
+    return currentSocket;
+  }
+
+  // ============================================
+  // CHANGE USER
+  // ============================================
+
+  if (currentUserId && currentUserId !== id) {
+    console.log("🔄 CHANGE SOCKET USER:", currentUserId, "→", id);
+
+    if (currentSocket.connected) {
+      currentSocket.emit("user:leave");
+    }
+  }
+
+  // ============================================
+  // SET NEW USER
+  // ============================================
+
+  currentUserId = id;
+
+  // ============================================
+  // ALREADY CONNECTED
+  // ============================================
+
+  if (currentSocket.connected) {
+    console.log("📤 SOCKET ALREADY CONNECTED → JOIN:", id);
+
+    currentSocket.emit("user:join", {
+      userId: id,
+    });
+
+    return currentSocket;
+  }
+
+  // ============================================
+  // CONNECT
+  // ============================================
+
+  console.log("🔌 CONNECT SOCKET FOR USER:", id);
+
+  currentSocket.connect();
+
+  return currentSocket;
+};
+
+// =====================================================
+// JOIN PRESENCE
+// =====================================================
+
+export const joinPresence = (userId) => {
+  return setSocketUser(userId);
+};
+
+// =====================================================
+// LEAVE PRESENCE
+// =====================================================
+
+export const leavePresence = () => {
+  if (!socket) {
+    currentUserId = null;
+    joinedUserId = null;
+
+    return;
+  }
+
+  console.log("📤 LEAVE PRESENCE:", currentUserId);
+
+  if (socket.connected && currentUserId) {
+    socket.emit("user:leave");
+  }
+
+  currentUserId = null;
+  joinedUserId = null;
 };
 
 // =====================================================
@@ -106,17 +261,129 @@ export const getSocket = () => {
 };
 
 // =====================================================
+// GET CURRENT SOCKET USER
+// =====================================================
+
+export const getSocketUser = () => {
+  return currentUserId;
+};
+
+// =====================================================
+// ONLINE USERS
+// =====================================================
+
+export const onOnlineUsers = (callback) => {
+  const currentSocket = createSocket();
+
+  const handler = (data = {}) => {
+    const userIds = Array.isArray(data.userIds) ? data.userIds.map(String) : [];
+
+    const count = Number(data.count ?? userIds.length);
+
+    console.log("👥 SOCKET ONLINE USERS:", {
+      userIds,
+      count,
+    });
+
+    callback({
+      userIds,
+      count: Number.isFinite(count) ? count : userIds.length,
+    });
+  };
+
+  currentSocket.on("users:online", handler);
+
+  return () => {
+    currentSocket.off("users:online", handler);
+  };
+};
+
+// =====================================================
+// ONLINE COUNT
+// =====================================================
+
+export const onOnlineCount = (callback) => {
+  const currentSocket = createSocket();
+
+  const handler = (data = {}) => {
+    const count = Number(data.count ?? 0);
+
+    callback(Number.isFinite(count) ? count : 0);
+  };
+
+  currentSocket.on("online:count", handler);
+
+  return () => {
+    currentSocket.off("online:count", handler);
+  };
+};
+
+// =====================================================
+// USER ONLINE
+// =====================================================
+
+export const onUserOnline = (callback) => {
+  const currentSocket = createSocket();
+
+  currentSocket.on("user:online", callback);
+
+  return () => {
+    currentSocket.off("user:online", callback);
+  };
+};
+
+// =====================================================
+// USER OFFLINE
+// =====================================================
+
+export const onUserOffline = (callback) => {
+  const currentSocket = createSocket();
+
+  currentSocket.on("user:offline", callback);
+
+  return () => {
+    currentSocket.off("user:offline", callback);
+  };
+};
+
+// =====================================================
 // DISCONNECT SOCKET
 // =====================================================
 
 export const disconnectSocket = () => {
   if (!socket) {
+    currentUserId = null;
+    joinedUserId = null;
+
     return;
   }
 
-  socket.removeAllListeners();
+  console.log("🔌 DISCONNECT SOCKET:", socket.id);
+
+  currentUserId = null;
+  joinedUserId = null;
 
   socket.disconnect();
 
+  socket.removeAllListeners();
+
   socket = null;
+};
+
+// =====================================================
+// DEFAULT
+// =====================================================
+
+export default {
+  connectSocket,
+  getSocket,
+  getSocketUser,
+  setSocketUser,
+  joinPresence,
+  leavePresence,
+  disconnectSocket,
+  onOnlineUsers,
+  onOnlineCount,
+  onUserOnline,
+  onUserOffline,
 };

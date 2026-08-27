@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   Avatar,
@@ -20,7 +20,6 @@ import {
   PhoneOutlined,
   SearchOutlined,
   SmileOutlined,
-  VideoCameraOutlined,
 } from "@ant-design/icons";
 
 import { connectSocket, getSocket } from "../../services/socket";
@@ -32,11 +31,15 @@ import api from "../../services/api";
 
 const getCurrentUser = () => {
   try {
-    const user =
-      localStorage.getItem("user") || localStorage.getItem("currentUser");
+    const raw =
+      localStorage.getItem("user") ||
+      localStorage.getItem("currentUser");
 
-    return user ? JSON.parse(user) : null;
-  } catch {
+    if (!raw) return null;
+
+    return JSON.parse(raw);
+  } catch (error) {
+    console.error("Read current user error:", error);
     return null;
   }
 };
@@ -44,13 +47,114 @@ const getCurrentUser = () => {
 const getUserId = (user) => {
   if (!user) return null;
 
-  return user._id || user.id;
+  if (typeof user === "string") {
+    return user;
+  }
+
+  return user._id || user.id || user.userId || null;
+};
+
+const normalizeId = (id) => {
+  if (!id) return null;
+
+  return String(id);
+};
+
+const getSenderId = (message) => {
+  if (!message) return null;
+
+  if (typeof message.senderId === "object") {
+    return (
+      message.senderId?._id ||
+      message.senderId?.id ||
+      message.senderId?.userId ||
+      null
+    );
+  }
+
+  return message.senderId || null;
+};
+
+const getOnlineUserId = (payload) => {
+  if (!payload) return null;
+
+  if (typeof payload === "string") {
+    return payload;
+  }
+
+  if (typeof payload === "number") {
+    return String(payload);
+  }
+
+  return (
+    payload.userId ||
+    payload._id ||
+    payload.id ||
+    payload.user?._id ||
+    payload.user?.id ||
+    payload.user?.userId ||
+    null
+  );
+};
+
+const normalizeOnlineUsers = (payload) => {
+  if (!payload) {
+    return [];
+  }
+
+  // Backend có thể trả:
+  // ["id1", "id2"]
+  if (Array.isArray(payload)) {
+    return [
+      ...new Set(
+        payload
+          .map((item) => getOnlineUserId(item))
+          .filter(Boolean)
+          .map(String),
+      ),
+    ];
+  }
+
+  // Hoặc:
+  // { users: [...] }
+  // { onlineUsers: [...] }
+  // { data: [...] }
+  if (typeof payload === "object") {
+    const list =
+      payload.users ||
+      payload.onlineUsers ||
+      payload.data ||
+      payload.userIds;
+
+    if (Array.isArray(list)) {
+      return [
+        ...new Set(
+          list
+            .map((item) => getOnlineUserId(item))
+            .filter(Boolean)
+            .map(String),
+        ),
+      ];
+    }
+
+    const singleId = getOnlineUserId(payload);
+
+    return singleId ? [String(singleId)] : [];
+  }
+
+  return [];
 };
 
 const formatTime = (date) => {
   if (!date) return "";
 
-  return new Date(date).toLocaleTimeString("vi-VN", {
+  const parsed = new Date(date);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return parsed.toLocaleTimeString("vi-VN", {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -59,17 +163,35 @@ const formatTime = (date) => {
 const formatConversationTime = (date) => {
   if (!date) return "";
 
-  const messageDate = new Date(date);
+  const parsed = new Date(date);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
   const now = new Date();
 
-  if (messageDate.toDateString() === now.toDateString()) {
+  if (parsed.toDateString() === now.toDateString()) {
     return formatTime(date);
   }
 
-  return messageDate.toLocaleDateString("vi-VN", {
+  return parsed.toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
   });
+};
+
+const getUserName = (user) => {
+  return (
+    user?.username ||
+    user?.fullName ||
+    user?.email ||
+    "Người dùng"
+  );
+};
+
+const getInitial = (user) => {
+  return getUserName(user).charAt(0).toUpperCase();
 };
 
 // =====================================================
@@ -78,28 +200,66 @@ const formatConversationTime = (date) => {
 
 export default function ChatPage() {
   // ===================================================
-  // USER
+  // CURRENT USER
   // ===================================================
 
   const currentUser = getCurrentUser();
-  const currentUserId = getUserId(currentUser);
+
+  const currentUserId = normalizeId(
+    getUserId(currentUser),
+  );
 
   // ===================================================
-  // STATE
+  // DATA
   // ===================================================
+
+  const [users, setUsers] = useState([]);
 
   const [conversations, setConversations] = useState([]);
-  const [selectedConversationId, setSelectedConversationId] = useState(null);
+
   const [messages, setMessages] = useState([]);
 
-  const [loadingConversations, setLoadingConversations] = useState(true);
-  const [loadingMessages, setLoadingMessages] = useState(false);
+  // ===================================================
+  // ONLINE USERS
+  // ===================================================
+
+  const [onlineUsers, setOnlineUsers] = useState([]);
+
+  // ===================================================
+  // SELECTED CHAT
+  // ===================================================
+
+  const [selectedConversationId, setSelectedConversationId] =
+    useState(null);
+
+  // ===================================================
+  // UI
+  // ===================================================
 
   const [search, setSearch] = useState("");
+
   const [input, setInput] = useState("");
 
   const [mobileChat, setMobileChat] = useState(false);
-  const [socketConnected, setSocketConnected] = useState(false);
+
+  // ===================================================
+  // LOADING
+  // ===================================================
+
+  const [loadingUsers, setLoadingUsers] = useState(true);
+
+  const [loadingConversations, setLoadingConversations] =
+    useState(true);
+
+  const [loadingMessages, setLoadingMessages] =
+    useState(false);
+
+  // ===================================================
+  // SOCKET STATE
+  // ===================================================
+
+  const [socketConnected, setSocketConnected] =
+    useState(false);
 
   // ===================================================
   // REFS
@@ -108,112 +268,174 @@ export default function ChatPage() {
   const messagesContainerRef = useRef(null);
 
   const currentConversationRef = useRef(null);
+
   const previousConversationRef = useRef(null);
 
   // ===================================================
-  // CURRENT CONVERSATION REF
+  // KEEP CURRENT CONVERSATION REF
   // ===================================================
 
   useEffect(() => {
-    currentConversationRef.current = selectedConversationId;
+    currentConversationRef.current =
+      selectedConversationId;
   }, [selectedConversationId]);
 
   // ===================================================
-  // OTHER USER
+  // CHECK ONLINE
   // ===================================================
 
-  const getOtherParticipant = (conversation) => {
-    if (!conversation?.participants) {
-      return null;
-    }
+  const isUserOnline = useCallback(
+    (userId) => {
+      const normalizedId = normalizeId(userId);
 
-    return conversation.participants.find(
-      (user) => String(user._id) !== String(currentUserId),
-    );
-  };
+      if (!normalizedId) {
+        return false;
+      }
+
+      return onlineUsers.includes(normalizedId);
+    },
+    [onlineUsers],
+  );
+
+  // ===================================================
+  // GET OTHER PARTICIPANT
+  // ===================================================
+
+  const getOtherParticipant = useCallback(
+    (conversation) => {
+      if (!conversation?.participants) {
+        return null;
+      }
+
+      return (
+        conversation.participants.find(
+          (user) =>
+            normalizeId(getUserId(user)) !==
+            currentUserId,
+        ) || null
+      );
+    },
+    [currentUserId],
+  );
+
+  // ===================================================
+  // LOAD USERS
+  // ===================================================
+
+  const loadUsers = useCallback(async () => {
+    try {
+      setLoadingUsers(true);
+
+      const response = await api.get("/users");
+
+      const data = response?.data?.data;
+
+      setUsers(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Load users error:", error);
+
+      antMessage.error(
+        error?.response?.data?.message ||
+          "Không thể tải danh sách người dùng",
+      );
+
+      setUsers([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, []);
 
   // ===================================================
   // LOAD CONVERSATIONS
   // ===================================================
 
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     try {
       setLoadingConversations(true);
 
       const response = await api.get("/conversations");
 
-      const data = response?.data?.data || [];
+      const data = response?.data?.data;
 
-      setConversations(data);
-
-      if (data.length > 0 && !selectedConversationId) {
-        setSelectedConversationId(data[0]._id);
-      }
+      setConversations(
+        Array.isArray(data) ? data : [],
+      );
     } catch (error) {
-      console.error("Load conversations error:", error);
+      console.error(
+        "Load conversations error:",
+        error,
+      );
 
       antMessage.error(
         error?.response?.data?.message ||
           "Không thể tải cuộc trò chuyện",
       );
+
+      setConversations([]);
     } finally {
       setLoadingConversations(false);
     }
-  };
-
-  useEffect(() => {
-    loadConversations();
   }, []);
 
   // ===================================================
-  // SELECTED CONVERSATION
+  // INITIAL LOAD
   // ===================================================
 
-  const selectedConversation = useMemo(() => {
-    return conversations.find(
-      (conversation) =>
-        String(conversation._id) === String(selectedConversationId),
-    );
-  }, [conversations, selectedConversationId]);
-
-  const otherUser = getOtherParticipant(selectedConversation);
+  useEffect(() => {
+    loadUsers();
+    loadConversations();
+  }, [loadUsers, loadConversations]);
 
   // ===================================================
   // LOAD MESSAGES
   // ===================================================
 
-  const loadMessages = async (conversationId) => {
-    if (!conversationId) return;
+  const loadMessages = useCallback(
+    async (conversationId) => {
+      if (!conversationId) {
+        setMessages([]);
+        return;
+      }
 
-    try {
-      setLoadingMessages(true);
+      try {
+        setLoadingMessages(true);
 
-      const response = await api.get(`/messages/${conversationId}`, {
-        params: {
-          page: 1,
-          limit: 100,
-        },
-      });
+        const response = await api.get(
+          `/messages/${conversationId}`,
+          {
+            params: {
+              page: 1,
+              limit: 100,
+            },
+          },
+        );
 
-      const data = response?.data?.data || [];
+        const data = response?.data?.data;
 
-      setMessages(data);
-    } catch (error) {
-      console.error("Load messages error:", error);
+        setMessages(
+          Array.isArray(data) ? data : [],
+        );
+      } catch (error) {
+        console.error(
+          "Load messages error:",
+          error,
+        );
 
-      antMessage.error(
-        error?.response?.data?.message ||
-          "Không thể tải tin nhắn",
-      );
+        antMessage.error(
+          error?.response?.data?.message ||
+            "Không thể tải tin nhắn",
+        );
 
-      setMessages([]);
-    } finally {
-      setLoadingMessages(false);
-    }
-  };
+        setMessages([]);
+      } finally {
+        setLoadingMessages(false);
+      }
+    },
+    [],
+  );
 
   // ===================================================
-  // LOAD WHEN CHANGE CONVERSATION
+  // LOAD MESSAGE WHEN CHANGE CHAT
   // ===================================================
 
   useEffect(() => {
@@ -223,7 +445,7 @@ export default function ChatPage() {
     }
 
     loadMessages(selectedConversationId);
-  }, [selectedConversationId]);
+  }, [selectedConversationId, loadMessages]);
 
   // ===================================================
   // SOCKET
@@ -232,14 +454,47 @@ export default function ChatPage() {
   useEffect(() => {
     const socket = connectSocket();
 
-    if (!socket) return;
+    if (!socket) {
+      console.error(
+        "❌ Không lấy được Socket.IO instance",
+      );
+      return;
+    }
+
+    // =================================================
+    // SOCKET CONNECT
+    // =================================================
 
     const handleConnect = () => {
-      console.log("🟢 Chat socket connected:", socket.id);
+      console.log(
+        "🟢 Chat socket connected:",
+        socket.id,
+      );
 
       setSocketConnected(true);
 
-      const conversationId = currentConversationRef.current;
+      // ===============================================
+      // QUAN TRỌNG:
+      // ĐĂNG KÝ USER VỚI BACKEND
+      // ===============================================
+
+      if (currentUserId) {
+        console.log(
+          "👤 Register online user:",
+          currentUserId,
+        );
+
+        socket.emit("user:join", {
+          userId: currentUserId,
+        });
+      }
+
+      // ===============================================
+      // JOIN CURRENT CONVERSATION
+      // ===============================================
+
+      const conversationId =
+        currentConversationRef.current;
 
       if (conversationId) {
         socket.emit("conversation:join", {
@@ -248,73 +503,215 @@ export default function ChatPage() {
       }
     };
 
+    // =================================================
+    // SOCKET DISCONNECT
+    // =================================================
+
     const handleDisconnect = (reason) => {
-      console.log("🔴 Chat socket disconnected:", reason);
+      console.log(
+        "🔴 Chat socket disconnected:",
+        reason,
+      );
 
       setSocketConnected(false);
     };
 
+    // =================================================
+    // SOCKET CONNECT ERROR
+    // =================================================
+
+    const handleConnectError = (error) => {
+      console.error(
+        "❌ Socket connect error:",
+        error,
+      );
+
+      setSocketConnected(false);
+    };
+
+    // =================================================
+    // ALL ONLINE USERS
+    // =================================================
+
+    const handleUsersOnline = (payload) => {
+      console.log(
+        "🟢 users:online:",
+        payload,
+      );
+
+      const normalized =
+        normalizeOnlineUsers(payload);
+
+      console.log(
+        "🟢 normalized online users:",
+        normalized,
+      );
+
+      setOnlineUsers(normalized);
+    };
+
+    // =================================================
+    // ONLINE COUNT
+    // =================================================
+
+    const handleOnlineCount = (payload) => {
+      console.log(
+        "👥 online:count:",
+        payload,
+      );
+    };
+
+    // =================================================
+    // USER ONLINE
+    // =================================================
+
+    const handleUserOnline = (payload) => {
+      console.log(
+        "🟢 user:online:",
+        payload,
+      );
+
+      const userId =
+        getOnlineUserId(payload);
+
+      if (!userId) {
+        return;
+      }
+
+      const normalizedId = String(userId);
+
+      setOnlineUsers((prev) => {
+        if (prev.includes(normalizedId)) {
+          return prev;
+        }
+
+        return [...prev, normalizedId];
+      });
+    };
+
+    // =================================================
+    // USER OFFLINE
+    // =================================================
+
+    const handleUserOffline = (payload) => {
+      console.log(
+        "🔴 user:offline:",
+        payload,
+      );
+
+      const userId =
+        getOnlineUserId(payload);
+
+      if (!userId) {
+        return;
+      }
+
+      const normalizedId = String(userId);
+
+      setOnlineUsers((prev) =>
+        prev.filter(
+          (id) => String(id) !== normalizedId,
+        ),
+      );
+    };
+
+    // =================================================
+    // NEW MESSAGE
+    // =================================================
+
     const handleNewMessage = (newMessage) => {
-      console.log("📩 New message:", newMessage);
+      console.log(
+        "📩 message:new:",
+        newMessage,
+      );
 
-      const conversationId = newMessage?.conversationId;
+      if (!newMessage) {
+        return;
+      }
 
-      if (!conversationId) return;
+      const conversationId =
+        newMessage.conversationId;
 
-      // =================================================
+      if (!conversationId) {
+        return;
+      }
+
+      // ===============================================
       // UPDATE SIDEBAR
-      // =================================================
+      // ===============================================
 
       setConversations((prev) => {
         const index = prev.findIndex(
           (conversation) =>
-            String(conversation._id) === String(conversationId),
+            normalizeId(conversation._id) ===
+            normalizeId(conversationId),
         );
 
+        // Conversation chưa có trong sidebar
         if (index === -1) {
           return prev;
         }
 
+        const oldConversation =
+          prev[index];
+
         const updatedConversation = {
-          ...prev[index],
+          ...oldConversation,
+
           lastMessage: newMessage,
-          lastMessageAt: newMessage.createdAt,
+
+          lastMessageAt:
+            newMessage.createdAt ||
+            new Date().toISOString(),
+
+          updatedAt:
+            newMessage.createdAt ||
+            oldConversation.updatedAt,
         };
+
+        const rest = prev.filter(
+          (_, i) => i !== index,
+        );
 
         return [
           updatedConversation,
-          ...prev.filter((_, i) => i !== index),
+          ...rest,
         ];
       });
 
-      // =================================================
-      // NOT CURRENT CHAT
-      // =================================================
+      // ===============================================
+      // KHÔNG PHẢI CHAT ĐANG MỞ
+      // ===============================================
 
       if (
-        String(conversationId) !==
-        String(currentConversationRef.current)
+        normalizeId(conversationId) !==
+        normalizeId(
+          currentConversationRef.current,
+        )
       ) {
         return;
       }
 
-      // =================================================
+      // ===============================================
       // ADD MESSAGE
-      // =================================================
+      // ===============================================
 
       setMessages((prev) => {
+        // Mongo ID
         if (
-          newMessage?._id &&
+          newMessage._id &&
           prev.some(
             (item) =>
-              String(item._id) === String(newMessage._id),
+              normalizeId(item._id) ===
+              normalizeId(newMessage._id),
           )
         ) {
           return prev;
         }
 
+        // Client ID
         if (
-          newMessage?.clientMessageId &&
+          newMessage.clientMessageId &&
           prev.some(
             (item) =>
               item.clientMessageId ===
@@ -328,153 +725,542 @@ export default function ChatPage() {
       });
     };
 
+    // =================================================
+    // MESSAGE ERROR
+    // =================================================
+
     const handleMessageError = (error) => {
-      console.error("❌ message:error", error);
+      console.error(
+        "❌ message:error:",
+        error,
+      );
 
       antMessage.error(
-        error?.message || "Không thể gửi tin nhắn",
+        error?.message ||
+          error?.error ||
+          "Không thể gửi tin nhắn",
       );
     };
 
-    const handleChatError = (error) => {
-      console.error("❌ chat:error", error);
+    // =================================================
+    // CHAT ERROR
+    // =================================================
 
-      antMessage.error(error?.message || "Lỗi chat");
+    const handleChatError = (error) => {
+      console.error(
+        "❌ chat:error:",
+        error,
+      );
+
+      antMessage.error(
+        error?.message ||
+          error?.error ||
+          "Lỗi chat",
+      );
     };
 
-    socket.on("connect", handleConnect);
-    socket.on("disconnect", handleDisconnect);
-    socket.on("message:new", handleNewMessage);
-    socket.on("message:error", handleMessageError);
-    socket.on("chat:error", handleChatError);
+    // =================================================
+    // REGISTER LISTENERS
+    // =================================================
+
+    socket.on(
+      "connect",
+      handleConnect,
+    );
+
+    socket.on(
+      "disconnect",
+      handleDisconnect,
+    );
+
+    socket.on(
+      "connect_error",
+      handleConnectError,
+    );
+
+    socket.on(
+      "users:online",
+      handleUsersOnline,
+    );
+
+    socket.on(
+      "online:count",
+      handleOnlineCount,
+    );
+
+    socket.on(
+      "user:online",
+      handleUserOnline,
+    );
+
+    socket.on(
+      "user:offline",
+      handleUserOffline,
+    );
+
+    socket.on(
+      "message:new",
+      handleNewMessage,
+    );
+
+    socket.on(
+      "message:error",
+      handleMessageError,
+    );
+
+    socket.on(
+      "chat:error",
+      handleChatError,
+    );
+
+    // =================================================
+    // SOCKET ĐÃ CONNECT SẴN
+    // =================================================
 
     if (socket.connected) {
       handleConnect();
     }
 
+    // =================================================
+    // CLEANUP
+    // =================================================
+
     return () => {
-      socket.off("connect", handleConnect);
-      socket.off("disconnect", handleDisconnect);
-      socket.off("message:new", handleNewMessage);
-      socket.off("message:error", handleMessageError);
-      socket.off("chat:error", handleChatError);
+      socket.off(
+        "connect",
+        handleConnect,
+      );
+
+      socket.off(
+        "disconnect",
+        handleDisconnect,
+      );
+
+      socket.off(
+        "connect_error",
+        handleConnectError,
+      );
+
+      socket.off(
+        "users:online",
+        handleUsersOnline,
+      );
+
+      socket.off(
+        "online:count",
+        handleOnlineCount,
+      );
+
+      socket.off(
+        "user:online",
+        handleUserOnline,
+      );
+
+      socket.off(
+        "user:offline",
+        handleUserOffline,
+      );
+
+      socket.off(
+        "message:new",
+        handleNewMessage,
+      );
+
+      socket.off(
+        "message:error",
+        handleMessageError,
+      );
+
+      socket.off(
+        "chat:error",
+        handleChatError,
+      );
+
+      // KHÔNG gọi disconnectSocket()
+      //
+      // Vì Layout cũng đang dùng chung socket.
     };
-  }, []);
+  }, [currentUserId]);
 
   // ===================================================
-  // JOIN / LEAVE ROOM
+  // JOIN / LEAVE CONVERSATION
   // ===================================================
 
   useEffect(() => {
     const socket = getSocket();
 
-    if (!socket || !selectedConversationId) {
+    if (!socket) {
       return;
     }
 
     const previousConversation =
       previousConversationRef.current;
 
+    // ===============================================
+    // LEAVE OLD
+    // ===============================================
+
     if (
       previousConversation &&
-      String(previousConversation) !==
-        String(selectedConversationId)
+      normalizeId(previousConversation) !==
+        normalizeId(selectedConversationId)
     ) {
       socket.emit("conversation:leave", {
-        conversationId: previousConversation,
+        conversationId:
+          previousConversation,
       });
     }
 
-    if (socket.connected) {
+    // ===============================================
+    // JOIN NEW
+    // ===============================================
+
+    if (
+      selectedConversationId &&
+      socket.connected
+    ) {
       socket.emit("conversation:join", {
-        conversationId: selectedConversationId,
+        conversationId:
+          selectedConversationId,
       });
     }
 
     previousConversationRef.current =
       selectedConversationId;
+
+    // ===============================================
+    // CLEANUP
+    // ===============================================
+
+    return () => {
+      if (
+        selectedConversationId &&
+        socket.connected
+      ) {
+        socket.emit("conversation:leave", {
+          conversationId:
+            selectedConversationId,
+        });
+      }
+    };
   }, [selectedConversationId]);
 
   // ===================================================
-  // AUTO SCROLL
+  // SELECTED CONVERSATION
   // ===================================================
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const container = messagesContainerRef.current;
+  const selectedConversation = useMemo(() => {
+    if (!selectedConversationId) {
+      return null;
+    }
 
-      if (!container) return;
+    return (
+      conversations.find(
+        (conversation) =>
+          normalizeId(conversation._id) ===
+          normalizeId(
+            selectedConversationId,
+          ),
+      ) || null
+    );
+  }, [
+    conversations,
+    selectedConversationId,
+  ]);
 
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: "smooth",
-      });
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [messages, loadingMessages]);
+  const otherUser = useMemo(() => {
+    return getOtherParticipant(
+      selectedConversation,
+    );
+  }, [
+    selectedConversation,
+    getOtherParticipant,
+  ]);
 
   // ===================================================
-  // SEARCH
+  // SEARCH KEYWORD
+  // ===================================================
+
+  const keyword = search
+    .trim()
+    .toLowerCase();
+
+  // ===================================================
+  // ONLINE USER LIST
+  // ===================================================
+
+  const onlineUserList = useMemo(() => {
+    return users.filter((user) => {
+      const userId = normalizeId(
+        getUserId(user),
+      );
+
+      if (!userId) {
+        return false;
+      }
+
+      // Không hiển thị chính mình
+      if (userId === currentUserId) {
+        return false;
+      }
+
+      // Chỉ online
+      if (!onlineUsers.includes(userId)) {
+        return false;
+      }
+
+      // Search
+      if (!keyword) {
+        return true;
+      }
+
+      const username =
+        user.username?.toLowerCase() || "";
+
+      const fullName =
+        user.fullName?.toLowerCase() || "";
+
+      const email =
+        user.email?.toLowerCase() || "";
+
+      return (
+        username.includes(keyword) ||
+        fullName.includes(keyword) ||
+        email.includes(keyword)
+      );
+    });
+  }, [
+    users,
+    onlineUsers,
+    currentUserId,
+    keyword,
+  ]);
+
+  // ===================================================
+  // FILTER CONVERSATIONS
   // ===================================================
 
   const filteredConversations = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-
     if (!keyword) {
       return conversations;
     }
 
-    return conversations.filter((conversation) => {
-      const user = getOtherParticipant(conversation);
+    return conversations.filter(
+      (conversation) => {
+        const user =
+          getOtherParticipant(
+            conversation,
+          );
 
-      if (!user) return false;
+        if (!user) {
+          return false;
+        }
 
-      return (
-        user.username?.toLowerCase().includes(keyword) ||
-        user.email?.toLowerCase().includes(keyword)
+        const username =
+          user.username?.toLowerCase() || "";
+
+        const fullName =
+          user.fullName?.toLowerCase() || "";
+
+        const email =
+          user.email?.toLowerCase() || "";
+
+        return (
+          username.includes(keyword) ||
+          fullName.includes(keyword) ||
+          email.includes(keyword)
+        );
+      },
+    );
+  }, [
+    conversations,
+    keyword,
+    getOtherParticipant,
+  ]);
+
+  // ===================================================
+  // FIND CONVERSATION
+  // ===================================================
+
+  const findConversationWithUser =
+    useCallback(
+      (userId) => {
+        const targetId =
+          normalizeId(userId);
+
+        if (!targetId) {
+          return null;
+        }
+
+        return (
+          conversations.find(
+            (conversation) => {
+              const user =
+                getOtherParticipant(
+                  conversation,
+                );
+
+              return (
+                normalizeId(
+                  getUserId(user),
+                ) === targetId
+              );
+            },
+          ) || null
+        );
+      },
+      [
+        conversations,
+        getOtherParticipant,
+      ],
+    );
+
+  // ===================================================
+  // START CHAT
+  // ===================================================
+
+  const handleStartChat = async (user) => {
+    const userId = getUserId(user);
+
+    if (!userId) {
+      antMessage.error(
+        "Không xác định được người dùng",
       );
-    });
-  }, [conversations, search, currentUserId]);
 
-  // ===================================================
-  // SELECT
-  // ===================================================
-
-  const handleSelectConversation = (conversationId) => {
-    if (
-      String(conversationId) ===
-      String(selectedConversationId)
-    ) {
-      setMobileChat(true);
       return;
     }
 
-    setSelectedConversationId(conversationId);
+    // ===============================================
+    // EXISTING
+    // ===============================================
+
+    const existingConversation =
+      findConversationWithUser(userId);
+
+    if (existingConversation) {
+      setSelectedConversationId(
+        existingConversation._id,
+      );
+
+      setInput("");
+
+      setMobileChat(true);
+
+      return;
+    }
+
+    // ===============================================
+    // CREATE
+    // ===============================================
+
+    try {
+      const response = await api.post(
+        "/conversations",
+        {
+          userId,
+        },
+      );
+
+      const conversation =
+        response?.data?.data;
+
+      if (!conversation?._id) {
+        antMessage.error(
+          "Không thể tạo cuộc trò chuyện",
+        );
+
+        return;
+      }
+
+      setConversations((prev) => {
+        const exists = prev.some(
+          (item) =>
+            normalizeId(item._id) ===
+            normalizeId(
+              conversation._id,
+            ),
+        );
+
+        if (exists) {
+          return prev;
+        }
+
+        return [
+          conversation,
+          ...prev,
+        ];
+      });
+
+      setSelectedConversationId(
+        conversation._id,
+      );
+
+      setInput("");
+
+      setMobileChat(true);
+    } catch (error) {
+      console.error(
+        "Start chat error:",
+        error,
+      );
+
+      antMessage.error(
+        error?.response?.data?.message ||
+          "Không thể bắt đầu cuộc trò chuyện",
+      );
+    }
+  };
+
+  // ===================================================
+  // SELECT CONVERSATION
+  // ===================================================
+
+  const handleSelectConversation = (
+    conversationId,
+  ) => {
+    setSelectedConversationId(
+      conversationId,
+    );
+
     setInput("");
+
     setMobileChat(true);
   };
 
   // ===================================================
-  // SEND
+  // SEND MESSAGE
   // ===================================================
 
   const handleSendMessage = () => {
     const content = input.trim();
 
-    if (!content) return;
+    if (!content) {
+      return;
+    }
 
     if (!selectedConversationId) {
       antMessage.warning(
         "Vui lòng chọn cuộc trò chuyện",
       );
+
       return;
     }
 
     const socket = getSocket();
 
-    if (!socket || !socket.connected) {
-      antMessage.error("Socket chưa kết nối");
+    if (!socket) {
+      antMessage.error(
+        "Không tìm thấy socket",
+      );
+
+      return;
+    }
+
+    if (!socket.connected) {
+      antMessage.error(
+        "Socket chưa kết nối",
+      );
+
       return;
     }
 
@@ -482,25 +1268,43 @@ export default function ChatPage() {
       antMessage.error(
         "Không xác định được người dùng",
       );
+
       return;
     }
 
-    const clientMessageId = `${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2, 10)}`;
+    // ===============================================
+    // CLIENT MESSAGE ID
+    // ===============================================
+
+    const clientMessageId =
+      `${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 10)}`;
+
+    // ===============================================
+    // SEND
+    // ===============================================
 
     socket.emit("message:send", {
-      conversationId: selectedConversationId,
+      conversationId:
+        selectedConversationId,
+
       senderId: currentUserId,
+
       content,
+
       clientMessageId,
     });
+
+    // ===============================================
+    // CLEAR
+    // ===============================================
 
     setInput("");
   };
 
   // ===================================================
-  // ENTER
+  // ENTER SEND
   // ===================================================
 
   const handleKeyDown = (event) => {
@@ -515,20 +1319,50 @@ export default function ChatPage() {
   };
 
   // ===================================================
-  // BACK
+  // MOBILE BACK
   // ===================================================
 
   const handleBack = () => {
     const socket = getSocket();
 
-    if (socket && selectedConversationId) {
+    if (
+      socket &&
+      selectedConversationId &&
+      socket.connected
+    ) {
       socket.emit("conversation:leave", {
-        conversationId: selectedConversationId,
+        conversationId:
+          selectedConversationId,
       });
     }
 
     setMobileChat(false);
   };
+
+  // ===================================================
+  // AUTO SCROLL
+  // ===================================================
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const container =
+        messagesContainerRef.current;
+
+      if (!container) {
+        return;
+      }
+
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+    }, 80);
+
+    return () => clearTimeout(timer);
+  }, [
+    messages,
+    loadingMessages,
+  ]);
 
   // ===================================================
   // LOADING
@@ -543,12 +1377,12 @@ export default function ChatPage() {
   }
 
   // ===================================================
-  // UI
+  // RENDER
   // ===================================================
 
   return (
     <div
-      className={`
+      className="
         flex
         h-full
         min-h-0
@@ -558,9 +1392,21 @@ export default function ChatPage() {
         bg-white
         pb-[78px]
         lg:pb-0
-      `}
+      "
     >
-      <div className="flex h-full min-h-0 min-w-0 w-full overflow-hidden bg-white lg:border lg:border-gray-200">
+      <div
+        className="
+          flex
+          h-full
+          min-h-0
+          min-w-0
+          w-full
+          overflow-hidden
+          bg-white
+          lg:border
+          lg:border-gray-200
+        "
+      >
         {/* ================================================= */}
         {/* SIDEBAR */}
         {/* ================================================= */}
@@ -581,60 +1427,187 @@ export default function ChatPage() {
             ${mobileChat ? "hidden lg:flex" : "flex"}
           `}
         >
-          {/* SIDEBAR HEADER */}
+          {/* ================================================= */}
+          {/* HEADER */}
+          {/* ================================================= */}
 
           <div className="shrink-0 px-4 pb-3 pt-5">
             <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <h1 className="m-0 text-[22px] font-bold tracking-tight text-gray-900">
-                  {currentUser?.username || "Tin nhắn"}
+                  Tin nhắn
                 </h1>
 
-                <span
-                  className={`
-                    h-2
-                    w-2
-                    rounded-full
-                    ${
-                      socketConnected
-                        ? "bg-green-500"
-                        : "bg-gray-300"
-                    }
-                  `}
+                <Tooltip
                   title={
                     socketConnected
-                      ? "Đã kết nối"
-                      : "Mất kết nối"
+                      ? "Realtime đang kết nối"
+                      : "Realtime đang mất kết nối"
                   }
-                />
+                >
+                  <span
+                    className={`
+                      h-2
+                      w-2
+                      rounded-full
+                      ${
+                        socketConnected
+                          ? "bg-green-500"
+                          : "bg-gray-300"
+                      }
+                    `}
+                  />
+                </Tooltip>
               </div>
 
               <Avatar
-                size={32}
+                size={34}
                 src={currentUser?.avatar}
               >
-                {currentUser?.username
-                  ?.charAt(0)
-                  ?.toUpperCase()}
+                {getInitial(currentUser)}
               </Avatar>
             </div>
+
+            {/* SEARCH */}
 
             <Input
               prefix={
                 <SearchOutlined className="text-gray-400" />
               }
-              placeholder="Tìm kiếm"
+              placeholder="Tìm kiếm người hoặc cuộc trò chuyện"
               value={search}
-              onChange={(e) =>
-                setSearch(e.target.value)
+              onChange={(event) =>
+                setSearch(event.target.value)
               }
               allowClear
               variant="filled"
-              className="h-9 !rounded-xl !bg-[#efefef] text-sm [&_.ant-input]:!bg-transparent [&.ant-input-affix-wrapper]:!border-0 [&.ant-input-affix-wrapper]:!shadow-none"
+              className="
+                h-9
+                !rounded-xl
+                !bg-[#efefef]
+                text-sm
+                [&_.ant-input]:!bg-transparent
+                [&.ant-input-affix-wrapper]:!border-0
+                [&.ant-input-affix-wrapper]:!shadow-none
+              "
             />
           </div>
 
-          {/* LIST */}
+          {/* ================================================= */}
+          {/* ONLINE USERS */}
+          {/* ================================================= */}
+
+          <div className="shrink-0 border-b border-gray-100 px-4 pb-3">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Đang hoạt động
+                </span>
+
+                <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              </div>
+
+              <span className="text-xs text-gray-400">
+                {onlineUserList.length}
+              </span>
+            </div>
+
+            {loadingUsers ? (
+              <div className="flex h-[70px] items-center justify-center">
+                <Spin size="small" />
+              </div>
+            ) : onlineUserList.length === 0 ? (
+              <div className="py-3 text-center text-xs text-gray-400">
+                Không có ai đang online
+              </div>
+            ) : (
+              <div
+                className="
+                  flex
+                  gap-4
+                  overflow-x-auto
+                  pb-1
+                  scrollbar-thin
+                "
+              >
+                {onlineUserList.map((user) => {
+                  const userId =
+                    getUserId(user);
+
+                  return (
+                    <button
+                      key={userId}
+                      type="button"
+                      onClick={() =>
+                        handleStartChat(user)
+                      }
+                      className="
+                        group
+                        flex
+                        w-[58px]
+                        shrink-0
+                        flex-col
+                        items-center
+                        border-0
+                        bg-transparent
+                        p-0
+                      "
+                    >
+                      <div className="relative">
+                        <Avatar
+                          size={52}
+                          src={user.avatar}
+                        >
+                          {getInitial(user)}
+                        </Avatar>
+
+                        <span
+                          className="
+                            absolute
+                            bottom-0
+                            right-0
+                            h-3.5
+                            w-3.5
+                            rounded-full
+                            border-[2.5px]
+                            border-white
+                            bg-green-500
+                          "
+                        />
+                      </div>
+
+                      <span
+                        className="
+                          mt-1
+                          w-full
+                          truncate
+                          text-center
+                          text-[11px]
+                          text-gray-700
+                        "
+                      >
+                        {getUserName(user)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* ================================================= */}
+          {/* CONVERSATIONS TITLE */}
+          {/* ================================================= */}
+
+          <div className="shrink-0 px-4 pb-1 pt-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Đoạn chat
+            </span>
+          </div>
+
+          {/* ================================================= */}
+          {/* CONVERSATION LIST */}
+          {/* ================================================= */}
 
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2">
             {filteredConversations.length === 0 ? (
@@ -644,8 +1617,8 @@ export default function ChatPage() {
                     Empty.PRESENTED_IMAGE_SIMPLE
                   }
                   description={
-                    search
-                      ? "Không tìm thấy người dùng"
+                    keyword
+                      ? "Không tìm thấy cuộc trò chuyện"
                       : "Chưa có cuộc trò chuyện"
                   }
                 />
@@ -658,13 +1631,23 @@ export default function ChatPage() {
                       conversation,
                     );
 
-                  if (!user) return null;
+                  if (!user) {
+                    return null;
+                  }
+
+                  const userId =
+                    getUserId(user);
 
                   const active =
-                    String(conversation._id) ===
-                    String(
+                    normalizeId(
+                      conversation._id,
+                    ) ===
+                    normalizeId(
                       selectedConversationId,
                     );
+
+                  const online =
+                    isUserOnline(userId);
 
                   const lastMessage =
                     conversation.lastMessage;
@@ -688,7 +1671,6 @@ export default function ChatPage() {
                         py-2.5
                         text-left
                         transition
-                        duration-100
 
                         ${
                           active
@@ -697,42 +1679,53 @@ export default function ChatPage() {
                         }
                       `}
                     >
+                      {/* AVATAR */}
+
                       <div className="relative shrink-0">
                         <Avatar
                           size={56}
                           src={user.avatar}
                         >
-                          {user.username
-                            ?.charAt(0)
-                            ?.toUpperCase()}
+                          {getInitial(user)}
                         </Avatar>
 
-                        {user.status ===
-                          "active" && (
-                          <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-[2.5px] border-white bg-green-500" />
+                        {online && (
+                          <span
+                            className="
+                              absolute
+                              bottom-0
+                              right-0
+                              h-3.5
+                              w-3.5
+                              rounded-full
+                              border-[2.5px]
+                              border-white
+                              bg-green-500
+                            "
+                          />
                         )}
                       </div>
+
+                      {/* INFO */}
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate text-sm font-medium text-gray-900">
-                            {user.username}
+                            {getUserName(user)}
                           </span>
+
+                          {lastMessage?.createdAt && (
+                            <span className="shrink-0 text-[10px] text-gray-400">
+                              {formatConversationTime(
+                                lastMessage.createdAt,
+                              )}
+                            </span>
+                          )}
                         </div>
 
                         <p className="m-0 mt-0.5 truncate text-[13px] text-gray-500">
-                          {lastMessage?.content
-                            ? lastMessage.content
-                            : "Chưa có tin nhắn"}
-
-                          {lastMessage?.createdAt && (
-                            <span className="text-gray-400">
-                              {" · " +
-                                formatConversationTime(
-                                  lastMessage.createdAt,
-                                )}
-                            </span>
-                          )}
+                          {lastMessage?.content ||
+                            "Chưa có tin nhắn"}
                         </p>
                       </div>
                     </button>
@@ -744,7 +1737,7 @@ export default function ChatPage() {
         </aside>
 
         {/* ================================================= */}
-        {/* CHAT */}
+        {/* CHAT AREA */}
         {/* ================================================= */}
 
         <main
@@ -766,9 +1759,24 @@ export default function ChatPage() {
             }
           `}
         >
+          {/* ================================================= */}
+          {/* EMPTY */}
+          {/* ================================================= */}
+
           {!selectedConversation ? (
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-gray-900">
+              <div
+                className="
+                  flex
+                  h-24
+                  w-24
+                  items-center
+                  justify-center
+                  rounded-full
+                  border-2
+                  border-gray-900
+                "
+              >
                 <SendOutlinedMirrored />
               </div>
 
@@ -777,7 +1785,7 @@ export default function ChatPage() {
               </p>
 
               <p className="m-0 text-sm text-gray-500">
-                Chọn một cuộc trò chuyện để bắt đầu
+                Chọn một người đang online hoặc một cuộc trò chuyện
               </p>
             </div>
           ) : (
@@ -786,44 +1794,86 @@ export default function ChatPage() {
               {/* CHAT HEADER */}
               {/* ================================================= */}
 
-              <header className="z-10 flex h-[64px] shrink-0 items-center justify-between border-b border-gray-200 bg-white px-2 sm:px-5">
+              <header
+                className="
+                  z-10
+                  flex
+                  h-[64px]
+                  shrink-0
+                  items-center
+                  justify-between
+                  border-b
+                  border-gray-200
+                  bg-white
+                  px-2
+                  sm:px-5
+                "
+              >
                 <div className="flex min-w-0 items-center gap-1.5 sm:gap-2.5">
+                  {/* MOBILE BACK */}
+
                   <Button
                     type="text"
-                    icon={<ArrowLeftOutlined />}
+                    icon={
+                      <ArrowLeftOutlined />
+                    }
                     className="lg:hidden"
                     onClick={handleBack}
                   />
+
+                  {/* AVATAR */}
 
                   <div className="relative shrink-0">
                     <Avatar
                       size={38}
                       src={otherUser?.avatar}
                     >
-                      {otherUser?.username
-                        ?.charAt(0)
-                        ?.toUpperCase()}
+                      {getInitial(otherUser)}
                     </Avatar>
 
-                    {otherUser?.status ===
-                      "active" && (
-                      <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-green-500" />
+                    {isUserOnline(
+                      getUserId(otherUser),
+                    ) && (
+                      <span
+                        className="
+                          absolute
+                          bottom-0
+                          right-0
+                          h-2.5
+                          w-2.5
+                          rounded-full
+                          border-2
+                          border-white
+                          bg-green-500
+                        "
+                      />
                     )}
                   </div>
 
+                  {/* INFO */}
+
                   <div className="min-w-0">
-                    <h2 className="m-0 max-w-[130px] truncate text-sm font-semibold text-gray-900 sm:max-w-none">
-                      {otherUser?.username}
+                    <h2 className="m-0 max-w-[150px] truncate text-sm font-semibold text-gray-900 sm:max-w-none">
+                      {getUserName(otherUser)}
                     </h2>
 
-                    <p className="m-0 text-[11px] text-gray-400">
-                      {otherUser?.status ===
-                      "active"
-                        ? "Đang hoạt động"
-                        : "Ngoại tuyến"}
+                    <p className="m-0 text-[11px]">
+                      {isUserOnline(
+                        getUserId(otherUser),
+                      ) ? (
+                        <span className="text-green-500">
+                          Đang hoạt động
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">
+                          Ngoại tuyến
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
+
+                {/* ACTIONS */}
 
                 <div className="flex shrink-0 items-center gap-0">
                   <Tooltip title="Gọi thoại">
@@ -880,67 +1930,96 @@ export default function ChatPage() {
                   sm:px-6
                 "
               >
-                <div className="mx-auto flex w-full min-w-0 max-w-4xl flex-col gap-0.5">
+                <div
+                  className="
+                    mx-auto
+                    flex
+                    w-full
+                    min-w-0
+                    max-w-4xl
+                    flex-col
+                  "
+                >
                   {loadingMessages ? (
                     <div className="flex min-h-[300px] items-center justify-center">
                       <Spin />
                     </div>
                   ) : messages.length === 0 ? (
-                    <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 px-4 text-center">
+                    <div
+                      className="
+                        flex
+                        min-h-[400px]
+                        flex-col
+                        items-center
+                        justify-center
+                        gap-3
+                        px-4
+                        text-center
+                      "
+                    >
                       <Avatar
                         size={80}
                         src={otherUser?.avatar}
                       >
-                        {otherUser?.username
-                          ?.charAt(0)
-                          ?.toUpperCase()}
+                        {getInitial(otherUser)}
                       </Avatar>
 
                       <p className="m-0 text-base font-semibold text-gray-900">
-                        {otherUser?.username}
+                        {getUserName(otherUser)}
                       </p>
 
                       <p className="m-0 text-sm text-gray-400">
-                        Chưa có tin nhắn. Hãy bắt đầu
-                        cuộc trò chuyện.
+                        Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện.
                       </p>
                     </div>
                   ) : (
                     <>
+                      {/* DATE */}
+
                       <div className="my-3 text-center">
                         <span className="text-[12px] font-medium text-gray-400">
                           Hôm nay
                         </span>
                       </div>
 
+                      {/* MESSAGE LIST */}
+
                       {messages.map(
                         (item, index) => {
                           const senderId =
-                            item.senderId?._id ||
-                            item.senderId;
+                            getSenderId(item);
 
                           const isMe =
-                            String(senderId) ===
-                            String(currentUserId);
+                            normalizeId(
+                              senderId,
+                            ) ===
+                            currentUserId;
 
                           const prevItem =
-                            messages[index - 1];
+                            messages[
+                              index - 1
+                            ];
 
                           const prevSenderId =
-                            prevItem?.senderId?._id ||
-                            prevItem?.senderId;
+                            getSenderId(
+                              prevItem,
+                            );
 
-                          const isSameSenderAsPrev =
+                          const sameSender =
                             prevItem &&
-                            String(
+                            normalizeId(
                               prevSenderId,
-                            ) === String(senderId);
+                            ) ===
+                              normalizeId(
+                                senderId,
+                              );
 
                           return (
                             <div
                               key={
                                 item._id ||
-                                item.clientMessageId
+                                item.clientMessageId ||
+                                `${senderId}-${index}`
                               }
                               className={`
                                 flex
@@ -949,7 +2028,7 @@ export default function ChatPage() {
                                 items-end
                                 gap-2
                                 ${
-                                  isSameSenderAsPrev
+                                  sameSender
                                     ? "mt-0.5"
                                     : "mt-3"
                                 }
@@ -960,35 +2039,39 @@ export default function ChatPage() {
                                 }
                               `}
                             >
+                              {/* OTHER AVATAR */}
+
                               {!isMe && (
                                 <div className="w-6 shrink-0">
-                                  {!isSameSenderAsPrev && (
+                                  {!sameSender && (
                                     <Avatar
                                       size={24}
                                       src={
-                                        item.senderId
+                                        item
+                                          .senderId
                                           ?.avatar ||
                                         otherUser?.avatar
                                       }
                                     >
-                                      {item
-                                        .senderId
-                                        ?.username
-                                        ?.charAt(0)
-                                        ?.toUpperCase()}
+                                      {getInitial(
+                                        item.senderId ||
+                                          otherUser,
+                                      )}
                                     </Avatar>
                                   )}
                                 </div>
                               )}
 
+                              {/* MESSAGE */}
+
                               <div
                                 className={`
                                   group
+                                  flex
                                   min-w-0
                                   max-w-[78%]
-                                  sm:max-w-[65%]
-                                  flex
                                   flex-col
+                                  sm:max-w-[65%]
                                   ${
                                     isMe
                                       ? "items-end"
@@ -1000,15 +2083,16 @@ export default function ChatPage() {
                                   className={`
                                     min-w-0
                                     max-w-full
+                                    whitespace-pre-wrap
                                     break-words
                                     break-all
-                                    whitespace-pre-wrap
                                     overflow-hidden
                                     rounded-[20px]
                                     px-3.5
                                     py-2
                                     text-sm
                                     leading-5
+
                                     ${
                                       isMe
                                         ? "bg-gradient-to-br from-[#4776E6] to-[#8E54E9] text-white"
@@ -1019,7 +2103,20 @@ export default function ChatPage() {
                                   {item.content}
                                 </div>
 
-                                <div className="mt-0.5 hidden items-center gap-1 px-1 text-[10px] text-gray-400 group-hover:flex">
+                                {/* TIME */}
+
+                                <div
+                                  className="
+                                    mt-0.5
+                                    hidden
+                                    items-center
+                                    gap-1
+                                    px-1
+                                    text-[10px]
+                                    text-gray-400
+                                    group-hover:flex
+                                  "
+                                >
                                   <span>
                                     {formatTime(
                                       item.createdAt,
@@ -1056,7 +2153,22 @@ export default function ChatPage() {
                 "
               >
                 <div className="mx-auto w-full min-w-0 max-w-4xl">
-                  <div className="flex min-w-0 items-center gap-1.5 rounded-full border border-gray-300 bg-white px-2 py-1.5">
+                  <div
+                    className="
+                      flex
+                      min-w-0
+                      items-center
+                      gap-1.5
+                      rounded-full
+                      border
+                      border-gray-300
+                      bg-white
+                      px-2
+                      py-1.5
+                    "
+                  >
+                    {/* EMOJI */}
+
                     <Tooltip title="Emoji">
                       <Button
                         type="text"
@@ -1068,20 +2180,34 @@ export default function ChatPage() {
                       />
                     </Tooltip>
 
+                    {/* INPUT */}
+
                     <Input.TextArea
                       value={input}
-                      onChange={(e) =>
-                        setInput(e.target.value)
+                      onChange={(event) =>
+                        setInput(
+                          event.target.value,
+                        )
                       }
-                      onKeyDown={handleKeyDown}
+                      onKeyDown={
+                        handleKeyDown
+                      }
                       autoSize={{
                         minRows: 1,
                         maxRows: 5,
                       }}
                       placeholder="Nhắn tin..."
                       variant="borderless"
-                      className="!min-w-0 !resize-none !px-1 !py-1 text-sm"
+                      className="
+                        !min-w-0
+                        !resize-none
+                        !px-1
+                        !py-1
+                        text-sm
+                      "
                     />
+
+                    {/* FILE */}
 
                     <Tooltip title="Ảnh / File">
                       <Button
@@ -1094,6 +2220,8 @@ export default function ChatPage() {
                       />
                     </Tooltip>
 
+                    {/* SEND */}
+
                     {input.trim() ? (
                       <Button
                         type="text"
@@ -1103,7 +2231,13 @@ export default function ChatPage() {
                         disabled={
                           !socketConnected
                         }
-                        className="shrink-0 !px-2 !font-semibold !text-[#3797f0] disabled:!text-gray-300"
+                        className="
+                          shrink-0
+                          !px-2
+                          !font-semibold
+                          !text-[#3797f0]
+                          disabled:!text-gray-300
+                        "
                       >
                         Gửi
                       </Button>
@@ -1158,7 +2292,13 @@ function SendOutlinedMirrored() {
       strokeWidth="1.5"
       className="text-gray-900"
     >
-      <line x1="22" y1="2" x2="11" y2="13" />
+      <line
+        x1="22"
+        y1="2"
+        x2="11"
+        y2="13"
+      />
+
       <polygon points="22 2 15 22 11 13 2 9 22 2" />
     </svg>
   );

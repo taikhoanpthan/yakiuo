@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 
 import {
   Avatar,
@@ -30,13 +29,23 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 
+import { useLocation, useNavigate } from "react-router-dom";
+
 import { motion } from "framer-motion";
+
 import dayjs from "dayjs";
 
 import { useAuth } from "../../store/AuthContext";
+
 import { getNotifications } from "../../services/notificationService";
 
+import { onOnlineUsers } from "../../services/socket";
+
 const { Content, Header, Sider } = AntLayout;
+
+// =====================================================
+// LAYOUT
+// =====================================================
 
 const Layout = ({ children }) => {
   const navigate = useNavigate();
@@ -44,33 +53,49 @@ const Layout = ({ children }) => {
 
   const { logout, user } = useAuth();
 
-  // =====================================================
+  // ===================================================
   // STATE
-  // =====================================================
+  // ===================================================
 
   const [collapsed, setCollapsed] = useState(false);
+
   const [isMobile, setIsMobile] = useState(false);
 
   const [notifications, setNotifications] = useState([]);
+
   const [notificationLoading, setNotificationLoading] = useState(false);
 
-  // =====================================================
-  // ROUTE STATE
-  // =====================================================
+  // ===================================================
+  // REALTIME ONLINE COUNT
+  //
+  // QUAN TRỌNG:
+  //
+  // Không lấy User.length
+  // Không gọi API users
+  // Không tự cộng/trừ
+  //
+  // Server Socket.IO là source of truth.
+  // ===================================================
 
-  const isChatPage =
-    location.pathname === "/chat" || location.pathname.startsWith("/chat/");
+  const [onlineCount, setOnlineCount] = useState(0);
 
-  // =====================================================
+  // ===================================================
   // NOTIFICATION
-  // =====================================================
+  // ===================================================
 
   const [notificationApi, notificationContextHolder] =
     notification.useNotification();
 
-  // =====================================================
+  // ===================================================
+  // CHAT PAGE
+  // ===================================================
+
+  const isChatPage =
+    location.pathname === "/chat" || location.pathname.startsWith("/chat/");
+
+  // ===================================================
   // MENU
-  // =====================================================
+  // ===================================================
 
   const menuItems = useMemo(() => {
     const items = [
@@ -80,18 +105,21 @@ const Layout = ({ children }) => {
         shortLabel: "Trang chủ",
         icon: <AppstoreOutlined />,
       },
+
       {
         key: "/feedback",
         label: "Feedback",
         shortLabel: "Feedback",
         icon: <CommentOutlined />,
       },
+
       {
         key: "/chat",
         label: "Tin nhắn",
         shortLabel: "Tin nhắn",
         icon: <MessageOutlined />,
       },
+
       {
         key: "/todos",
         label: "Todo List",
@@ -100,13 +128,13 @@ const Layout = ({ children }) => {
       },
     ];
 
+    // ADMIN
     if (user?.role === "admin") {
       items.splice(1, 0, {
         key: "/users",
         label: "Nhân viên",
         shortLabel: "Nhân viên",
         icon: <TeamOutlined />,
-        adminOnly: true,
       });
 
       items.push({
@@ -114,33 +142,31 @@ const Layout = ({ children }) => {
         label: "Thông báo",
         shortLabel: "Thông báo",
         icon: <BellOutlined />,
-        adminOnly: true,
       });
     }
 
     return items;
   }, [user?.role]);
 
-  // =====================================================
+  // ===================================================
   // MOBILE MENU
-  // =====================================================
+  // ===================================================
 
   const mobileMenuItems = useMemo(() => {
-    const items = ["/dashboard", "/feedback", "/chat", "/todos"];
+    const keys = ["/dashboard", "/feedback", "/chat", "/todos"];
 
-    // Admin có thêm Thông báo
     if (user?.role === "admin") {
-      items.push("/notifications");
+      keys.push("/notifications");
     }
 
-    return items
+    return keys
       .map((key) => menuItems.find((item) => item.key === key))
       .filter(Boolean);
   }, [menuItems, user?.role]);
 
-  // =====================================================
+  // ===================================================
   // NAVIGATION
-  // =====================================================
+  // ===================================================
 
   const handleNavigate = useCallback(
     (path) => {
@@ -149,13 +175,17 @@ const Layout = ({ children }) => {
     [navigate],
   );
 
-  // =====================================================
+  // ===================================================
   // LOGOUT
-  // =====================================================
+  // ===================================================
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
+      console.log("🚪 LOGOUT USER:", user?._id);
+
       await logout();
+
+      setOnlineCount(0);
 
       message.success("Bạn đã đăng xuất an toàn");
 
@@ -163,15 +193,61 @@ const Layout = ({ children }) => {
         replace: true,
       });
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("❌ Logout error:", error);
 
       message.error("Đăng xuất thất bại");
     }
-  };
+  }, [logout, navigate, user?._id]);
 
-  // =====================================================
+  // ===================================================
+  // REALTIME PRESENCE
+  //
+  // Layout chịu trách nhiệm:
+  //
+  // USER LOGIN
+  //      ↓
+  // setSocketUser(user._id)
+  //      ↓
+  // Socket.IO
+  //      ↓
+  // user:join
+  //
+  // Server trả:
+  //
+  // users:online
+  //
+  // Layout chỉ nghe event.
+  //
+  // KHÔNG QUERY DATABASE.
+  // KHÔNG POLLING.
+  // ===================================================
+  useEffect(() => {
+    if (!user?._id) {
+      setOnlineCount(0);
+      return;
+    }
+
+    console.log("👂 LISTEN REALTIME PRESENCE FOR:", user._id);
+
+    const unsubscribeUsers = onOnlineUsers((payload) => {
+      console.log("👥 REALTIME ONLINE USERS:", payload);
+
+      const userIds = Array.isArray(payload?.userIds) ? payload.userIds : [];
+
+      const count = Number(payload?.count ?? userIds.length);
+
+      setOnlineCount(Number.isFinite(count) ? count : userIds.length);
+    });
+
+    return () => {
+      console.log("👋 STOP LISTENING PRESENCE:", user._id);
+
+      unsubscribeUsers();
+    };
+  }, [user?._id]);
+  // ===================================================
   // NOTIFICATION POPUP
-  // =====================================================
+  // ===================================================
 
   const showNotificationPopup = useCallback(
     (notificationItem) => {
@@ -190,7 +266,6 @@ const Layout = ({ children }) => {
               display: "flex",
               alignItems: "center",
               gap: 10,
-              paddingRight: 24,
             }}
           >
             <div
@@ -203,7 +278,6 @@ const Layout = ({ children }) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 6px 16px rgba(57, 119, 246, 0.25)",
               }}
             >
               <BellOutlined
@@ -228,7 +302,6 @@ const Layout = ({ children }) => {
                   fontWeight: 600,
                   color: "#3977f6",
                   textTransform: "uppercase",
-                  letterSpacing: "0.5px",
                 }}
               >
                 Thông báo mới
@@ -239,7 +312,6 @@ const Layout = ({ children }) => {
                   fontSize: 15,
                   fontWeight: 700,
                   color: "#172033",
-                  lineHeight: 1.3,
                 }}
               >
                 {title}
@@ -253,7 +325,6 @@ const Layout = ({ children }) => {
             style={{
               marginTop: 10,
               marginLeft: 48,
-              marginRight: 4,
               color: "#667085",
               fontSize: 13,
               lineHeight: 1.6,
@@ -265,13 +336,13 @@ const Layout = ({ children }) => {
         ),
 
         placement: "topRight",
+
         duration: 5,
 
         closeIcon: (
           <span
             style={{
               color: "#98A2B3",
-              fontSize: 14,
             }}
           >
             ×
@@ -281,44 +352,20 @@ const Layout = ({ children }) => {
         style: {
           width: 380,
           maxWidth: "calc(100vw - 24px)",
-          padding: "16px",
+          padding: 16,
           borderRadius: 18,
           background: "#fff",
           border: "1px solid #E9EEF7",
-          boxShadow:
-            "0 18px 45px rgba(16, 24, 40, 0.14), 0 4px 12px rgba(16, 24, 40, 0.06)",
+          boxShadow: "0 18px 45px rgba(16,24,40,.14)",
         },
-
-        btn: (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginTop: 8,
-            }}
-          >
-            <Button
-              type="text"
-              size="small"
-              onClick={() => notificationApi.destroy()}
-              style={{
-                color: "#667085",
-                fontWeight: 500,
-                borderRadius: 8,
-              }}
-            >
-              Đóng
-            </Button>
-          </div>
-        ),
       });
     },
     [notificationApi],
   );
 
-  // =====================================================
+  // ===================================================
   // LOAD NOTIFICATIONS
-  // =====================================================
+  // ===================================================
 
   const loadNotifications = useCallback(
     async (showPopup = false) => {
@@ -343,37 +390,32 @@ const Layout = ({ children }) => {
           return;
         }
 
-        let shownNotifications = [];
+        let shownIds = [];
 
         try {
-          shownNotifications = JSON.parse(
+          shownIds = JSON.parse(
             localStorage.getItem("shownNotificationIds") || "[]",
           );
 
-          if (!Array.isArray(shownNotifications)) {
-            shownNotifications = [];
+          if (!Array.isArray(shownIds)) {
+            shownIds = [];
           }
         } catch {
-          shownNotifications = [];
+          shownIds = [];
         }
 
-        if (shownNotifications.includes(latest._id)) {
+        if (shownIds.includes(latest._id)) {
           return;
         }
 
-        const updatedShownNotifications = [
-          latest._id,
-          ...shownNotifications,
-        ].slice(0, 50);
-
         localStorage.setItem(
           "shownNotificationIds",
-          JSON.stringify(updatedShownNotifications),
+          JSON.stringify([latest._id, ...shownIds].slice(0, 50)),
         );
 
         showNotificationPopup(latest);
       } catch (error) {
-        console.error("Load notifications error:", error);
+        console.error("❌ Load notifications error:", error);
 
         setNotifications([]);
       } finally {
@@ -383,13 +425,14 @@ const Layout = ({ children }) => {
     [showNotificationPopup],
   );
 
-  // =====================================================
+  // ===================================================
   // NOTIFICATION POLLING
-  // =====================================================
+  // ===================================================
 
   useEffect(() => {
-    if (!user) {
+    if (!user?._id) {
       setNotifications([]);
+
       return;
     }
 
@@ -402,11 +445,11 @@ const Layout = ({ children }) => {
     return () => {
       clearInterval(interval);
     };
-  }, [user, loadNotifications]);
+  }, [user?._id, loadNotifications]);
 
-  // =====================================================
+  // ===================================================
   // RESPONSIVE
-  // =====================================================
+  // ===================================================
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 991px)");
@@ -428,17 +471,17 @@ const Layout = ({ children }) => {
     };
   }, []);
 
-  // =====================================================
+  // ===================================================
   // NOTIFICATION DATA
-  // =====================================================
+  // ===================================================
 
   const recentNotifications = notifications.slice(0, 5);
 
   const notificationCount = notifications.length;
 
-  // =====================================================
-  // NOTIFICATION POPOVER
-  // =====================================================
+  // ===================================================
+  // NOTIFICATION CONTENT
+  // ===================================================
 
   const notificationContent = (
     <div
@@ -453,7 +496,6 @@ const Layout = ({ children }) => {
           alignItems: "center",
           paddingBottom: 12,
           borderBottom: "1px solid #f1f5f9",
-          marginBottom: 4,
         }}
       >
         <div>
@@ -474,7 +516,7 @@ const Layout = ({ children }) => {
               marginTop: 2,
             }}
           >
-            {notificationCount > 0
+            {notificationCount
               ? `${notificationCount} thông báo`
               : "Không có thông báo mới"}
           </div>
@@ -493,7 +535,7 @@ const Layout = ({ children }) => {
           style={{
             display: "flex",
             justifyContent: "center",
-            padding: "30px 0",
+            padding: 30,
           }}
         >
           <Spin size="small" />
@@ -515,7 +557,6 @@ const Layout = ({ children }) => {
           style={{
             maxHeight: 400,
             overflowY: "auto",
-            overflowX: "hidden",
           }}
         >
           {recentNotifications.map((item) => (
@@ -526,7 +567,6 @@ const Layout = ({ children }) => {
                 gap: 12,
                 padding: "12px 8px",
                 borderRadius: 8,
-                cursor: "pointer",
               }}
             >
               <div
@@ -544,7 +584,6 @@ const Layout = ({ children }) => {
                 <BellOutlined
                   style={{
                     color: "#3977f6",
-                    fontSize: 16,
                   }}
                 />
               </div>
@@ -577,7 +616,6 @@ const Layout = ({ children }) => {
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: "vertical",
                     overflow: "hidden",
-                    wordBreak: "break-word",
                   }}
                 >
                   {item.content || ""}
@@ -602,9 +640,9 @@ const Layout = ({ children }) => {
     </div>
   );
 
-  // =====================================================
+  // ===================================================
   // USER MENU
-  // =====================================================
+  // ===================================================
 
   const userMenu = [
     {
@@ -635,9 +673,9 @@ const Layout = ({ children }) => {
     },
   ];
 
-  // =====================================================
+  // ===================================================
   // SIDEBAR
-  // =====================================================
+  // ===================================================
 
   const renderNav = () => (
     <div
@@ -650,8 +688,6 @@ const Layout = ({ children }) => {
         overflow: "hidden",
       }}
     >
-      {/* BRAND */}
-
       <div
         className="erp-brand"
         style={{
@@ -663,12 +699,11 @@ const Layout = ({ children }) => {
         {!collapsed && (
           <div>
             <strong>YAKIUO</strong>
+
             <span>ERP WORKSPACE</span>
           </div>
         )}
       </div>
-
-      {/* LABEL */}
 
       {!collapsed && (
         <div
@@ -680,8 +715,6 @@ const Layout = ({ children }) => {
           Điều hướng
         </div>
       )}
-
-      {/* MENU */}
 
       <nav
         className="erp-nav"
@@ -719,8 +752,6 @@ const Layout = ({ children }) => {
         })}
       </nav>
 
-      {/* BOTTOM */}
-
       <div
         className="erp-side-bottom"
         style={{
@@ -744,18 +775,34 @@ const Layout = ({ children }) => {
     </div>
   );
 
-  // =====================================================
+  // ===================================================
   // MOBILE TASKBAR
-  // =====================================================
-
-  // =====================================================
-  // MOBILE TASKBAR — INSTAGRAM / LIQUID STYLE
-  // =====================================================
+  // ===================================================
 
   const renderMobileTaskbar = () => {
     if (!isMobile) {
       return null;
     }
+
+    const allItems = [
+      ...mobileMenuItems,
+
+      {
+        key: "/profile",
+        label: "Tôi",
+        shortLabel: "Tôi",
+
+        icon: (
+          <Avatar
+            size={24}
+            src={user?.avatar || undefined}
+            icon={!user?.avatar && <UserOutlined />}
+          >
+            {!user?.avatar && (user?.fullName?.charAt(0) || "Y").toUpperCase()}
+          </Avatar>
+        ),
+      },
+    ];
 
     return (
       <nav
@@ -767,32 +814,20 @@ const Layout = ({ children }) => {
           right: 10,
           bottom: "max(10px, env(safe-area-inset-bottom))",
           zIndex: 9999,
-
-          width: "auto",
           height: 66,
-
           display: "flex",
           alignItems: "center",
-
           padding: 5,
-
           overflow: "hidden",
-
-          background: "rgba(255,255,255,0.82)",
+          background: "rgba(255,255,255,.82)",
           backdropFilter: "blur(24px) saturate(180%)",
           WebkitBackdropFilter: "blur(24px) saturate(180%)",
-
-          border: "1px solid rgba(255,255,255,0.75)",
-
+          border: "1px solid rgba(255,255,255,.75)",
           borderRadius: 24,
-
-          boxShadow:
-            "0 10px 35px rgba(15,23,42,0.12), 0 2px 8px rgba(15,23,42,0.06)",
-
-          WebkitTapHighlightColor: "transparent",
+          boxShadow: "0 10px 35px rgba(15,23,42,.12)",
         }}
       >
-        {mobileMenuItems.map((item) => {
+        {allItems.map((item) => {
           const active =
             location.pathname === item.key ||
             location.pathname.startsWith(`${item.key}/`);
@@ -801,267 +836,81 @@ const Layout = ({ children }) => {
             <button
               key={item.key}
               type="button"
-              className={`erp-mobile-task-item ${active ? "is-active" : ""}`}
               onClick={() => handleNavigate(item.key)}
               style={{
                 position: "relative",
-
                 flex: "1 1 0",
                 minWidth: 0,
                 height: "100%",
-
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-
                 gap: 2,
-
                 border: 0,
-                outline: "none",
                 background: "transparent",
-
                 borderRadius: 19,
-
-                cursor: "pointer",
-
-                padding: "4px 2px",
-
                 color: active ? "#111827" : "#8b95a7",
-
-                WebkitTapHighlightColor: "transparent",
-
-                transition: "color 180ms ease, transform 180ms ease",
+                padding: "4px 2px",
               }}
             >
-              {/* LIQUID ACTIVE BACKGROUND */}
               {active && (
                 <motion.span
                   layoutId="mobile-nav-active"
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 32,
-                    mass: 0.7,
-                  }}
                   style={{
                     position: "absolute",
                     inset: 2,
-
                     borderRadius: 18,
-
                     background:
-                      "linear-gradient(145deg, rgba(241,245,249,0.95), rgba(226,232,240,0.72))",
-
-                    boxShadow:
-                      "inset 0 1px 0 rgba(255,255,255,0.95), 0 3px 10px rgba(15,23,42,0.06)",
-
+                      "linear-gradient(145deg, rgba(241,245,249,.95), rgba(226,232,240,.72))",
                     zIndex: 0,
                   }}
                 />
               )}
 
-              {/* ICON */}
               <motion.span
-                className="erp-mobile-task-icon"
-                animate={{
-                  scale: active ? 1.06 : 1,
-                  y: active ? -1 : 0,
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 500,
-                  damping: 25,
-                }}
                 style={{
                   position: "relative",
                   zIndex: 1,
-
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-
                   width: 28,
                   height: 28,
-
                   fontSize: 20,
-                  lineHeight: 1,
-
-                  color: "inherit",
-
-                  transition: "filter 180ms ease",
+                }}
+                animate={{
+                  scale: active ? 1.06 : 1,
                 }}
               >
                 {item.icon}
               </motion.span>
 
-              {/* LABEL */}
-              <motion.span
-                className="erp-mobile-task-label"
-                animate={{
-                  opacity: active ? 1 : 0.72,
-                  y: active ? 0 : 1,
-                }}
-                transition={{
-                  duration: 0.18,
-                }}
+              <span
                 style={{
                   position: "relative",
                   zIndex: 1,
-
-                  maxWidth: "100%",
-
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-
                   fontSize: 9,
                   fontWeight: active ? 650 : 500,
                   lineHeight: "12px",
-
-                  letterSpacing: "-0.1px",
-
-                  color: "inherit",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: "100%",
                 }}
               >
                 {item.shortLabel || item.label}
-              </motion.span>
+              </span>
             </button>
           );
         })}
-
-        {/* PROFILE */}
-        {(() => {
-          const active =
-            location.pathname === "/profile" ||
-            location.pathname.startsWith("/profile/");
-
-          return (
-            <button
-              type="button"
-              className={`erp-mobile-task-item ${active ? "is-active" : ""}`}
-              onClick={() => handleNavigate("/profile")}
-              style={{
-                position: "relative",
-
-                flex: "1 1 0",
-                minWidth: 0,
-                height: "100%",
-
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-
-                gap: 2,
-
-                border: 0,
-                outline: "none",
-                background: "transparent",
-
-                borderRadius: 19,
-
-                cursor: "pointer",
-
-                padding: "4px 2px",
-
-                color: active ? "#111827" : "#8b95a7",
-
-                WebkitTapHighlightColor: "transparent",
-              }}
-            >
-              {/* LIQUID ACTIVE */}
-              {active && (
-                <motion.span
-                  layoutId="mobile-nav-active"
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 32,
-                    mass: 0.7,
-                  }}
-                  style={{
-                    position: "absolute",
-                    inset: 2,
-
-                    borderRadius: 18,
-
-                    background:
-                      "linear-gradient(145deg, rgba(241,245,249,0.95), rgba(226,232,240,0.72))",
-
-                    boxShadow:
-                      "inset 0 1px 0 rgba(255,255,255,0.95), 0 3px 10px rgba(15,23,42,0.06)",
-
-                    zIndex: 0,
-                  }}
-                />
-              )}
-
-              {/* AVATAR */}
-              <motion.span
-                animate={{
-                  scale: active ? 1.08 : 1,
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 500,
-                  damping: 25,
-                }}
-                style={{
-                  position: "relative",
-                  zIndex: 1,
-
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-
-                  width: 28,
-                  height: 28,
-                }}
-              >
-                <Avatar
-                  size={24}
-                  src={user?.avatar || undefined}
-                  icon={!user?.avatar && <UserOutlined />}
-                  style={{
-                    border: active
-                      ? "2px solid #111827"
-                      : "2px solid rgba(148,163,184,0.35)",
-                    transition: "border 180ms ease",
-                  }}
-                >
-                  {!user?.avatar &&
-                    (user?.fullName?.charAt(0) || "Y").toUpperCase()}
-                </Avatar>
-              </motion.span>
-
-              {/* LABEL */}
-              <motion.span
-                animate={{
-                  opacity: active ? 1 : 0.72,
-                }}
-                style={{
-                  position: "relative",
-                  zIndex: 1,
-
-                  fontSize: 9,
-                  fontWeight: active ? 650 : 500,
-                  lineHeight: "12px",
-
-                  color: "inherit",
-                }}
-              >
-                Tôi
-              </motion.span>
-            </button>
-          );
-        })()}
       </nav>
     );
   };
-  // =====================================================
+
+  // ===================================================
   // RENDER
-  // =====================================================
+  // ===================================================
 
   return (
     <>
@@ -1076,9 +925,9 @@ const Layout = ({ children }) => {
           overflow: "hidden",
         }}
       >
-        {/* =================================================
-            DESKTOP SIDEBAR
-        ================================================= */}
+        {/* =============================================
+            SIDEBAR
+        ============================================= */}
 
         <Sider
           className="erp-sider"
@@ -1094,26 +943,20 @@ const Layout = ({ children }) => {
               setCollapsed(false);
             }
           }}
-          zeroWidthTriggerStyle={{
-            display: "none",
-          }}
           style={{
             height: "100dvh",
             maxHeight: "100dvh",
             overflow: "hidden",
-            flexShrink: 0,
           }}
         >
           {renderNav()}
         </Sider>
 
-        {/* MOBILE TASKBAR */}
-
         {renderMobileTaskbar()}
 
-        {/* =================================================
+        {/* =============================================
             WORKSPACE
-        ================================================= */}
+        ============================================= */}
 
         <AntLayout
           className="erp-workspace"
@@ -1125,26 +968,22 @@ const Layout = ({ children }) => {
             overflow: "hidden",
           }}
         >
-          {/* =================================================
+          {/* ===========================================
               HEADER
-          ================================================= */}
+          =========================================== */}
 
           <Header
             className="erp-header"
             style={{
               position: "relative",
               zIndex: 100,
-
               flex: "0 0 64px",
               height: 64,
               minHeight: 64,
-
               lineHeight: "64px",
               padding: 0,
             }}
           >
-            {/* LEFT */}
-
             <Space size={12}>
               <Button
                 type="text"
@@ -1173,19 +1012,75 @@ const Layout = ({ children }) => {
               </div>
             </Space>
 
-            {/* RIGHT */}
+            {/* =========================================
+                RIGHT
+            ========================================= */}
 
             <Space size={16}>
-              {/* NOTIFICATION */}
+              {/* =======================================
+                  REALTIME ONLINE
+              ======================================= */}
+
+              <Tooltip title={`${onlineCount} người đang online`}>
+                <div
+                  className="erp-online-indicator"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    height: 36,
+                    padding: "0 11px",
+                    borderRadius: 12,
+                    background: "#f0fdf4",
+                    border: "1px solid #dcfce7",
+                    color: "#166534",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 9,
+                      height: 9,
+                      minWidth: 9,
+                      borderRadius: "50%",
+                      background: onlineCount > 0 ? "#22c55e" : "#94a3b8",
+                      boxShadow:
+                        onlineCount > 0
+                          ? "0 0 0 3px rgba(34,197,94,.12)"
+                          : "none",
+                    }}
+                  />
+
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {onlineCount}
+                  </span>
+
+                  <span
+                    className="erp-online-label"
+                    style={{
+                      fontSize: 12,
+                      color: "#4b5563",
+                    }}
+                  >
+                    đang online
+                  </span>
+                </div>
+              </Tooltip>
+
+              {/* =======================================
+                  NOTIFICATION
+              ======================================= */}
 
               <Popover
                 trigger="click"
                 placement="bottomRight"
                 arrow={false}
                 content={notificationContent}
-                align={{
-                  offset: [40, 8],
-                }}
                 styles={{
                   root: {
                     maxWidth: "calc(100vw - 24px)",
@@ -1197,19 +1092,19 @@ const Layout = ({ children }) => {
                     count={notificationCount}
                     overflowCount={99}
                     size="small"
-                    offset={[-3, 5]}
                   >
                     <Button
                       type="text"
                       className="erp-menu-button"
                       icon={<BellOutlined />}
-                      aria-label="Thông báo"
                     />
                   </Badge>
                 </Tooltip>
               </Popover>
 
-              {/* USER */}
+              {/* =======================================
+                  USER
+              ======================================= */}
 
               <Dropdown
                 placement="bottomRight"
@@ -1253,9 +1148,9 @@ const Layout = ({ children }) => {
             </Space>
           </Header>
 
-          {/* =================================================
+          {/* ===========================================
               CONTENT
-          ================================================= */}
+          =========================================== */}
 
           <Content
             className={`erp-content ${isChatPage ? "erp-content-chat" : ""}`}
@@ -1263,25 +1158,9 @@ const Layout = ({ children }) => {
               flex: "1 1 auto",
               minHeight: 0,
               minWidth: 0,
-
-              /*
-               * CHAT:
-               * Không cho Content scroll.
-               * ChatPage tự quản lý scroll.
-               */
               overflowY: isChatPage ? "hidden" : "auto",
-
               overflowX: "hidden",
-
               WebkitOverflowScrolling: "touch",
-
-              /*
-               * Các page bình thường phải
-               * chừa taskbar mobile.
-               *
-               * ChatPage tự chừa taskbar
-               * nên Content không cộng thêm.
-               */
               paddingBottom:
                 isMobile && !isChatPage
                   ? "calc(82px + env(safe-area-inset-bottom))"
@@ -1301,17 +1180,10 @@ const Layout = ({ children }) => {
               }}
               transition={{
                 duration: 0.24,
-                ease: "easeOut",
               }}
               style={{
                 minWidth: 0,
 
-                /*
-                 * CHAT:
-                 * Bắt buộc wrapper phải có
-                 * chiều cao thực tế để
-                 * flex bên trong hoạt động.
-                 */
                 ...(isChatPage
                   ? {
                       height: "100%",
@@ -1322,22 +1194,17 @@ const Layout = ({ children }) => {
                     }
                   : {
                       minHeight: "100%",
-                      height: "auto",
                     }),
               }}
             >
               {children}
             </motion.main>
 
-            {/* =================================================
-                FOOTER
-            ================================================= */}
-
             {!isChatPage && (
               <footer className="erp-footer">
                 <div className="erp-footer-left">
                   <div className="erp-footer-brand">
-                    <span className="erp-footer-mark"></span>
+                    <span className="erp-footer-mark" />
 
                     <div>
                       <strong>YAKIUO ISHIKAWA</strong>

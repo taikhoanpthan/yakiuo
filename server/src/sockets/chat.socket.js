@@ -1,84 +1,553 @@
 const Conversation = require("../models/Conversation");
 const Message = require("../models/Message");
+const User = require("../models/User");
 
-// userId -> số socket đang kết nối
+// =====================================================
+// ONLINE USERS
+//
+// userId -> Set(socketId)
+//
+// Ví dụ:
+//
+// user A -> socket1, socket2
+// user B -> socket3
+//
+// => ONLINE USER = 2
+// => ONLINE SOCKET = 3
+// =====================================================
+
 const onlineUsers = new Map();
 
-const addOnlineUser = (userId) => {
-  const id = String(userId);
+// =====================================================
+// NORMALIZE ID
+// =====================================================
 
-  const count = onlineUsers.get(id) || 0;
-
-  onlineUsers.set(id, count + 1);
-
-  return count === 0;
-};
-
-const removeOnlineUser = (userId) => {
-  const id = String(userId);
-
-  const count = onlineUsers.get(id) || 0;
-
-  if (count <= 1) {
-    onlineUsers.delete(id);
-    return true;
+const normalizeId = (value) => {
+  if (!value) {
+    return null;
   }
 
-  onlineUsers.set(id, count - 1);
-
-  return false;
+  return String(value);
 };
+
+// =====================================================
+// GET ONLINE USER IDS
+// =====================================================
+
+const getOnlineUserIds = () => {
+  return Array.from(onlineUsers.keys());
+};
+
+// =====================================================
+// GET ONLINE USER COUNT
+// =====================================================
+
+const getOnlineUserCount = () => {
+  return onlineUsers.size;
+};
+
+// =====================================================
+// GET TOTAL SOCKET COUNT
+// =====================================================
+
+const getOnlineSocketCount = () => {
+  let count = 0;
+
+  for (const sockets of onlineUsers.values()) {
+    count += sockets.size;
+  }
+
+  return count;
+};
+
+// =====================================================
+// DEBUG ONLINE MAP
+// =====================================================
+
+const debugOnlineMap = () => {
+  const map = Array.from(onlineUsers.entries()).map(
+    ([userId, sockets]) => ({
+      userId,
+      socketCount: sockets.size,
+      sockets: Array.from(sockets),
+    })
+  );
+
+  console.log("=================================");
+  console.log("🗺️ CURRENT ONLINE MAP");
+  console.log(JSON.stringify(map, null, 2));
+  console.log("👥 ONLINE USERS:", onlineUsers.size);
+  console.log("🔌 ONLINE SOCKETS:", getOnlineSocketCount());
+  console.log("=================================");
+};
+
+// =====================================================
+// ADD ONLINE SOCKET
+// =====================================================
+
+const addOnlineSocket = (userId, socketId) => {
+  const id = normalizeId(userId);
+
+  if (!id || !socketId) {
+    return {
+      becameOnline: false,
+      socketCount: 0,
+    };
+  }
+
+  let sockets = onlineUsers.get(id);
+
+  // User chưa online
+  if (!sockets) {
+    sockets = new Set();
+
+    onlineUsers.set(id, sockets);
+  }
+
+  const wasOffline = sockets.size === 0;
+
+  sockets.add(socketId);
+
+  return {
+    becameOnline: wasOffline,
+    socketCount: sockets.size,
+  };
+};
+
+// =====================================================
+// REMOVE ONLINE SOCKET
+// =====================================================
+
+const removeOnlineSocket = (userId, socketId) => {
+  const id = normalizeId(userId);
+
+  if (!id || !socketId) {
+    return {
+      becameOffline: false,
+      socketCount: 0,
+      removed: false,
+    };
+  }
+
+  const sockets = onlineUsers.get(id);
+
+  if (!sockets) {
+    return {
+      becameOffline: false,
+      socketCount: 0,
+      removed: false,
+    };
+  }
+
+  // Socket không tồn tại trong Set
+  if (!sockets.has(socketId)) {
+    return {
+      becameOffline: false,
+      socketCount: sockets.size,
+      removed: false,
+    };
+  }
+
+  sockets.delete(socketId);
+
+  // User không còn socket nào
+  if (sockets.size === 0) {
+    onlineUsers.delete(id);
+
+    return {
+      becameOffline: true,
+      socketCount: 0,
+      removed: true,
+    };
+  }
+
+  return {
+    becameOffline: false,
+    socketCount: sockets.size,
+    removed: true,
+  };
+};
+
+// =====================================================
+// BUILD PRESENCE PAYLOAD
+// =====================================================
+
+const getPresencePayload = () => {
+  const userIds = getOnlineUserIds();
+
+  return {
+    userIds,
+    count: userIds.length,
+  };
+};
+
+// =====================================================
+// BROADCAST ONLINE STATE
+// =====================================================
+
+const broadcastOnlineState = (io) => {
+  const payload = getPresencePayload();
+
+  console.log("=================================");
+  console.log("📡 PRESENCE SYNC");
+  console.log("👥 ONLINE USERS:", payload.userIds);
+  console.log("👥 ONLINE COUNT:", payload.count);
+  console.log("🔌 TOTAL SOCKETS:", getOnlineSocketCount());
+  console.log("=================================");
+
+  io.emit("users:online", payload);
+
+  io.emit("online:count", {
+    count: payload.count,
+  });
+};
+
+// =====================================================
+// SEND CURRENT PRESENCE TO SOCKET
+// =====================================================
+
+const sendCurrentPresence = (socket) => {
+  const payload = getPresencePayload();
+
+  console.log(
+    "📤 SEND CURRENT PRESENCE:",
+    socket.id,
+    payload
+  );
+
+  socket.emit("users:online", payload);
+
+  socket.emit("online:count", {
+    count: payload.count,
+  });
+};
+
+// =====================================================
+// REMOVE SOCKET PRESENCE
+// =====================================================
+
+const removeSocketPresence = (io, socket, reason = "unknown") => {
+  const userId = normalizeId(socket.userId);
+  const socketId = socket.id;
+
+  // Socket chưa join user
+  if (!userId) {
+    console.log(
+      "⚪ REMOVE PRESENCE SKIPPED:",
+      socketId,
+      "→ socket chưa có user"
+    );
+
+    return false;
+  }
+
+  console.log("=================================");
+  console.log("🔴 REMOVE PRESENCE");
+  console.log("👤 USER:", userId);
+  console.log("🔌 SOCKET:", socketId);
+  console.log("📌 REASON:", reason);
+
+  const result = removeOnlineSocket(
+    userId,
+    socketId
+  );
+
+  console.log("🗑️ REMOVED:", result.removed);
+  console.log(
+    "🔌 REMAINING USER SOCKETS:",
+    result.socketCount
+  );
+
+  // Rất quan trọng:
+  // Socket này không còn thuộc user nữa
+  socket.userId = null;
+
+  // User thật sự offline
+  if (result.becameOffline) {
+    console.log(
+      "🔴 USER REALLY OFFLINE:",
+      userId
+    );
+
+    io.emit("user:offline", {
+      userId,
+      lastSeen: new Date(),
+    });
+  } else {
+    console.log(
+      "🟡 USER STILL ONLINE:",
+      userId
+    );
+  }
+
+  // Sync toàn bộ client
+  broadcastOnlineState(io);
+
+  // Debug Map
+  debugOnlineMap();
+
+  console.log("=================================");
+
+  return true;
+};
+
+// =====================================================
+// SOCKET SERVER
+// =====================================================
 
 module.exports = (io) => {
   io.on("connection", (socket) => {
-    console.log("🟢 Socket connected:", socket.id);
+    console.log("=================================");
+    console.log("🟢 SOCKET CONNECTED");
+    console.log("🔌 SOCKET:", socket.id);
+    console.log("👤 USER:", socket.userId || null);
+    console.log("👥 ONLINE USERS:", getOnlineUserCount());
+    console.log(
+      "🔌 ONLINE SOCKETS:",
+      getOnlineSocketCount()
+    );
+    console.log("=================================");
 
-    // =====================================================
-    // AUTH USER
-    // =====================================================
+    // =================================================
+    // SEND CURRENT PRESENCE
+    // =================================================
 
-    socket.on("user:join", ({ userId }) => {
-      if (!userId) {
-        return;
-      }
+    sendCurrentPresence(socket);
 
-      socket.userId = String(userId);
+    // =================================================
+    // USER JOIN
+    // =================================================
 
-      const becameOnline = addOnlineUser(userId);
+    socket.on("user:join", async (data = {}) => {
+      try {
+        const requestedUserId = normalizeId(
+          data.userId
+        );
 
-      console.log(
-        `👤 User ${userId} joined socket ${socket.id}`,
-      );
+        console.log("=================================");
+        console.log("📥 USER JOIN REQUEST");
+        console.log("🔌 SOCKET:", socket.id);
+        console.log("👤 USER:", requestedUserId);
+        console.log("👤 CURRENT SOCKET USER:", socket.userId);
+        console.log("=================================");
 
-      // Chỉ broadcast khi user thực sự chuyển
-      // offline -> online
-      if (becameOnline) {
-        io.emit("user:online", {
-          userId: String(userId),
+        // -------------------------------------------------
+        // Validate ID
+        // -------------------------------------------------
+
+        if (!requestedUserId) {
+          socket.emit("presence:error", {
+            message: "User ID không hợp lệ",
+          });
+
+          return;
+        }
+
+        // -------------------------------------------------
+        // Socket đã join đúng user
+        // -------------------------------------------------
+
+        if (socket.userId === requestedUserId) {
+          console.log(
+            "ℹ️ SOCKET ALREADY JOINED:",
+            requestedUserId,
+            socket.id
+          );
+
+          sendCurrentPresence(socket);
+
+          return;
+        }
+
+        // -------------------------------------------------
+        // Socket đang thuộc user khác
+        // -------------------------------------------------
+
+        if (socket.userId) {
+          console.log(
+            "🔄 SOCKET CHANGE USER:",
+            socket.userId,
+            "→",
+            requestedUserId
+          );
+
+          removeSocketPresence(
+            io,
+            socket,
+            "change-user"
+          );
+        }
+
+        // -------------------------------------------------
+        // Validate user DB
+        // -------------------------------------------------
+
+        const user = await User.findById(
+          requestedUserId
+        ).select(
+          "_id username role status"
+        );
+
+        if (!user) {
+          console.log(
+            "❌ USER NOT FOUND:",
+            requestedUserId
+          );
+
+          socket.emit("presence:error", {
+            message: "User không tồn tại",
+          });
+
+          return;
+        }
+
+        // -------------------------------------------------
+        // Validate status
+        // -------------------------------------------------
+
+        if (user.status !== "active") {
+          console.log(
+            "❌ USER NOT ACTIVE:",
+            requestedUserId,
+            user.status
+          );
+
+          socket.emit("presence:error", {
+            message: "Tài khoản đang bị khóa",
+          });
+
+          return;
+        }
+
+        // -------------------------------------------------
+        // Gán user vào socket
+        // -------------------------------------------------
+
+        socket.userId = requestedUserId;
+
+        // -------------------------------------------------
+        // Add socket
+        // -------------------------------------------------
+
+        const result = addOnlineSocket(
+          requestedUserId,
+          socket.id
+        );
+
+        console.log("=================================");
+        console.log("🟢 USER JOINED PRESENCE");
+        console.log("👤 USER:", requestedUserId);
+        console.log("👤 USERNAME:", user.username);
+        console.log("🔌 SOCKET:", socket.id);
+        console.log(
+          "🟢 BECAME ONLINE:",
+          result.becameOnline
+        );
+        console.log(
+          "🔌 USER SOCKET COUNT:",
+          result.socketCount
+        );
+        console.log(
+          "👥 TOTAL ONLINE USERS:",
+          getOnlineUserCount()
+        );
+        console.log(
+          "🔌 TOTAL SOCKETS:",
+          getOnlineSocketCount()
+        );
+        console.log("=================================");
+
+        // -------------------------------------------------
+        // User vừa online
+        // -------------------------------------------------
+
+        if (result.becameOnline) {
+          io.emit("user:online", {
+            userId: requestedUserId,
+          });
+        }
+
+        // -------------------------------------------------
+        // Sync toàn bộ client
+        // -------------------------------------------------
+
+        broadcastOnlineState(io);
+
+        // -------------------------------------------------
+        // Debug
+        // -------------------------------------------------
+
+        debugOnlineMap();
+      } catch (error) {
+        console.error(
+          "❌ USER JOIN ERROR:",
+          error
+        );
+
+        socket.emit("presence:error", {
+          message:
+            "Không thể xác định trạng thái online",
         });
       }
-
-      // Gửi danh sách người đang online cho chính user
-      socket.emit("users:online", {
-        userIds: Array.from(onlineUsers.keys()),
-      });
     });
 
-    // =====================================================
-    // JOIN CONVERSATION
-    // =====================================================
+    // =================================================
+    // USER LEAVE
+    // =================================================
+
+    socket.on("user:leave", () => {
+      console.log("=================================");
+      console.log("📤 USER LEAVE");
+      console.log("👤 USER:", socket.userId);
+      console.log("🔌 SOCKET:", socket.id);
+      console.log("=================================");
+
+      try {
+        removeSocketPresence(
+          io,
+          socket,
+          "user-leave"
+        );
+      } catch (error) {
+        console.error(
+          "❌ USER LEAVE ERROR:",
+          error
+        );
+      }
+    });
+
+    // =================================================
+    // CONVERSATION JOIN
+    // =================================================
 
     socket.on(
       "conversation:join",
-      async ({ conversationId }) => {
+      async (data = {}) => {
         try {
+          const conversationId =
+            data.conversationId;
+
           if (!conversationId) {
+            socket.emit("chat:error", {
+              message:
+                "Conversation ID không hợp lệ",
+            });
+
+            return;
+          }
+
+          if (!socket.userId) {
+            socket.emit("chat:error", {
+              message:
+                "Bạn chưa kết nối tài khoản",
+            });
+
             return;
           }
 
           const conversation =
             await Conversation.findById(
-              conversationId,
+              conversationId
             );
 
           if (!conversation) {
@@ -90,25 +559,42 @@ module.exports = (io) => {
             return;
           }
 
+          const isParticipant =
+            conversation.participants.some(
+              (id) =>
+                String(id) ===
+                String(socket.userId)
+            );
+
+          if (!isParticipant) {
+            socket.emit("chat:error", {
+              message:
+                "Bạn không thuộc conversation này",
+            });
+
+            return;
+          }
+
           const roomName =
             `conversation:${conversationId}`;
 
           socket.join(roomName);
 
           console.log(
-            `👥 ${socket.id} joined ${roomName}`,
+            `👥 ${socket.userId} joined ${roomName}`
           );
 
           socket.emit(
             "conversation:joined",
             {
-              conversationId,
-            },
+              conversationId:
+                String(conversationId),
+            }
           );
         } catch (error) {
           console.error(
-            "Join conversation error:",
-            error,
+            "❌ CONVERSATION JOIN ERROR:",
+            error
           );
 
           socket.emit("chat:error", {
@@ -116,16 +602,19 @@ module.exports = (io) => {
               "Không thể tham gia conversation",
           });
         }
-      },
+      }
     );
 
-    // =====================================================
-    // LEAVE CONVERSATION
-    // =====================================================
+    // =================================================
+    // CONVERSATION LEAVE
+    // =================================================
 
     socket.on(
       "conversation:leave",
-      ({ conversationId }) => {
+      (data = {}) => {
+        const conversationId =
+          data.conversationId;
+
         if (!conversationId) {
           return;
         }
@@ -134,25 +623,47 @@ module.exports = (io) => {
           `conversation:${conversationId}`;
 
         socket.leave(roomName);
-      },
+
+        console.log(
+          `👋 ${socket.id} left ${roomName}`
+        );
+      }
     );
 
-    // =====================================================
+    // =================================================
     // SEND MESSAGE
-    // =====================================================
+    // =================================================
 
     socket.on(
       "message:send",
-      async ({
-        conversationId,
-        senderId,
-        content,
-        clientMessageId,
-      }) => {
+      async (data = {}) => {
+        const {
+          conversationId,
+          content,
+          clientMessageId,
+        } = data;
+
         try {
+          // -------------------------------------------------
+          // Check socket user
+          // -------------------------------------------------
+
+          if (!socket.userId) {
+            socket.emit("message:error", {
+              clientMessageId,
+              message:
+                "Socket chưa xác định user",
+            });
+
+            return;
+          }
+
+          // -------------------------------------------------
+          // Validate
+          // -------------------------------------------------
+
           if (
             !conversationId ||
-            !senderId ||
             !content?.trim()
           ) {
             socket.emit("message:error", {
@@ -164,27 +675,16 @@ module.exports = (io) => {
             return;
           }
 
-          // -----------------------------------------------
-          // Bảo vệ senderId
-          // -----------------------------------------------
+          const senderId =
+            String(socket.userId);
 
-          if (
-            socket.userId &&
-            String(socket.userId) !==
-              String(senderId)
-          ) {
-            socket.emit("message:error", {
-              clientMessageId,
-              message:
-                "Không hợp lệ",
-            });
-
-            return;
-          }
+          // -------------------------------------------------
+          // Conversation
+          // -------------------------------------------------
 
           const conversation =
             await Conversation.findById(
-              conversationId,
+              conversationId
             );
 
           if (!conversation) {
@@ -197,11 +697,15 @@ module.exports = (io) => {
             return;
           }
 
+          // -------------------------------------------------
+          // Check participant
+          // -------------------------------------------------
+
           const isParticipant =
             conversation.participants.some(
               (id) =>
                 String(id) ===
-                String(senderId),
+                senderId
             );
 
           if (!isParticipant) {
@@ -214,11 +718,11 @@ module.exports = (io) => {
             return;
           }
 
-          // -----------------------------------------------
-          // CREATE MESSAGE
-          // -----------------------------------------------
+          // -------------------------------------------------
+          // Create message
+          // -------------------------------------------------
 
-          const message =
+          const newMessage =
             await Message.create({
               conversationId,
               senderId,
@@ -227,52 +731,56 @@ module.exports = (io) => {
               seenBy: [senderId],
             });
 
-          // -----------------------------------------------
-          // UPDATE CONVERSATION
-          // -----------------------------------------------
+          // -------------------------------------------------
+          // Update conversation
+          // -------------------------------------------------
 
           conversation.lastMessage =
-            message._id;
+            newMessage._id;
 
           conversation.lastMessageAt =
-            message.createdAt;
+            newMessage.createdAt;
 
           await conversation.save();
 
-          // -----------------------------------------------
-          // POPULATE
-          // -----------------------------------------------
+          // -------------------------------------------------
+          // Populate
+          // -------------------------------------------------
 
           const populatedMessage =
             await Message.findById(
-              message._id,
+              newMessage._id
             ).populate(
               "senderId",
-              "_id username email avatar",
+              "_id username email avatar fullName"
             );
 
-          // -----------------------------------------------
-          // BROADCAST
-          // -----------------------------------------------
+          // -------------------------------------------------
+          // Room
+          // -------------------------------------------------
 
           const roomName =
             `conversation:${conversationId}`;
+
+          // -------------------------------------------------
+          // Emit
+          // -------------------------------------------------
 
           io.to(roomName).emit(
             "message:new",
             {
               ...populatedMessage.toObject(),
-              clientMessageId,
-            },
-          );
 
-          console.log(
-            `💬 Message sent → ${roomName}`,
+              clientMessageId,
+
+              conversationId:
+                String(conversationId),
+            }
           );
         } catch (error) {
           console.error(
-            "Send message error:",
-            error,
+            "❌ SEND MESSAGE ERROR:",
+            error
           );
 
           socket.emit("message:error", {
@@ -281,40 +789,46 @@ module.exports = (io) => {
               "Không thể gửi tin nhắn",
           });
         }
-      },
+      }
     );
 
-    // =====================================================
+    // =================================================
     // DISCONNECT
-    // =====================================================
+    // =================================================
 
-    socket.on("disconnect", () => {
-      const userId = socket.userId;
+    socket.on("disconnect", (reason) => {
+      console.log("=================================");
+      console.log("🔴 SOCKET DISCONNECTED");
+      console.log("🔌 SOCKET:", socket.id);
+      console.log("👤 USER:", socket.userId);
+      console.log("📌 REASON:", reason);
+      console.log("=================================");
 
-      if (!userId) {
-        console.log(
-          "🔴 Socket disconnected:",
-          socket.id,
+      try {
+        removeSocketPresence(
+          io,
+          socket,
+          `disconnect:${reason}`
         );
-
-        return;
-      }
-
-      const becameOffline =
-        removeOnlineUser(userId);
-
-      console.log(
-        `🔴 User ${userId} disconnected`,
-      );
-
-      // Chỉ báo offline khi tất cả socket của user
-      // đều đã disconnect
-      if (becameOffline) {
-        io.emit("user:offline", {
-          userId: String(userId),
-          lastSeen: new Date(),
-        });
+      } catch (error) {
+        console.error(
+          "❌ DISCONNECT PRESENCE ERROR:",
+          error
+        );
       }
     });
   });
 };
+
+// =====================================================
+// EXPORT HELPERS
+// =====================================================
+
+module.exports.getOnlineUserCount =
+  getOnlineUserCount;
+
+module.exports.getOnlineUserIds =
+  getOnlineUserIds;
+
+module.exports.getOnlineSocketCount =
+  getOnlineSocketCount;

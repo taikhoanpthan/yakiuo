@@ -251,41 +251,6 @@ export default function ChatPage() {
   const [isComposerFocused, setIsComposerFocused] = useState(false);
 
   // ===================================================
-  // MOBILE KEYBOARD / IOS VISUAL VIEWPORT
-  // ===================================================
-
-  useEffect(() => {
-    const viewport = window.visualViewport;
-
-    const updateChatViewport = () => {
-      const viewportHeight = viewport?.height || window.innerHeight;
-
-      document.documentElement.style.setProperty(
-        "--chat-viewport-height",
-        `${Math.round(viewportHeight)}px`,
-      );
-    };
-
-    updateChatViewport();
-
-    viewport?.addEventListener("resize", updateChatViewport);
-    viewport?.addEventListener("scroll", updateChatViewport);
-    window.addEventListener("resize", updateChatViewport);
-    window.addEventListener("orientationchange", updateChatViewport);
-
-    return () => {
-      viewport?.removeEventListener("resize", updateChatViewport);
-      viewport?.removeEventListener("scroll", updateChatViewport);
-      window.removeEventListener("resize", updateChatViewport);
-      window.removeEventListener("orientationchange", updateChatViewport);
-
-      document.documentElement.style.removeProperty(
-        "--chat-viewport-height",
-      );
-    };
-  }, []);
-
-  // ===================================================
   // LOADING
   // ===================================================
 
@@ -2263,6 +2228,11 @@ export default function ChatPage() {
                             ) ===
                             currentUserId;
 
+                          const senderName = getUserName(
+                            item.senderId ||
+                              (isMe ? currentUser : otherUser),
+                          );
+
                           const isDeleted = Boolean(item.deletedAt);
 
                           const imageMessage = isImageMessage(item);
@@ -2382,6 +2352,16 @@ export default function ChatPage() {
                                     }
                                   `}
                                 >
+                                  <p
+                                    className={`mb-1 m-0 text-xs font-semibold leading-4 ${
+                                      isMe
+                                        ? "text-white/85"
+                                        : "text-gray-500"
+                                    }`}
+                                  >
+                                    {senderName}
+                                  </p>
+
                                   {isDeleted ? (
                                     <span className="italic text-gray-500">
                                       Tin nhắn đã bị xoá

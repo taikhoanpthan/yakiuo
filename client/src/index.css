@@ -1952,14 +1952,20 @@ button {
 @media (max-width: 991px) {
   .erp-page-chat,
   .chat-page-root {
-    height: var(--chat-viewport-height, 100dvh) !important;
-    max-height: var(--chat-viewport-height, 100dvh) !important;
+    height: 100% !important;
+    max-height: 100% !important;
     min-height: 0 !important;
     overflow: hidden !important;
   }
 
   .chat-page-root {
     overscroll-behavior: none;
+  }
+
+  /* Thanh tác vụ mobile nằm cố định ở đáy màn hình, nên chừa chỗ để
+     khung soạn tin không bị che. */
+  .chat-composer {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom)) !important;
   }
 
   .chat-composer-focused .chat-composer {

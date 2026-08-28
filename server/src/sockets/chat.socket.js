@@ -320,9 +320,8 @@ module.exports = (io) => {
 
     socket.on("user:join", async (data = {}) => {
       try {
-        const requestedUserId = normalizeId(
-          data.userId
-        );
+        const requestedUserId = normalizeId(data.userId);
+        const authenticatedUserId = normalizeId(socket.data.authUserId);
 
         console.log("=================================");
         console.log("📥 USER JOIN REQUEST");
@@ -335,9 +334,9 @@ module.exports = (io) => {
         // Validate ID
         // -------------------------------------------------
 
-        if (!requestedUserId) {
+        if (!authenticatedUserId || requestedUserId !== authenticatedUserId) {
           socket.emit("presence:error", {
-            message: "User ID không hợp lệ",
+            message: "Không thể xác thực người dùng socket",
           });
 
           return;
@@ -347,7 +346,7 @@ module.exports = (io) => {
         // Socket đã join đúng user
         // -------------------------------------------------
 
-        if (socket.userId === requestedUserId) {
+        if (socket.userId === authenticatedUserId) {
           console.log(
             "ℹ️ SOCKET ALREADY JOINED:",
             requestedUserId,
@@ -423,14 +422,14 @@ module.exports = (io) => {
         // Gán user vào socket
         // -------------------------------------------------
 
-        socket.userId = requestedUserId;
+        socket.userId = authenticatedUserId;
 
         // -------------------------------------------------
         // Add socket
         // -------------------------------------------------
 
         const result = addOnlineSocket(
-          requestedUserId,
+          authenticatedUserId,
           socket.id
         );
 
@@ -463,7 +462,7 @@ module.exports = (io) => {
 
         if (result.becameOnline) {
           io.emit("user:online", {
-            userId: requestedUserId,
+            userId: authenticatedUserId,
           });
         }
 
@@ -741,6 +740,9 @@ module.exports = (io) => {
           conversation.lastMessageAt =
             newMessage.createdAt;
 
+          // Tin nhắn mới sẽ đưa đoạn chat trở lại inbox của các bên.
+          conversation.deletedFor = [];
+
           await conversation.save();
 
           // -------------------------------------------------
@@ -791,6 +793,43 @@ module.exports = (io) => {
         }
       }
     );
+
+    // Người nhận đang mở cuộc trò chuyện: đồng bộ trạng thái đã xem cho mọi tab.
+    socket.on("message:read", async (data = {}) => {
+      try {
+        const conversationId = data.conversationId;
+        const readerId = String(socket.userId || "");
+
+        if (!conversationId || !readerId) return;
+
+        const conversation = await Conversation.findById(conversationId);
+        const isParticipant = conversation?.participants.some(
+          (id) => String(id) === readerId,
+        );
+
+        if (!isParticipant) return;
+
+        const result = await Message.updateMany(
+          {
+            conversationId,
+            senderId: { $ne: readerId },
+            seenBy: { $ne: readerId },
+            deletedAt: null,
+          },
+          { $addToSet: { seenBy: readerId } },
+        );
+
+        if (result.modifiedCount > 0) {
+          io.to(`conversation:${conversationId}`).emit("message:read", {
+            conversationId: String(conversationId),
+            readerId,
+            readAt: new Date(),
+          });
+        }
+      } catch (error) {
+        console.error("❌ MESSAGE READ ERROR:", error);
+      }
+    });
 
     // =================================================
     // DISCONNECT

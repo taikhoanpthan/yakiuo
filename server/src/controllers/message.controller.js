@@ -85,11 +85,20 @@ const getMessages = async (req, res) => {
     // GET MESSAGES
     // =========================
 
+    const clearEntry = conversation.clearedFor?.find(
+      (entry) => String(entry.userId) === String(currentUserId),
+    );
+
+    const messageFilter = {
+      conversationId,
+      ...(clearEntry?.clearedAt
+        ? { createdAt: { $gt: clearEntry.clearedAt } }
+        : {}),
+    };
+
     const [messages, total] =
       await Promise.all([
-        Message.find({
-          conversationId,
-        })
+        Message.find(messageFilter)
           .populate(
             "senderId",
             "_id username email avatar",
@@ -101,9 +110,7 @@ const getMessages = async (req, res) => {
           .limit(limit)
           .lean(),
 
-        Message.countDocuments({
-          conversationId,
-        }),
+        Message.countDocuments(messageFilter),
       ]);
 
     // Đảo lại để frontend nhận
@@ -141,6 +148,93 @@ const getMessages = async (req, res) => {
   }
 };
 
+// =========================
+// MARK CONVERSATION AS READ
+// =========================
+
+const markMessagesAsRead = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+    const { conversationId } = req.params;
+    const conversation = await Conversation.findById(conversationId);
+
+    if (!conversation || !conversation.participants.some((id) => String(id) === String(currentUserId))) {
+      return res.status(404).json({ success: false, message: "Conversation không tồn tại" });
+    }
+
+    const result = await Message.updateMany(
+      { conversationId, senderId: { $ne: currentUserId }, seenBy: { $ne: currentUserId }, deletedAt: null },
+      { $addToSet: { seenBy: currentUserId } },
+    );
+
+    if (result.modifiedCount > 0) {
+      req.app.get("io")?.to(`conversation:${conversationId}`).emit("message:read", {
+        conversationId: String(conversationId),
+        readerId: String(currentUserId),
+        readAt: new Date(),
+      });
+    }
+
+    return res.json({ success: true, modifiedCount: result.modifiedCount });
+  } catch (error) {
+    console.error("Mark messages as read error:", error);
+    return res.status(500).json({ success: false, message: "Không thể cập nhật trạng thái đã xem" });
+  }
+};
+
+// =========================
+// DELETE OWN MESSAGE
+// =========================
+
+const deleteMessage = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+    const { messageId } = req.params;
+    const message = await Message.findById(messageId);
+
+    if (!message || message.deletedAt) {
+      return res.status(404).json({ success: false, message: "Tin nhắn không tồn tại" });
+    }
+
+    if (String(message.senderId) !== String(currentUserId)) {
+      return res.status(403).json({ success: false, message: "Bạn chỉ có thể xóa tin nhắn của mình" });
+    }
+
+    message.deletedAt = new Date();
+    message.deletedBy = currentUserId;
+    message.content = "";
+    await message.save();
+
+    const conversation = await Conversation.findById(message.conversationId);
+    if (conversation && String(conversation.lastMessage || "") === String(message._id)) {
+      const latest = await Message.findOne({ conversationId: message.conversationId, deletedAt: null }).sort({ createdAt: -1 });
+      conversation.lastMessage = latest?._id || null;
+      conversation.lastMessageAt = latest?.createdAt || null;
+      await conversation.save();
+    }
+
+    req.app.get("io")?.to(`conversation:${message.conversationId}`).emit("message:deleted", {
+      messageId: String(message._id),
+      conversationId: String(message.conversationId),
+      deletedAt: message.deletedAt,
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        messageId: String(message._id),
+        conversationId: String(message.conversationId),
+        deletedAt: message.deletedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Delete message error:", error);
+    return res.status(500).json({ success: false, message: "Không thể xóa tin nhắn" });
+  }
+};
+
 module.exports = {
   getMessages,
+  markMessagesAsRead,
+  deleteMessage,
 };

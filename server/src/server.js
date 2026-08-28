@@ -18,8 +18,10 @@ const express = require("express");
 const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken");
 
 const connectDB = require("./config/db");
+const User = require("./models/User");
 
 // =========================
 // ROUTES
@@ -33,6 +35,8 @@ const notificationRoutes = require("./routes/notification.routes");
 const uploadRoutes = require("./routes/upload.routes");
 const todoRoutes = require("./routes/todo.routes");
 const commissionRoutes = require("./routes/commission.routes");
+const commissionGGRoutes = require("./routes/commissionGG.routes");
+const feedbackTagRoutes = require("./routes/feedbackTag.routes");
 const workScheduleRoutes = require("./routes/workSchedule.routes");
 const conversationRoutes = require("./routes/conversation.routes");
 const messageRoutes = require("./routes/message.routes");
@@ -115,6 +119,26 @@ const io = new Server(server, {
   },
 });
 
+// Không cho client tự nhận là một user khác qua payload socket.
+io.use(async (socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token;
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    const user = await User.findById(decoded.userId).select("_id status");
+
+    if (!user || user.status !== "active") {
+      return next(new Error("Account is inactive"));
+    }
+
+    socket.data.authUserId = String(user._id);
+    return next();
+  } catch (error) {
+    return next(new Error("Invalid or expired token"));
+  }
+});
+
+app.set("io", io);
+
 // =========================
 // SETUP SOCKET
 // =========================
@@ -150,6 +174,10 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/todos", todoRoutes);
 
 app.use("/api/commissions", commissionRoutes);
+
+app.use("/api/commission-gg", commissionGGRoutes);
+
+app.use("/api/feedback-tags", feedbackTagRoutes);
 
 app.use("/api/work-schedule", workScheduleRoutes);
 

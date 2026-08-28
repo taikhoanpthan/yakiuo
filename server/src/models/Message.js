@@ -44,6 +44,18 @@ const messageSchema = new mongoose.Schema(
       },
     ],
 
+    // Xóa mềm để bảo toàn lịch sử/audit cuộc trò chuyện.
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
     // Reply message
     replyTo: {
       type: mongoose.Schema.Types.ObjectId,

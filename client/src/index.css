@@ -91,7 +91,7 @@ button {
 
 .erp-shell {
   width: 100%;
-  height: 100dvh !important;
+  height: var(--erp-viewport-height, 100dvh) !important;
   min-height: 0 !important;
 
   background: var(--erp-bg) !important;
@@ -106,6 +106,53 @@ button {
   background: var(--erp-bg) !important;
 
   overflow: hidden;
+  height: var(--erp-viewport-height, 100dvh) !important;
+}
+
+.erp-content-chat,
+.erp-page-chat {
+  overscroll-behavior: none;
+}
+
+.erp-sidebar-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.erp-notification-popover .ant-popover-inner {
+  max-height: calc(100dvh - 88px);
+  overflow: hidden;
+}
+
+.erp-notification-popover .erp-notification-list {
+  max-height: min(520px, calc(100dvh - 180px)) !important;
+}
+
+@media (max-width: 560px) {
+  .erp-feedback-modal {
+    max-width: calc(100vw - 24px) !important;
+    margin: 0 12px !important;
+    padding-bottom: 12px;
+  }
+
+  .erp-feedback-modal .ant-modal-content {
+    max-height: calc(100dvh - 24px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .erp-feedback-modal .ant-modal-body {
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .erp-feedback-modal .ant-modal-footer {
+    flex-shrink: 0;
+  }
 }
 
 /* =========================================================
@@ -740,6 +787,9 @@ button {
       #263b68 45%,
       #3977f6 100%
     );
+
+  background-position: center;
+  background-size: cover;
 }
 
 .yakiuo-cover::before {
@@ -759,6 +809,8 @@ button {
       rgba(255, 255, 255, 0.12),
       transparent 35%
     );
+
+  z-index: 1;
 }
 
 .yakiuo-cover-overlay {
@@ -771,6 +823,19 @@ button {
       rgba(0, 0, 0, 0.05),
       rgba(0, 0, 0, 0.28)
     );
+
+  z-index: 2;
+}
+
+.yakiuo-cover-image {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  z-index: 0;
 }
 
 .yakiuo-cover-brand {
@@ -816,6 +881,8 @@ button {
 .yakiuo-cover-camera {
   position: absolute !important;
 
+  z-index: 20;
+
   right: 20px;
   bottom: 20px;
 
@@ -825,6 +892,17 @@ button {
 
   box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.16);
+}
+
+.yakiuo-cover-adjust {
+  position: absolute !important;
+  z-index: 20;
+  right: 154px;
+  bottom: 20px;
+
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
 }
 
 /* =========================================================
@@ -876,6 +954,15 @@ button {
     0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+.yakiuo-profile-avatar img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: var(--avatar-position, 50% 50%);
+  transform: scale(var(--avatar-zoom, 1));
+}
+
 .yakiuo-avatar-camera {
   position: absolute;
 
@@ -907,6 +994,25 @@ button {
   background: #d8dadf;
 
   transform: scale(1.04);
+}
+
+.yakiuo-avatar-adjust {
+  position: absolute;
+  left: 7px;
+  bottom: 7px;
+
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #e4e6eb;
+  color: #1c1e21;
+  cursor: pointer;
 }
 
 .yakiuo-profile-identity {
@@ -1322,6 +1428,28 @@ button {
       ) !important;
   }
 
+  /* Chặn Ant Layout giữ lại chiều rộng sidebar khi đã ẩn trên điện thoại. */
+  .erp-workspace,
+  .erp-content,
+  .erp-page {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+  }
+
+  .erp-page {
+    max-width: none;
+    margin-right: 0 !important;
+  }
+
+  .erp-page > * {
+    min-width: 0;
+  }
+
+  .erp-content-chat {
+    padding-bottom: 0 !important;
+  }
+
   .erp-page {
     padding: 20px 16px;
   }
@@ -1458,6 +1586,14 @@ button {
     transform: translateY(-1px);
   }
 
+  .erp-mobile-task-active {
+    position: absolute;
+    inset: 2px;
+    z-index: 0;
+    border-radius: 18px;
+    background: linear-gradient(145deg, rgba(241,245,249,.95), rgba(226,232,240,.72));
+  }
+
   .erp-mobile-task-label {
     max-width: 100%;
 
@@ -1515,6 +1651,11 @@ button {
     bottom: 12px;
   }
 
+  .yakiuo-cover-adjust {
+    right: 126px;
+    bottom: 12px;
+  }
+
   .yakiuo-profile-info {
     padding: 0 12px;
   }
@@ -1542,6 +1683,14 @@ button {
 
   .yakiuo-avatar-camera {
     right: 3px;
+    bottom: 3px;
+
+    width: 34px;
+    height: 34px;
+  }
+
+  .yakiuo-avatar-adjust {
+    left: 3px;
     bottom: 3px;
 
     width: 34px;

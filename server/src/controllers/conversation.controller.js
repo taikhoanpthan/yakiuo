@@ -85,6 +85,12 @@ const createConversation = async (req, res) => {
         "participants",
         "_id username email avatar phone role status",
       );
+    } else {
+      // Chủ động mở lại chat đã xóa thì đưa nó trở lại hộp thư của người này.
+      conversation.deletedFor = conversation.deletedFor.filter(
+        (entry) => String(entry.userId) !== String(currentUserId),
+      );
+      await conversation.save();
     }
 
     return res.status(200).json({
@@ -116,6 +122,7 @@ const getMyConversations = async (req, res) => {
     const conversations =
       await Conversation.find({
         participants: currentUserId,
+        "deletedFor.userId": { $ne: currentUserId },
       })
         .populate(
           "participants",
@@ -144,6 +151,39 @@ const getMyConversations = async (req, res) => {
       success: false,
       message: "Không thể lấy conversations",
     });
+  }
+};
+
+// =========================
+// DELETE CONVERSATION FOR CURRENT USER
+// =========================
+
+const deleteConversation = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+    const conversation = await Conversation.findById(req.params.id);
+
+    if (!conversation || !conversation.participants.some((id) => String(id) === String(currentUserId))) {
+      return res.status(404).json({ success: false, message: "Conversation không tồn tại" });
+    }
+
+    const deletedAt = new Date();
+
+    conversation.deletedFor = conversation.deletedFor.filter(
+      (entry) => String(entry.userId) !== String(currentUserId),
+    );
+    conversation.deletedFor.push({ userId: currentUserId, deletedAt });
+
+    conversation.clearedFor = conversation.clearedFor.filter(
+      (entry) => String(entry.userId) !== String(currentUserId),
+    );
+    conversation.clearedFor.push({ userId: currentUserId, clearedAt: deletedAt });
+    await conversation.save();
+
+    return res.json({ success: true, message: "Đã xóa cuộc trò chuyện khỏi hộp thư của bạn" });
+  } catch (error) {
+    console.error("Delete conversation error:", error);
+    return res.status(500).json({ success: false, message: "Không thể xóa cuộc trò chuyện" });
   }
 };
 
@@ -214,4 +254,5 @@ module.exports = {
   createConversation,
   getMyConversations,
   getConversationById,
+  deleteConversation,
 };

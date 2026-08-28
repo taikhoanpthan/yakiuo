@@ -43,3 +43,8 @@ export const changePassword = async (data) => {
 
   return response.data;
 };
+export const updateMyProfile = async (data) => {
+  const response = await api.patch("/users/me/profile", data);
+
+  return response.data;
+};

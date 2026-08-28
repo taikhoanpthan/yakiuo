@@ -25,8 +25,11 @@ import {
 } from "../../services/feedbackService";
 
 import FeedbackTable from "./FeedbackTable";
+import { useAuth } from "../../store/AuthContext";
+import { getFeedbackTags } from "../../services/feedbackTag.service";
 
 const Feedback = () => {
+  const { user } = useAuth();
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -41,6 +44,7 @@ const Feedback = () => {
   const [formModalOpen, setFormModalOpen] = useState(false);
 
   const [editingFeedback, setEditingFeedback] = useState(null);
+  const [presetTags, setPresetTags] = useState([]);
 
   const [pagination, setPagination] = useState({
     current: 1,
@@ -84,6 +88,25 @@ const Feedback = () => {
   useEffect(() => {
     void loadFeedbacks();
   }, [loadFeedbacks]);
+
+  const canUsePresetTags = ["premium", "admin"].includes(user?.role);
+
+  const handleInsertPresetTag = (label) => {
+    const currentContent = form.getFieldValue("content") || "";
+    const separator = currentContent.trim() ? ", " : "";
+    form.setFieldValue("content", `${currentContent}${separator}${label}`);
+  };
+
+  useEffect(() => {
+    if (!canUsePresetTags) {
+      setPresetTags([]);
+      return;
+    }
+
+    getFeedbackTags()
+      .then((response) => setPresetTags(Array.isArray(response?.data) ? response.data : []))
+      .catch(() => setPresetTags([]));
+  }, [canUsePresetTags]);
 
   // =========================
   // OPEN CREATE
@@ -311,7 +334,18 @@ const Feedback = () => {
         open={Boolean(selectedFeedback)}
         footer={<Button onClick={() => setSelectedFeedback(null)}>Đóng</Button>}
         onCancel={() => setSelectedFeedback(null)}
-        width={640}
+        width="min(640px, calc(100vw - 24px))"
+        className="erp-feedback-modal"
+        style={{ top: 12 }}
+        styles={{
+          body: {
+            maxHeight: "calc(100dvh - 180px)",
+            overflowY: "auto",
+            overflowX: "hidden",
+          },
+        }}
+        maskClosable
+        keyboard
       >
         {selectedFeedback && (
           <Descriptions column={1} size="small" bordered>
@@ -331,13 +365,6 @@ const Feedback = () => {
               {selectedFeedback.meal || "—"}
             </Descriptions.Item>
 
-            <Descriptions.Item label="Nhãn">
-              {selectedFeedback.tags?.length
-                ? selectedFeedback.tags.map((tag, index) => (
-                    <Tag key={`${tag}-${index}`}>{tag}</Tag>
-                  ))
-                : "—"}
-            </Descriptions.Item>
 
             <Descriptions.Item label="Nội dung">
               <span className="whitespace-pre-wrap">
@@ -370,9 +397,19 @@ const Feedback = () => {
         okText={editingFeedback ? "Lưu thay đổi" : "Thêm feedback"}
         cancelText="Hủy"
         confirmLoading={saving}
-        width={760}
-        centered
-        destroyOnClose={false}
+        width="min(760px, calc(100vw - 24px))"
+        className="erp-feedback-modal"
+        style={{ top: 12 }}
+        styles={{
+          body: {
+            maxHeight: "calc(100dvh - 180px)",
+            overflowY: "auto",
+            overflowX: "hidden",
+          },
+        }}
+        destroyOnHidden
+        maskClosable
+        keyboard
       >
         <Form form={form} layout="vertical" className="mt-4">
           {/* ROW 1 */}
@@ -430,40 +467,27 @@ const Feedback = () => {
               />
             </Form.Item>
 
-            {/* TAGS */}
-            <Form.Item label="Nhãn" name="tags">
-              <Select
-                mode="tags"
-                size="large"
-                placeholder="Nhập tag rồi Enter"
-                tokenSeparators={[","]}
-                options={[
-                  {
-                    label: "Khen món ăn",
-                    value: "Khen món ăn",
-                  },
-                  {
-                    label: "Khen phục vụ",
-                    value: "Khen phục vụ",
-                  },
-                  {
-                    label: "Không gian",
-                    value: "Không gian",
-                  },
-                  {
-                    label: "Phàn nàn",
-                    value: "Phàn nàn",
-                  },
-                  {
-                    label: "Góp ý",
-                    value: "Góp ý",
-                  },
-                ]}
-              />
-            </Form.Item>
           </div>
 
           {/* CONTENT */}
+          {canUsePresetTags && presetTags.length > 0 && (
+            <div className="mb-3 rounded-xl border border-purple-100 bg-purple-50/60 p-3">
+              <div className="mb-2 text-xs font-semibold text-purple-700">Nhãn gợi ý — bấm để chèn vào nội dung</div>
+              <div className="flex flex-wrap gap-2">
+                {presetTags.map((tag) => (
+                  <button
+                    key={tag._id}
+                    type="button"
+                    onClick={() => handleInsertPresetTag(tag.label)}
+                    className="rounded-full border border-purple-200 bg-white px-3 py-1 text-xs font-medium text-purple-700 transition hover:bg-purple-100"
+                  >
+                    {tag.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Form.Item
             label="Nội dung feedback"
             name="content"

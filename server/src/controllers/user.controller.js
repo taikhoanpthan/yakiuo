@@ -1,5 +1,20 @@
 const userService = require("../services/user.service");
 
+const forceLogoutUserSockets = (io, userId) => {
+  if (!io || !userId) return;
+
+  const targetUserId = String(userId);
+
+  for (const socket of io.sockets.sockets.values()) {
+    if (String(socket.data?.authUserId) !== targetUserId) continue;
+
+    socket.emit("account:locked", {
+      message: "Tài khoản của bạn đã bị khóa bởi quản trị viên.",
+    });
+    socket.disconnect(true);
+  }
+};
+
 const getUsers = async (req, res) => {
   try {
     const result = await userService.getUsers(req.query);
@@ -14,6 +29,24 @@ const getUsers = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to get users",
+    });
+  }
+};
+
+// Danh sách rút gọn để mọi người dùng đã đăng nhập có thể mở chat.
+const getChatUsers = async (req, res) => {
+  try {
+    const users = await userService.getChatUsers();
+
+    return res.status(200).json({
+      success: true,
+      data: { users },
+    });
+  } catch (error) {
+    console.error("Get chat users failed:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Không thể tải danh sách người dùng cho chat",
     });
   }
 };
@@ -55,7 +88,7 @@ const createUser = async (req, res) => {
       });
     }
 
-    if (role && !["employee", "manager", "admin"].includes(role)) {
+    if (role && !["employee", "premium", "manager", "admin"].includes(role)) {
       return res.status(400).json({
         success: false,
         message: "Invalid role",
@@ -98,7 +131,7 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     if (req.body.role) {
-      if (!["employee", "manager", "admin"].includes(req.body.role)) {
+      if (!["employee", "premium", "manager", "admin"].includes(req.body.role)) {
         return res.status(400).json({
           success: false,
           message: "Invalid role",
@@ -135,6 +168,10 @@ const updateUserStatus = async (req, res) => {
     }
 
     const user = await userService.updateUserStatus(req.params.id, status);
+
+    if (status === "inactive") {
+      forceLogoutUserSockets(req.app.get("io"), user._id);
+    }
 
     return res.status(200).json({
       success: true,
@@ -183,6 +220,21 @@ const getMe = async (req, res) => {
     });
   }
 };
+
+const updateMyProfile = async (req, res) => {
+  try {
+    const user = await userService.updateOwnProfile(req.user._id, req.body);
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: { user },
+    });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 const changePassword = async (req, res) => {
   try {
     const {
@@ -227,7 +279,9 @@ const changePassword = async (req, res) => {
 };
 module.exports = {
   getMe,
+  updateMyProfile,
   getUsers,
+  getChatUsers,
   getUserById,
   createUser,
   updateUser,

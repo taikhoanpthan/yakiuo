@@ -32,6 +32,7 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null }) => {
     try {
       if (isEdit) {
         const data = {
+          username: values.username,
           email: values.email,
           fullName: values.fullName,
           phone: values.phone,
@@ -110,7 +111,7 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null }) => {
             },
           ]}
         >
-          <Input placeholder="employee01" disabled={isEdit} />
+          <Input placeholder="employee01" />
         </Form.Item>
 
         {/* EMAIL */}
@@ -177,6 +178,14 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null }) => {
                 {
                   value: "employee",
                   label: "Employee",
+                },
+                {
+                  value: "premium",
+                  label: "Premium",
+                },
+                {
+                  value: "manager",
+                  label: "Manager",
                 },
                 {
                   value: "admin",

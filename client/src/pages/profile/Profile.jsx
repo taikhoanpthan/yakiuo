@@ -9,6 +9,7 @@ import {
   Form,
   Input,
   Modal,
+  Slider,
   Tag,
   Upload,
   message,
@@ -19,6 +20,7 @@ import {
   CheckCircleFilled,
   CloseOutlined,
   DollarOutlined,
+  DragOutlined,
   EditOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
@@ -32,20 +34,23 @@ import {
 
 import api from "../../services/api";
 
-import { getMe, updateUser, changePassword } from "../../services/user.service";
+import { getMe, updateMyProfile, changePassword } from "../../services/user.service";
 
 import Commission from "../commission/Commission";
+import CommissionGG from "../commission/CommissionGG";
 
 const Profile = () => {
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
-  const { user: authUser, updateUser } = useAuth();
+  const { updateUser } = useAuth();
 
   const [user, setUser] = useState(null);
+  const canEditAccountIdentity = ["admin", "manager", "premium"].includes(user?.role);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
 
   const [showEditForm, setShowEditForm] = useState(false);
@@ -53,6 +58,10 @@ const Profile = () => {
 
   // Xem avatar
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [imageAdjustTarget, setImageAdjustTarget] = useState(null);
+  const [imagePosition, setImagePosition] = useState({ x: 50, y: 50 });
+  const [imageZoom, setImageZoom] = useState(1);
+  const [savingImagePosition, setSavingImagePosition] = useState(false);
 
   // =====================================================
   // GET CURRENT USER
@@ -74,6 +83,8 @@ const Profile = () => {
       updateUser(currentUser);
 
       form.setFieldsValue({
+        username: currentUser.username || "",
+        email: currentUser.email || "",
         fullName: currentUser.fullName || "",
         phone: currentUser.phone || "",
       });
@@ -155,6 +166,46 @@ const Profile = () => {
   };
 
   // =====================================================
+  // UPLOAD COVER IMAGE
+  // =====================================================
+
+  const handleUploadCover = async ({ file, onSuccess, onError }) => {
+    try {
+      if (!file.type?.startsWith("image/")) {
+        throw new Error("Chỉ được upload file hình ảnh");
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error("Ảnh không được vượt quá 5MB");
+      }
+
+      setUploadingCover(true);
+
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("type", "cover");
+
+      const response = await api.post("/upload/image", formData);
+      const coverImage = response?.data?.data?.coverImage;
+
+      if (!coverImage) {
+        throw new Error("Không nhận được URL ảnh bìa");
+      }
+
+      setUser((prev) => ({ ...prev, coverImage }));
+      updateUser({ coverImage });
+      message.success("Đã cập nhật ảnh bìa");
+      onSuccess?.(response.data);
+    } catch (error) {
+      console.error("Upload cover failed:", error);
+      message.error(error.response?.data?.message || error.message || "Không thể cập nhật ảnh bìa");
+      onError?.(error);
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
+  // =====================================================
   // UPDATE PROFILE
   // =====================================================
 
@@ -167,7 +218,13 @@ const Profile = () => {
     try {
       setSaving(true);
 
-      const response = await updateUser(user._id, {
+      const response = await updateMyProfile({
+        ...(canEditAccountIdentity
+          ? {
+              username: values.username?.trim() || "",
+              email: values.email?.trim() || "",
+            }
+          : {}),
         fullName: values.fullName?.trim() || "",
         phone: values.phone?.trim() || "",
       });
@@ -179,8 +236,11 @@ const Profile = () => {
       }
 
       setUser(updatedUser);
+      updateUser(updatedUser);
 
       form.setFieldsValue({
+        username: updatedUser.username || "",
+        email: updatedUser.email || "",
         fullName: updatedUser.fullName || "",
         phone: updatedUser.phone || "",
       });
@@ -198,6 +258,39 @@ const Profile = () => {
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openImageAdjuster = (target) => {
+    const position = target === "avatar" ? user?.avatarPosition : user?.coverPosition;
+    setImagePosition({ x: position?.x ?? 50, y: position?.y ?? 50 });
+    setImageZoom(target === "avatar" ? (user?.avatarZoom ?? 1) : (user?.coverZoom ?? 1));
+    setImageAdjustTarget(target);
+  };
+
+  const handleSaveImagePosition = async () => {
+    if (!imageAdjustTarget) return;
+
+    try {
+      setSavingImagePosition(true);
+      const positionField = imageAdjustTarget === "avatar" ? "avatarPosition" : "coverPosition";
+      const zoomField = imageAdjustTarget === "avatar" ? "avatarZoom" : "coverZoom";
+      const response = await updateMyProfile({
+        [positionField]: imagePosition,
+        [zoomField]: imageZoom,
+      });
+      const updatedUser = response?.data?.user;
+
+      if (!updatedUser) throw new Error("Không thể lưu vị trí ảnh");
+
+      setUser(updatedUser);
+      updateUser(updatedUser);
+      setImageAdjustTarget(null);
+      message.success("Đã lưu vị trí ảnh");
+    } catch (error) {
+      message.error(error?.response?.data?.message || error.message || "Không thể lưu vị trí ảnh");
+    } finally {
+      setSavingImagePosition(false);
     }
   };
 
@@ -263,6 +356,11 @@ const Profile = () => {
       color: "gold",
     },
 
+    premium: {
+      label: "PREMIUM",
+      color: "purple",
+    },
+
     employee: {
       label: "EMPLOYEE",
       color: "blue",
@@ -305,13 +403,41 @@ const Profile = () => {
           <div className="yakiuo-cover relative">
             <div className="yakiuo-cover-overlay" />
 
-            {/* CENTER TITLE */}
+            {user?.coverImage && (
+              <img
+                src={user.coverImage}
+                alt="Ảnh bìa"
+                className="yakiuo-cover-image"
+                style={{
+                  objectPosition: `${user?.coverPosition?.x ?? 50}% ${user?.coverPosition?.y ?? 50}%`,
+                  transform: `scale(${user?.coverZoom ?? 1})`,
+                }}
+              />
+            )}
 
-            <div className="absolute inset-0 z-10 flex items-center justify-center">
-              <span className="yakiuo-cover-title text-center text-white">
-                NÔ LỆ TƯ BẢN
-              </span>
-            </div>
+            <Upload
+              showUploadList={false}
+              accept="image/png,image/jpeg,image/webp"
+              customRequest={handleUploadCover}
+            >
+              <Button
+                className="yakiuo-cover-camera"
+                icon={<CameraOutlined />}
+                loading={uploadingCover}
+              >
+                Đổi ảnh bìa
+              </Button>
+            </Upload>
+
+            {user?.coverImage && (
+              <Button
+                className="yakiuo-cover-adjust"
+                icon={<DragOutlined />}
+                onClick={() => openImageAdjuster("cover")}
+              >
+                Căn chỉnh
+              </Button>
+            )}
           </div>
 
           {/* PROFILE INFO */}
@@ -336,6 +462,10 @@ const Profile = () => {
                   <Avatar
                     className="yakiuo-profile-avatar"
                     src={user?.avatar || undefined}
+                    style={{
+                      "--avatar-position": `${user?.avatarPosition?.x ?? 50}% ${user?.avatarPosition?.y ?? 50}%`,
+                      "--avatar-zoom": user?.avatarZoom ?? 1,
+                    }}
                     icon={!user?.avatar && <UserOutlined />}
                   >
                     {!user?.avatar && user?.fullName?.charAt(0)?.toUpperCase()}
@@ -358,6 +488,17 @@ const Profile = () => {
                     <CameraOutlined />
                   </button>
                 </Upload>
+
+                {user?.avatar && (
+                  <button
+                    type="button"
+                    className="yakiuo-avatar-adjust"
+                    title="Căn chỉnh ảnh đại diện"
+                    onClick={() => openImageAdjuster("avatar")}
+                  >
+                    <DragOutlined />
+                  </button>
+                )}
               </div>
 
               {/* =================================================
@@ -487,6 +628,48 @@ const Profile = () => {
                     onFinish={handleSave}
                     requiredMark={false}
                   >
+                    {canEditAccountIdentity && (
+                      <>
+                        <Form.Item
+                          label="Tên đăng nhập"
+                          name="username"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Vui lòng nhập tên đăng nhập",
+                            },
+                            {
+                              min: 3,
+                              message: "Tên đăng nhập phải có ít nhất 3 ký tự",
+                            },
+                          ]}
+                        >
+                          <Input
+                            size="large"
+                            prefix={<UserOutlined />}
+                            placeholder="Nhập tên đăng nhập"
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label="Email"
+                          name="email"
+                          rules={[
+                            {
+                              type: "email",
+                              message: "Email không hợp lệ",
+                            },
+                          ]}
+                        >
+                          <Input
+                            size="large"
+                            prefix={<MailOutlined />}
+                            placeholder="Nhập email"
+                          />
+                        </Form.Item>
+                      </>
+                    )}
+
                     <Form.Item
                       label="Họ và tên"
                       name="fullName"
@@ -594,6 +777,8 @@ const Profile = () => {
 
                 <Commission />
               </Card>
+
+              <CommissionGG />
             </div>
           </div>
         </div>
@@ -628,6 +813,61 @@ const Profile = () => {
               className="max-h-[80vh] w-auto max-w-full object-contain"
             />
           )}
+        </div>
+      </Modal>
+
+      <Modal
+        title={`Căn chỉnh ${imageAdjustTarget === "cover" ? "ảnh bìa" : "ảnh đại diện"}`}
+        open={Boolean(imageAdjustTarget)}
+        onCancel={() => setImageAdjustTarget(null)}
+        onOk={handleSaveImagePosition}
+        okText="Lưu vị trí"
+        cancelText="Hủy"
+        confirmLoading={savingImagePosition}
+        centered
+      >
+        <div className="py-3">
+          {imageAdjustTarget === "cover" ? (
+            <div className="relative h-40 overflow-hidden rounded-xl bg-slate-200">
+              <img
+                src={user?.coverImage}
+                alt="Xem trước ảnh bìa"
+                className="h-full w-full object-cover"
+                style={{
+                  objectPosition: `${imagePosition.x}% ${imagePosition.y}%`,
+                  transform: `scale(${imageZoom})`,
+                }}
+              />
+            </div>
+          ) : (
+            <div className="flex justify-center">
+              <img
+                src={user?.avatar}
+                alt="Xem trước ảnh đại diện"
+                className="h-40 w-40 rounded-full bg-slate-100 object-cover"
+                style={{
+                  objectPosition: `${imagePosition.x}% ${imagePosition.y}%`,
+                  transform: `scale(${imageZoom})`,
+                }}
+              />
+            </div>
+          )}
+
+          <div className="mt-6">
+            <div className="mb-2 text-sm font-medium text-slate-700">Căn ngang</div>
+            <Slider value={imagePosition.x} onChange={(x) => setImagePosition((prev) => ({ ...prev, x }))} />
+          </div>
+          <div className="mt-4">
+            <div className="mb-2 text-sm font-medium text-slate-700">Căn dọc</div>
+            <Slider value={imagePosition.y} onChange={(y) => setImagePosition((prev) => ({ ...prev, y }))} />
+          </div>
+          <div className="mt-4">
+            <div className="mb-2 flex justify-between text-sm font-medium text-slate-700">
+              <span>Thu phóng</span>
+              <span>{imageZoom.toFixed(2)}×</span>
+            </div>
+            <Slider min={1} max={2.5} step={0.05} value={imageZoom} onChange={setImageZoom} />
+          </div>
         </div>
       </Modal>
 

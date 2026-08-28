@@ -5,6 +5,7 @@ import {
   Button,
   Empty,
   Input,
+  Popconfirm,
   Spin,
   Tooltip,
   message as antMessage,
@@ -14,35 +15,24 @@ import {
   ArrowLeftOutlined,
   AudioOutlined,
   CheckOutlined,
+  CheckCircleFilled,
+  DeleteOutlined,
   FileImageOutlined,
   HeartOutlined,
   InfoCircleOutlined,
   PhoneOutlined,
   SearchOutlined,
   SmileOutlined,
+  VideoCameraOutlined,
 } from "@ant-design/icons";
 
 import { connectSocket, getSocket } from "../../services/socket";
 import api from "../../services/api";
+import { useAuth } from "../../store/AuthContext";
 
 // =====================================================
 // HELPERS
 // =====================================================
-
-const getCurrentUser = () => {
-  try {
-    const raw =
-      localStorage.getItem("user") ||
-      localStorage.getItem("currentUser");
-
-    if (!raw) return null;
-
-    return JSON.parse(raw);
-  } catch (error) {
-    console.error("Read current user error:", error);
-    return null;
-  }
-};
 
 const getUserId = (user) => {
   if (!user) return null;
@@ -203,7 +193,7 @@ export default function ChatPage() {
   // CURRENT USER
   // ===================================================
 
-  const currentUser = getCurrentUser();
+  const { user: currentUser } = useAuth();
 
   const currentUserId = normalizeId(
     getUserId(currentUser),
@@ -326,9 +316,9 @@ export default function ChatPage() {
     try {
       setLoadingUsers(true);
 
-      const response = await api.get("/users");
+      const response = await api.get("/users/chat");
 
-      const data = response?.data?.data;
+      const data = response?.data?.data?.users;
 
       setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -446,6 +436,28 @@ export default function ChatPage() {
 
     loadMessages(selectedConversationId);
   }, [selectedConversationId, loadMessages]);
+
+  // Mở cuộc trò chuyện hoặc nhận tin nhắn mới sẽ xác nhận đã xem.
+  const markConversationAsRead = useCallback(async (conversationId) => {
+    if (!conversationId) return;
+
+    const socket = getSocket();
+    if (socket?.connected) {
+      socket.emit("message:read", { conversationId });
+    }
+
+    try {
+      await api.post(`/messages/${conversationId}/read`);
+    } catch (error) {
+      console.error("Mark conversation as read error:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedConversationId && messages.length > 0) {
+      markConversationAsRead(selectedConversationId);
+    }
+  }, [selectedConversationId, messages.length, markConversationAsRead]);
 
   // ===================================================
   // SOCKET
@@ -725,6 +737,38 @@ export default function ChatPage() {
       });
     };
 
+    const handleMessageRead = (payload = {}) => {
+      if (normalizeId(payload.conversationId) !== normalizeId(currentConversationRef.current)) {
+        return;
+      }
+
+      const readerId = normalizeId(payload.readerId);
+      if (!readerId) return;
+
+      setMessages((prev) => prev.map((item) => {
+        if (normalizeId(getSenderId(item)) === readerId || item.deletedAt) return item;
+
+        const seenBy = Array.isArray(item.seenBy) ? item.seenBy : [];
+        const alreadySeen = seenBy.some((user) => normalizeId(getUserId(user)) === readerId);
+
+        return alreadySeen ? item : { ...item, seenBy: [...seenBy, readerId] };
+      }));
+    };
+
+    const handleMessageDeleted = (payload = {}) => {
+      if (normalizeId(payload.conversationId) !== normalizeId(currentConversationRef.current)) {
+        return;
+      }
+
+      setMessages((prev) => prev.map((item) => (
+        normalizeId(item._id) === normalizeId(payload.messageId)
+          ? { ...item, content: "", deletedAt: payload.deletedAt || new Date().toISOString() }
+          : item
+      )));
+
+      loadConversations();
+    };
+
     // =================================================
     // MESSAGE ERROR
     // =================================================
@@ -803,6 +847,10 @@ export default function ChatPage() {
       handleNewMessage,
     );
 
+    socket.on("message:read", handleMessageRead);
+
+    socket.on("message:deleted", handleMessageDeleted);
+
     socket.on(
       "message:error",
       handleMessageError,
@@ -866,6 +914,10 @@ export default function ChatPage() {
         handleNewMessage,
       );
 
+      socket.off("message:read", handleMessageRead);
+
+      socket.off("message:deleted", handleMessageDeleted);
+
       socket.off(
         "message:error",
         handleMessageError,
@@ -880,7 +932,7 @@ export default function ChatPage() {
       //
       // Vì Layout cũng đang dùng chung socket.
     };
-  }, [currentUserId]);
+  }, [currentUserId, loadConversations]);
 
   // ===================================================
   // JOIN / LEAVE CONVERSATION
@@ -1227,6 +1279,44 @@ export default function ChatPage() {
     setMobileChat(true);
   };
 
+  const handleDeleteMessage = async (messageId) => {
+    if (!messageId) return;
+
+    try {
+      await api.delete(`/messages/${messageId}`);
+
+      // Event Socket.IO sẽ đồng bộ đối phương; cập nhật ngay cả khi socket vừa mất kết nối.
+      setMessages((prev) => prev.map((item) => (
+        normalizeId(item._id) === normalizeId(messageId)
+          ? { ...item, content: "", deletedAt: new Date().toISOString() }
+          : item
+      )));
+      loadConversations();
+      antMessage.success("Đã xóa tin nhắn");
+    } catch (error) {
+      antMessage.error(error?.response?.data?.message || "Không thể xóa tin nhắn");
+    }
+  };
+
+  const handleDeleteConversation = async () => {
+    if (!selectedConversationId) return;
+
+    try {
+      await api.delete(`/conversations/${selectedConversationId}`);
+      const deletedId = selectedConversationId;
+
+      setConversations((prev) => prev.filter(
+        (conversation) => normalizeId(conversation._id) !== normalizeId(deletedId),
+      ));
+      setSelectedConversationId(null);
+      setMessages([]);
+      setMobileChat(false);
+      antMessage.success("Đã xóa cuộc trò chuyện khỏi hộp thư của bạn");
+    } catch (error) {
+      antMessage.error(error?.response?.data?.message || "Không thể xóa cuộc trò chuyện");
+    }
+  };
+
   // ===================================================
   // SEND MESSAGE
   // ===================================================
@@ -1390,8 +1480,7 @@ export default function ChatPage() {
         w-full
         overflow-hidden
         bg-white
-        pb-[78px]
-        lg:pb-0
+        pb-0
       "
     >
       <div
@@ -1908,6 +1997,26 @@ export default function ChatPage() {
                       }
                     />
                   </Tooltip>
+
+                  <Popconfirm
+                    title="Xóa cuộc trò chuyện?"
+                    description="Đoạn chat chỉ bị xóa khỏi hộp thư của bạn."
+                    okText="Xóa"
+                    cancelText="Hủy"
+                    okButtonProps={{ danger: true }}
+                    onConfirm={handleDeleteConversation}
+                  >
+                    <Tooltip title="Xóa cuộc trò chuyện">
+                      <Button
+                        type="text"
+                        shape="circle"
+                        size="large"
+                        danger
+                        icon={<DeleteOutlined />}
+                        aria-label="Xóa cuộc trò chuyện"
+                      />
+                    </Tooltip>
+                  </Popconfirm>
                 </div>
               </header>
 
@@ -1995,6 +2104,16 @@ export default function ChatPage() {
                             ) ===
                             currentUserId;
 
+                          const isDeleted = Boolean(item.deletedAt);
+
+                          const seenByOther = isMe && Array.isArray(item.seenBy) && item.seenBy.some(
+                            (user) => normalizeId(getUserId(user)) !== currentUserId,
+                          );
+
+                          const isLastOwnMessage = isMe && !messages.slice(index + 1).some(
+                            (nextItem) => normalizeId(getSenderId(nextItem)) === currentUserId,
+                          );
+
                           const prevItem =
                             messages[
                               index - 1
@@ -2064,8 +2183,8 @@ export default function ChatPage() {
 
                               {/* MESSAGE */}
 
-                              <div
-                                className={`
+                                  <div
+                                    className={`
                                   group
                                   flex
                                   min-w-0
@@ -2094,14 +2213,29 @@ export default function ChatPage() {
                                     leading-5
 
                                     ${
-                                      isMe
-                                        ? "bg-gradient-to-br from-[#4776E6] to-[#8E54E9] text-white"
-                                        : "bg-[#efefef] text-gray-900"
+                                      isDeleted
+                                        ? "bg-[#efefef] text-gray-500"
+                                        : isMe
+                                          ? "bg-gradient-to-br from-[#4776E6] to-[#8E54E9] text-white"
+                                          : "bg-[#efefef] text-gray-900"
                                     }
                                   `}
                                 >
-                                  {item.content}
+                                  {isDeleted ? (
+                                    <span className="italic text-gray-500">
+                                      Tin nhắn đã bị xoá
+                                    </span>
+                                  ) : (
+                                    item.content
+                                  )}
                                 </div>
+
+                                {isLastOwnMessage && seenByOther && !isDeleted && (
+                                  <div className="mt-1 flex items-center gap-1 px-1 text-[10px] font-medium text-[#4776E6]">
+                                    <CheckCircleFilled className="text-[10px]" />
+                                    <span>Đã xem</span>
+                                  </div>
+                                )}
 
                                 {/* TIME */}
 
@@ -2123,10 +2257,31 @@ export default function ChatPage() {
                                     )}
                                   </span>
 
-                                  {isMe && (
-                                    <CheckOutlined className="text-[9px]" />
+                                  {isMe && !isDeleted && (
+                                    <Tooltip title={seenByOther ? "Đã xem" : "Đã gửi"}>
+                                      <CheckOutlined className={`text-[9px] ${seenByOther ? "text-[#4776E6]" : ""}`} />
+                                    </Tooltip>
                                   )}
                                 </div>
+
+                                {isMe && !isDeleted && item._id && (
+                                  <Popconfirm
+                                    title="Xóa tin nhắn này?"
+                                    description="Tin nhắn sẽ biến mất với cả hai bên."
+                                    okText="Xóa"
+                                    cancelText="Hủy"
+                                    okButtonProps={{ danger: true }}
+                                    onConfirm={() => handleDeleteMessage(item._id)}
+                                  >
+                                    <Button
+                                      type="text"
+                                      size="small"
+                                      icon={<DeleteOutlined />}
+                                      className="mt-0.5 hidden !text-gray-400 group-hover:!inline-flex hover:!text-red-500"
+                                      aria-label="Xóa tin nhắn"
+                                    />
+                                  </Popconfirm>
+                                )}
                               </div>
                             </div>
                           );

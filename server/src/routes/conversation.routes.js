@@ -4,6 +4,7 @@ const {
   createConversation,
   getMyConversations,
   getConversationById,
+  deleteConversation,
 } = require("../controllers/conversation.controller");
 
 const {
@@ -41,5 +42,7 @@ router.get(
   authenticate,
   getConversationById
 );
+
+router.delete("/:id", authenticate, deleteConversation);
 
 module.exports = router;

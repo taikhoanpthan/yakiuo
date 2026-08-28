@@ -16,10 +16,20 @@ const ROLE_PERMISSIONS = {
     "commission.delete",
 
     "reports.read",
+
+    "notifications.read",
+    "notifications.create",
+    "notifications.update",
+    "notifications.delete",
   ],
 
   manager: [
     "users.read",
+
+    "notifications.read",
+    "notifications.create",
+    "notifications.update",
+    "notifications.delete",
 
     "feedback.read",
     "feedback.create",
@@ -38,6 +48,16 @@ const ROLE_PERMISSIONS = {
     "feedback.read",
     "feedback.create",
     "feedback.update",
+
+    "commission.read",
+    "commission.create",
+  ],
+
+  premium: [
+    "feedback.read",
+    "feedback.create",
+    "feedback.update",
+    "feedback.delete",
 
     "commission.read",
     "commission.create",

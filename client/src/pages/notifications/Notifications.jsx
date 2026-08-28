@@ -43,7 +43,10 @@ import {
   getWorkSchedule,
   updateWorkSchedule,
 } from "../../services/workSchedule.service";
+import { createFeedbackTag, deleteFeedbackTag, getFeedbackTags } from "../../services/feedbackTag.service";
+import { useAuth } from "../../store/AuthContext";
 const Notifications = () => {
+  const { user } = useAuth();
   const [form] = Form.useForm();
 
   const [notifications, setNotifications] = useState([]);
@@ -58,6 +61,9 @@ const Notifications = () => {
   const [workSchedule, setWorkSchedule] = useState(null);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleUploading, setScheduleUploading] = useState(false);
+  const [feedbackTags, setFeedbackTags] = useState([]);
+  const [newFeedbackTag, setNewFeedbackTag] = useState("");
+  const [tagSaving, setTagSaving] = useState(false);
   // =========================
   // LOAD DATA
   // =========================
@@ -106,10 +112,49 @@ const Notifications = () => {
     }
   }, []);
 
+  const loadFeedbackTags = useCallback(async () => {
+    if (user?.role !== "admin") return;
+
+    try {
+      const response = await getFeedbackTags();
+      setFeedbackTags(Array.isArray(response?.data) ? response.data : []);
+    } catch (error) {
+      setFeedbackTags([]);
+    }
+  }, [user?.role]);
+
   useEffect(() => {
     void loadNotifications();
     void loadWorkSchedule();
-  }, [loadNotifications, loadWorkSchedule]);
+    void loadFeedbackTags();
+  }, [loadNotifications, loadWorkSchedule, loadFeedbackTags]);
+
+  const handleCreateFeedbackTag = async () => {
+    const label = newFeedbackTag.trim();
+    if (!label) return;
+
+    try {
+      setTagSaving(true);
+      const response = await createFeedbackTag(label);
+      setFeedbackTags((prev) => [...prev, response.data].sort((a, b) => a.label.localeCompare(b.label, "vi")));
+      setNewFeedbackTag("");
+      message.success("Đã tạo nhãn Feedback");
+    } catch (error) {
+      message.error(error?.response?.data?.message || "Không thể tạo nhãn Feedback");
+    } finally {
+      setTagSaving(false);
+    }
+  };
+
+  const handleDeleteFeedbackTag = async (id) => {
+    try {
+      await deleteFeedbackTag(id);
+      setFeedbackTags((prev) => prev.filter((tag) => tag._id !== id));
+      message.success("Đã xóa nhãn Feedback");
+    } catch (error) {
+      message.error(error?.response?.data?.message || "Không thể xóa nhãn Feedback");
+    }
+  };
 
   const uploadScheduleToCloudinary = async (file) => {
     const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -279,30 +324,36 @@ const Notifications = () => {
   // SUBMIT
   // =========================
 
-  const handleSubmit = (values) => {
-    // Đóng modal ngay
-    setModalOpen(false);
-    setEditingNotification(null);
-    form.resetFields();
+  const handleSubmit = async (values) => {
+    const notificationId = editingNotification?._id;
+    const isEditing = Boolean(notificationId);
 
-    // POST chạy ngay
-    createNotification(values)
-      .then((response) => {
-        const newNotification = response.data?.data?.notification;
+    try {
+      setSaving(true);
 
-        if (newNotification) {
-          setNotifications((prev) => [newNotification, ...prev]);
-        }
+      if (isEditing) {
+        await updateNotification(notificationId, values);
+      } else {
+        await createNotification(values);
+      }
 
-        message.success("Đã tạo thông báo");
-      })
-      .catch((error) => {
-        console.error("Create notification error:", error);
+      // Tải lại để giữ cả dữ liệu người tạo đã được populate từ server.
+      await loadNotifications();
 
-        message.error(
-          error.response?.data?.message || "Không thể tạo thông báo",
-        );
-      });
+      message.success(isEditing ? "Đã cập nhật thông báo" : "Đã tạo thông báo");
+      setModalOpen(false);
+      setEditingNotification(null);
+      form.resetFields();
+    } catch (error) {
+      console.error(`${isEditing ? "Update" : "Create"} notification error:`, error);
+
+      message.error(
+        error.response?.data?.message ||
+          (isEditing ? "Không thể cập nhật thông báo" : "Không thể tạo thông báo"),
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   // =========================
@@ -696,6 +747,37 @@ const Notifications = () => {
           )}
         </div>
       </Card>
+
+      {user?.role === "admin" && (
+        <Card className="erp-section-card">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="m-0 text-base font-semibold text-slate-800">Nhãn Feedback cho Premium</h2>
+              <p className="mb-0 mt-1 text-sm text-slate-400">Premium sẽ nhìn thấy các nhãn này khi thêm feedback.</p>
+            </div>
+            <div className="flex gap-2 sm:w-[360px]">
+              <Input
+                value={newFeedbackTag}
+                onChange={(event) => setNewFeedbackTag(event.target.value)}
+                onPressEnter={handleCreateFeedbackTag}
+                placeholder="Ví dụ: Đồ ăn ngon"
+                maxLength={60}
+              />
+              <Button type="primary" icon={<PlusOutlined />} loading={tagSaving} onClick={handleCreateFeedbackTag}>
+                Thêm
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {feedbackTags.length ? feedbackTags.map((tag) => (
+              <Tag key={tag._id} closable onClose={(event) => { event.preventDefault(); handleDeleteFeedbackTag(tag._id); }}>
+                {tag.label}
+              </Tag>
+            )) : <span className="text-sm text-slate-400">Chưa có nhãn nào.</span>}
+          </div>
+        </Card>
+      )}
       {/* ================= STATS ================= */}
 
       {/* ================= TABLE ================= */}

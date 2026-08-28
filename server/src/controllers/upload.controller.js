@@ -10,10 +10,12 @@ const uploadImage = async (req, res) => {
       });
     }
 
+    const imageType = req.body?.type === "cover" ? "cover" : "avatar";
+
     const result = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
-          folder: "yakiuo-erp",
+          folder: `yakiuo-erp/${imageType}s`,
           resource_type: "image",
         },
         (error, result) => {
@@ -41,15 +43,20 @@ const uploadImage = async (req, res) => {
       });
     }
 
-    user.avatar = result.secure_url;
+    if (imageType === "cover") {
+      user.coverImage = result.secure_url;
+    } else {
+      user.avatar = result.secure_url;
+    }
 
     await user.save();
 
     return res.status(201).json({
       success: true,
-      message: "Avatar uploaded successfully",
+      message: `${imageType === "cover" ? "Cover image" : "Avatar"} uploaded successfully`,
       data: {
         avatar: user.avatar,
+        coverImage: user.coverImage,
       },
     });
   } catch (error) {

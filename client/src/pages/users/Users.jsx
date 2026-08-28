@@ -30,8 +30,11 @@ import {
   deleteUser,
 } from "../../services/user.service";
 import EmployeeDetail from "./EmployeeDetail";
+import { useAuth } from "../../store/AuthContext";
 
 const Users = () => {
+  const { user: currentUser } = useAuth();
+  const canManageUsers = currentUser?.role === "admin";
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -172,6 +175,10 @@ const Users = () => {
             color: "gold",
             label: "MANAGER",
           },
+          premium: {
+            color: "purple",
+            label: "PREMIUM",
+          },
           employee: {
             color: "blue",
             label: "EMPLOYEE",
@@ -257,6 +264,12 @@ const Users = () => {
       ),
     },
   ];
+
+  // Manager chỉ được xem hồ sơ nhân viên; các thao tác đổi thông tin/mật khẩu
+  // vẫn dành riêng cho admin ở cả UI lẫn backend permission.
+  if (!canManageUsers) {
+    columns.pop();
+  }
   if (selectedEmployee) {
     return (
       <EmployeeDetail
@@ -276,17 +289,19 @@ const Users = () => {
           </p>
         </div>
 
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          size="large"
-          onClick={() => {
-            setEditingUser(null);
-            setModalOpen(true);
-          }}
-        >
-          Thêm nhân viên
-        </Button>
+        {canManageUsers && (
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            size="large"
+            onClick={() => {
+              setEditingUser(null);
+              setModalOpen(true);
+            }}
+          >
+            Thêm nhân viên
+          </Button>
+        )}
       </div>
 
       {/* FILTER */}
@@ -315,6 +330,10 @@ const Users = () => {
               {
                 value: "manager",
                 label: "Manager",
+              },
+              {
+                value: "premium",
+                label: "Premium",
               },
               {
                 value: "employee",

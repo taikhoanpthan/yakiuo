@@ -14,6 +14,10 @@ router.use(authenticate);
 // =========================
 
 router.get("/me", userController.getMe);
+router.patch("/me/profile", userController.updateMyProfile);
+
+// Danh sách hồ sơ rút gọn để chọn người trò chuyện.
+router.get("/chat", userController.getChatUsers);
 
 // =========================
 // USERS MANAGEMENT

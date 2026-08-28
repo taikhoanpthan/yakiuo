@@ -51,6 +51,11 @@ const createSocket = () => {
     reconnectionDelayMax: 5000,
 
     timeout: 10000,
+
+    // Lấy token mới nhất mỗi lần Socket.IO (re)connect.
+    auth: (callback) => callback({
+      token: localStorage.getItem("accessToken"),
+    }),
   });
 
   // =================================================
@@ -109,6 +114,21 @@ const createSocket = () => {
 
   socket.on("presence:error", (data) => {
     console.error("❌ PRESENCE ERROR:", data);
+  });
+
+  // Server gửi sự kiện này khi quản trị viên khóa tài khoản.
+  // Xóa token và quay về đăng nhập ngay, không chờ request tiếp theo.
+  socket.on("account:locked", (data = {}) => {
+    console.warn("🔒 ACCOUNT LOCKED:", data.message || "Tài khoản đã bị khóa");
+
+    currentUserId = null;
+    joinedUserId = null;
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    localStorage.removeItem("currentUser");
+    socket.disconnect();
+    window.location.assign("/login");
   });
 
   // =================================================

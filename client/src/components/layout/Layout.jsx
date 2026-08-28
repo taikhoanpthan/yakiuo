@@ -5,6 +5,7 @@ import {
   Badge,
   Button,
   Dropdown,
+  Drawer,
   Empty,
   Layout as AntLayout,
   Popover,
@@ -24,7 +25,6 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   MessageOutlined,
-  SettingOutlined,
   TeamOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -40,6 +40,8 @@ import { useAuth } from "../../store/AuthContext";
 import { getNotifications } from "../../services/notificationService";
 
 import { onOnlineUsers } from "../../services/socket";
+import MobileTaskbar from "./MobileTaskbar";
+import DesktopSidebar from "./DesktopSidebar";
 
 const { Content, Header, Sider } = AntLayout;
 
@@ -64,6 +66,7 @@ const Layout = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
 
   const [notificationLoading, setNotificationLoading] = useState(false);
+  const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
 
   // ===================================================
   // REALTIME ONLINE COUNT
@@ -92,6 +95,29 @@ const Layout = ({ children }) => {
 
   const isChatPage =
     location.pathname === "/chat" || location.pathname.startsWith("/chat/");
+
+  // Safari iOS không luôn cập nhật 100dvh đúng lúc bàn phím mở.
+  // Dùng visualViewport để khung chat luôn nằm trong phần màn hình đang thấy.
+  useEffect(() => {
+    const viewport = window.visualViewport;
+
+    const syncViewportHeight = () => {
+      document.documentElement.style.setProperty(
+        "--erp-viewport-height",
+        `${viewport?.height || window.innerHeight}px`,
+      );
+    };
+
+    syncViewportHeight();
+    viewport?.addEventListener("resize", syncViewportHeight);
+    window.addEventListener("resize", syncViewportHeight);
+
+    return () => {
+      viewport?.removeEventListener("resize", syncViewportHeight);
+      window.removeEventListener("resize", syncViewportHeight);
+      document.documentElement.style.removeProperty("--erp-viewport-height");
+    };
+  }, []);
 
   // ===================================================
   // MENU
@@ -128,8 +154,8 @@ const Layout = ({ children }) => {
       },
     ];
 
-    // ADMIN
-    if (user?.role === "admin") {
+    // ADMIN + MANAGER: đều có thể xem nhân viên và quản lý thông báo.
+    if (["admin", "manager"].includes(user?.role)) {
       items.splice(1, 0, {
         key: "/users",
         label: "Nhân viên",
@@ -155,7 +181,7 @@ const Layout = ({ children }) => {
   const mobileMenuItems = useMemo(() => {
     const keys = ["/dashboard", "/feedback", "/chat", "/todos"];
 
-    if (user?.role === "admin") {
+    if (["admin", "manager"].includes(user?.role)) {
       keys.push("/notifications");
     }
 
@@ -163,6 +189,19 @@ const Layout = ({ children }) => {
       .map((key) => menuItems.find((item) => item.key === key))
       .filter(Boolean);
   }, [menuItems, user?.role]);
+
+  const mobileTaskbarItems = useMemo(
+    () => [
+      ...mobileMenuItems,
+      {
+        key: "/profile",
+        label: "Tôi",
+        shortLabel: "Tôi",
+        user,
+      },
+    ],
+    [mobileMenuItems, user],
+  );
 
   // ===================================================
   // NAVIGATION
@@ -352,6 +391,7 @@ const Layout = ({ children }) => {
         style: {
           width: 380,
           maxWidth: "calc(100vw - 24px)",
+          marginRight: 12,
           padding: 16,
           borderRadius: 18,
           background: "#fff",
@@ -554,8 +594,9 @@ const Layout = ({ children }) => {
 
       {!notificationLoading && recentNotifications.length > 0 && (
         <div
+          className="erp-notification-list"
           style={{
-            maxHeight: 400,
+            maxHeight: "min(520px, calc(100dvh - 180px))",
             overflowY: "auto",
           }}
         >
@@ -678,101 +719,13 @@ const Layout = ({ children }) => {
   // ===================================================
 
   const renderNav = () => (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        height: "100%",
-        minHeight: 0,
-        overflow: "hidden",
-      }}
-    >
-      <div
-        className="erp-brand"
-        style={{
-          flexShrink: 0,
-        }}
-      >
-        <div className="erp-brand-mark">Y</div>
-
-        {!collapsed && (
-          <div>
-            <strong>YAKIUO</strong>
-
-            <span>ERP WORKSPACE</span>
-          </div>
-        )}
-      </div>
-
-      {!collapsed && (
-        <div
-          className="erp-nav-label"
-          style={{
-            flexShrink: 0,
-          }}
-        >
-          Điều hướng
-        </div>
-      )}
-
-      <nav
-        className="erp-nav"
-        aria-label="Điều hướng chính"
-        style={{
-          flex: "1 1 auto",
-          minHeight: 0,
-          overflowY: "auto",
-          overflowX: "hidden",
-          paddingBottom: 12,
-        }}
-      >
-        {menuItems.map((item) => {
-          const active =
-            location.pathname === item.key ||
-            location.pathname.startsWith(`${item.key}/`);
-
-          return (
-            <Tooltip
-              key={item.key}
-              title={collapsed ? item.label : undefined}
-              placement="right"
-            >
-              <button
-                type="button"
-                className={`erp-nav-item ${active ? "is-active" : ""}`}
-                onClick={() => handleNavigate(item.key)}
-              >
-                <span className="erp-nav-icon">{item.icon}</span>
-
-                {!collapsed && <span>{item.label}</span>}
-              </button>
-            </Tooltip>
-          );
-        })}
-      </nav>
-
-      <div
-        className="erp-side-bottom"
-        style={{
-          flexShrink: 0,
-        }}
-      >
-        <div className="erp-side-help">
-          <SettingOutlined />
-
-          {!collapsed && <span>Hệ thống nội bộ</span>}
-        </div>
-
-        <Tooltip title={collapsed ? "Đăng xuất" : undefined} placement="right">
-          <button type="button" className="erp-logout" onClick={handleLogout}>
-            <LogoutOutlined />
-
-            {!collapsed && <span>Đăng xuất</span>}
-          </button>
-        </Tooltip>
-      </div>
-    </div>
+    <DesktopSidebar
+      collapsed={collapsed}
+      items={menuItems}
+      pathname={location.pathname}
+      onNavigate={handleNavigate}
+      onLogout={handleLogout}
+    />
   );
 
   // ===================================================
@@ -780,131 +733,16 @@ const Layout = ({ children }) => {
   // ===================================================
 
   const renderMobileTaskbar = () => {
-    if (!isMobile) {
+    if (!isMobile || isChatPage) {
       return null;
     }
 
-    const allItems = [
-      ...mobileMenuItems,
-
-      {
-        key: "/profile",
-        label: "Tôi",
-        shortLabel: "Tôi",
-
-        icon: (
-          <Avatar
-            size={24}
-            src={user?.avatar || undefined}
-            icon={!user?.avatar && <UserOutlined />}
-          >
-            {!user?.avatar && (user?.fullName?.charAt(0) || "Y").toUpperCase()}
-          </Avatar>
-        ),
-      },
-    ];
-
     return (
-      <nav
-        className="erp-mobile-taskbar"
-        aria-label="Điều hướng mobile"
-        style={{
-          position: "fixed",
-          left: 10,
-          right: 10,
-          bottom: "max(10px, env(safe-area-inset-bottom))",
-          zIndex: 9999,
-          height: 66,
-          display: "flex",
-          alignItems: "center",
-          padding: 5,
-          overflow: "hidden",
-          background: "rgba(255,255,255,.82)",
-          backdropFilter: "blur(24px) saturate(180%)",
-          WebkitBackdropFilter: "blur(24px) saturate(180%)",
-          border: "1px solid rgba(255,255,255,.75)",
-          borderRadius: 24,
-          boxShadow: "0 10px 35px rgba(15,23,42,.12)",
-        }}
-      >
-        {allItems.map((item) => {
-          const active =
-            location.pathname === item.key ||
-            location.pathname.startsWith(`${item.key}/`);
-
-          return (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => handleNavigate(item.key)}
-              style={{
-                position: "relative",
-                flex: "1 1 0",
-                minWidth: 0,
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 2,
-                border: 0,
-                background: "transparent",
-                borderRadius: 19,
-                color: active ? "#111827" : "#8b95a7",
-                padding: "4px 2px",
-              }}
-            >
-              {active && (
-                <motion.span
-                  layoutId="mobile-nav-active"
-                  style={{
-                    position: "absolute",
-                    inset: 2,
-                    borderRadius: 18,
-                    background:
-                      "linear-gradient(145deg, rgba(241,245,249,.95), rgba(226,232,240,.72))",
-                    zIndex: 0,
-                  }}
-                />
-              )}
-
-              <motion.span
-                style={{
-                  position: "relative",
-                  zIndex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 28,
-                  height: 28,
-                  fontSize: 20,
-                }}
-                animate={{
-                  scale: active ? 1.06 : 1,
-                }}
-              >
-                {item.icon}
-              </motion.span>
-
-              <span
-                style={{
-                  position: "relative",
-                  zIndex: 1,
-                  fontSize: 9,
-                  fontWeight: active ? 650 : 500,
-                  lineHeight: "12px",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  maxWidth: "100%",
-                }}
-              >
-                {item.shortLabel || item.label}
-              </span>
-            </button>
-          );
-        })}
-      </nav>
+      <MobileTaskbar
+        items={mobileTaskbarItems}
+        pathname={location.pathname}
+        onNavigate={handleNavigate}
+      />
     );
   };
 
@@ -920,7 +758,7 @@ const Layout = ({ children }) => {
         className="erp-shell"
         style={{
           width: "100%",
-          height: "100dvh",
+          height: "var(--erp-viewport-height, 100dvh)",
           minHeight: 0,
           overflow: "hidden",
         }}
@@ -944,8 +782,8 @@ const Layout = ({ children }) => {
             }
           }}
           style={{
-            height: "100dvh",
-            maxHeight: "100dvh",
+            height: "var(--erp-viewport-height, 100dvh)",
+            maxHeight: "var(--erp-viewport-height, 100dvh)",
             overflow: "hidden",
           }}
         >
@@ -964,7 +802,7 @@ const Layout = ({ children }) => {
             flex: "1 1 auto",
             minWidth: 0,
             minHeight: 0,
-            height: "100dvh",
+            height: "var(--erp-viewport-height, 100dvh)",
             overflow: "hidden",
           }}
         >
@@ -1076,31 +914,45 @@ const Layout = ({ children }) => {
                   NOTIFICATION
               ======================================= */}
 
-              <Popover
-                trigger="click"
-                placement="bottomRight"
-                arrow={false}
-                content={notificationContent}
-                styles={{
-                  root: {
-                    maxWidth: "calc(100vw - 24px)",
-                  },
-                }}
-              >
-                <Tooltip title="Thông báo">
-                  <Badge
-                    count={notificationCount}
-                    overflowCount={99}
-                    size="small"
+              {isMobile ? (
+                <>
+                  <Tooltip title="Thông báo">
+                    <Badge count={notificationCount} overflowCount={99} size="small" offset={[-4, 4]}>
+                      <Button
+                        type="text"
+                        className="erp-menu-button"
+                        icon={<BellOutlined />}
+                        onClick={() => setNotificationDrawerOpen(true)}
+                      />
+                    </Badge>
+                  </Tooltip>
+
+                  <Drawer
+                    title="Thông báo"
+                    placement="bottom"
+                    height="min(78dvh, 680px)"
+                    open={notificationDrawerOpen}
+                    onClose={() => setNotificationDrawerOpen(false)}
+                    className="erp-mobile-notification-drawer"
                   >
-                    <Button
-                      type="text"
-                      className="erp-menu-button"
-                      icon={<BellOutlined />}
-                    />
-                  </Badge>
-                </Tooltip>
-              </Popover>
+                    {notificationContent}
+                  </Drawer>
+                </>
+              ) : (
+                <Popover
+                  trigger="click"
+                  placement="bottomRight"
+                  arrow={false}
+                  content={notificationContent}
+                  styles={{ root: { maxWidth: "calc(100vw - 24px)" } }}
+                >
+                  <Tooltip title="Thông báo">
+                    <Badge count={notificationCount} overflowCount={99} size="small" offset={[-4, 4]}>
+                      <Button type="text" className="erp-menu-button" icon={<BellOutlined />} />
+                    </Badge>
+                  </Tooltip>
+                </Popover>
+              )}
 
               {/* =======================================
                   USER

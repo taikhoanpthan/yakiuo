@@ -33,6 +33,35 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    coverImage: {
+      type: String,
+      default: "",
+    },
+
+    avatarPosition: {
+      x: { type: Number, default: 50, min: 0, max: 100 },
+      y: { type: Number, default: 50, min: 0, max: 100 },
+    },
+
+    avatarZoom: {
+      type: Number,
+      default: 1,
+      min: 1,
+      max: 2.5,
+    },
+
+    coverPosition: {
+      x: { type: Number, default: 50, min: 0, max: 100 },
+      y: { type: Number, default: 50, min: 0, max: 100 },
+    },
+
+    coverZoom: {
+      type: Number,
+      default: 1,
+      min: 1,
+      max: 2.5,
+    },
+
     phone: {
       type: String,
       default: "",
@@ -40,7 +69,7 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["employee", "manager", "admin"],
+      enum: ["employee", "premium", "manager", "admin"],
       default: "employee",
     },
 

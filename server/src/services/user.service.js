@@ -51,6 +51,14 @@ const getUsers = async ({ page = 1, limit = 20, search = "" }) => {
   };
 };
 
+// Hồ sơ tối thiểu cho danh sách người có thể nhắn tin.
+const getChatUsers = async () => {
+  return User.find({ status: "active" })
+    .select("_id username fullName avatar")
+    .sort({ fullName: 1, username: 1 })
+    .lean();
+};
+
 const getUserById = async (userId) => {
   const user = await User.findById(userId).select(
     "-passwordHash -refreshTokenHash -__v",
@@ -109,12 +117,33 @@ const createUser = async ({
 
 const updateUser = async (
   userId,
-  { email, fullName, avatar, phone, role, password },
+  { username, email, fullName, avatar, phone, role, password },
 ) => {
   const user = await User.findById(userId);
 
   if (!user) {
     throw new Error("User not found");
+  }
+
+  if (username !== undefined) {
+    const normalizedUsername = username.trim();
+
+    if (!normalizedUsername) {
+      throw new Error("Username is required");
+    }
+
+    if (normalizedUsername !== user.username) {
+      const existingUsername = await User.findOne({
+        username: normalizedUsername,
+        _id: { $ne: userId },
+      });
+
+      if (existingUsername) {
+        throw new Error("Username already exists");
+      }
+
+      user.username = normalizedUsername;
+    }
   }
 
   if (email !== undefined) {
@@ -162,6 +191,58 @@ const updateUser = async (
 
   await user.save();
 
+  return sanitizeUser(user);
+};
+
+const normalizeImagePosition = (position = {}) => ({
+  x: Math.min(100, Math.max(0, Number(position.x) || 50)),
+  y: Math.min(100, Math.max(0, Number(position.y) || 50)),
+});
+
+const normalizeImageZoom = (zoom) => Math.min(2.5, Math.max(1, Number(zoom) || 1));
+
+// Người dùng chỉ cập nhật được hồ sơ và vị trí hiển thị ảnh của chính họ.
+const updateOwnProfile = async (userId, { username, email, fullName, phone, avatarPosition, coverPosition, avatarZoom, coverZoom }) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const canEditAccountIdentity = ["admin", "manager", "premium"].includes(user.role);
+
+  if (username !== undefined) {
+    if (!canEditAccountIdentity) throw new Error("Bạn không có quyền đổi tên đăng nhập");
+
+    const normalizedUsername = username.trim();
+    if (!normalizedUsername) throw new Error("Tên đăng nhập không được để trống");
+
+    if (normalizedUsername !== user.username) {
+      const existing = await User.findOne({ username: normalizedUsername, _id: { $ne: userId } });
+      if (existing) throw new Error("Tên đăng nhập đã tồn tại");
+      user.username = normalizedUsername;
+    }
+  }
+
+  if (email !== undefined) {
+    if (!canEditAccountIdentity) throw new Error("Bạn không có quyền đổi email");
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (normalizedEmail && normalizedEmail !== user.email) {
+      const existing = await User.findOne({ email: normalizedEmail, _id: { $ne: userId } });
+      if (existing) throw new Error("Email đã tồn tại");
+    }
+    user.email = normalizedEmail || undefined;
+  }
+
+  if (fullName !== undefined) user.fullName = fullName.trim();
+  if (phone !== undefined) user.phone = phone.trim();
+  if (avatarPosition !== undefined) user.avatarPosition = normalizeImagePosition(avatarPosition);
+  if (coverPosition !== undefined) user.coverPosition = normalizeImagePosition(coverPosition);
+  if (avatarZoom !== undefined) user.avatarZoom = normalizeImageZoom(avatarZoom);
+  if (coverZoom !== undefined) user.coverZoom = normalizeImageZoom(coverZoom);
+
+  await user.save();
   return sanitizeUser(user);
 };
 const updateUserStatus = async (userId, status) => {
@@ -238,9 +319,11 @@ const changePassword = async (userId, currentPassword, newPassword) => {
 };
 module.exports = {
   getUsers,
+  getChatUsers,
   getUserById,
   createUser,
   updateUser,
+  updateOwnProfile,
   updateUserStatus,
   deleteUser,
   changePassword,

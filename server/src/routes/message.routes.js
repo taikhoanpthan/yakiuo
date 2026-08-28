@@ -2,6 +2,8 @@ const express = require("express");
 
 const {
   getMessages,
+  markMessagesAsRead,
+  deleteMessage,
 } = require("../controllers/message.controller");
 
 const {
@@ -14,10 +16,14 @@ const router = express.Router();
 // GET MESSAGE HISTORY
 // =========================
 
-router.get(
-  "/:conversationId",
+router.post(
+  "/:conversationId/read",
   authenticate,
-  getMessages,
+  markMessagesAsRead,
 );
+
+router.delete("/:messageId", authenticate, deleteMessage);
+
+router.get("/:conversationId", authenticate, getMessages);
 
 module.exports = router;

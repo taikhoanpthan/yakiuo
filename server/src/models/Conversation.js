@@ -11,6 +11,36 @@ const conversationSchema = new mongoose.Schema(
       },
     ],
 
+    // Người dùng đã xóa/ẩn đoạn chat khỏi hộp thư của riêng họ.
+    deletedFor: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        deletedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+
+    // Mốc xóa lịch sử riêng của từng người dùng. Tin trước mốc này không tải lại.
+    clearedFor: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        clearedAt: {
+          type: Date,
+          required: true,
+        },
+      },
+    ],
+
     // Tin nhắn cuối cùng
     lastMessage: {
       type: mongoose.Schema.Types.ObjectId,

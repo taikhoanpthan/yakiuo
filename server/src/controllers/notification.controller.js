@@ -73,12 +73,12 @@ const createNotification = async (
       });
     }
 
-    // Chỉ Admin được tạo
-    if (req.user.role !== "admin") {
+    // Admin và manager có thể quản lý thông báo.
+    if (!["admin", "manager"].includes(req.user.role)) {
       return res.status(403).json({
         success: false,
         message:
-          "Only admin can create notifications",
+          "Only admin or manager can create notifications",
       });
     }
 
@@ -154,11 +154,11 @@ const updateNotification = async (
       });
     }
 
-    if (req.user.role !== "admin") {
+    if (!["admin", "manager"].includes(req.user.role)) {
       return res.status(403).json({
         success: false,
         message:
-          "Only admin can update notifications",
+          "Only admin or manager can update notifications",
       });
     }
 
@@ -206,11 +206,11 @@ const deleteNotification = async (
       });
     }
 
-    if (req.user.role !== "admin") {
+    if (!["admin", "manager"].includes(req.user.role)) {
       return res.status(403).json({
         success: false,
         message:
-          "Only admin can delete notifications",
+          "Only admin or manager can delete notifications",
       });
     }
 

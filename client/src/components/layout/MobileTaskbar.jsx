@@ -23,8 +23,18 @@ const MobileTaskbar = ({ items, pathname, onNavigate }) => (
           onClick={() => onNavigate(item.key)}
           className={`erp-mobile-task-item ${active ? "is-active" : ""}`}
         >
-          {active && <motion.span layoutId="mobile-nav-active" className="erp-mobile-task-active" />}
-          <motion.span className="erp-mobile-task-icon" animate={{ scale: active ? 1.06 : 1 }}>
+          {active && (
+            <motion.span
+              layoutId="mobile-nav-active"
+              className="erp-mobile-task-active"
+              transition={{ type: "spring", stiffness: 420, damping: 30, mass: 0.7 }}
+            />
+          )}
+          <motion.span
+            className="erp-mobile-task-icon"
+            animate={{ scale: active ? 1.05 : 1, y: active ? -1 : 0 }}
+            transition={{ type: "spring", stiffness: 500, damping: 28, mass: 0.55 }}
+          >
             {icon}
           </motion.span>
           <span className="erp-mobile-task-label">{item.shortLabel || item.label}</span>

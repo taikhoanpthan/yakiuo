@@ -423,6 +423,7 @@ module.exports = (io) => {
         // -------------------------------------------------
 
         socket.userId = authenticatedUserId;
+        socket.join(`user:${authenticatedUserId}`);
 
         // -------------------------------------------------
         // Add socket
@@ -640,6 +641,7 @@ module.exports = (io) => {
           conversationId,
           content,
           clientMessageId,
+          type = "text",
         } = data;
 
         try {
@@ -663,7 +665,8 @@ module.exports = (io) => {
 
           if (
             !conversationId ||
-            !content?.trim()
+            !content?.trim() ||
+            !["text", "image"].includes(type)
           ) {
             socket.emit("message:error", {
               clientMessageId,
@@ -725,7 +728,7 @@ module.exports = (io) => {
             await Message.create({
               conversationId,
               senderId,
-              type: "text",
+              type,
               content: content.trim(),
               seenBy: [senderId],
             });

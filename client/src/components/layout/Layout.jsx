@@ -1015,7 +1015,7 @@ const Layout = ({ children }) => {
               WebkitOverflowScrolling: "touch",
               paddingBottom:
                 isMobile && !isChatPage
-                  ? "calc(82px + env(safe-area-inset-bottom))"
+                  ? "calc(76px + env(safe-area-inset-bottom))"
                   : 0,
             }}
           >

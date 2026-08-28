@@ -2,6 +2,7 @@ const express = require("express");
 
 const {
   createConversation,
+  createGroupConversation,
   getMyConversations,
   getConversationById,
   deleteConversation,
@@ -42,6 +43,8 @@ router.get(
   authenticate,
   getConversationById
 );
+
+router.post("/group", authenticate, createGroupConversation);
 
 router.delete("/:id", authenticate, deleteConversation);
 

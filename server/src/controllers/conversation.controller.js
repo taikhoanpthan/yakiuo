@@ -73,6 +73,7 @@ const createConversation = async (req, res) => {
 
     if (!conversation) {
       conversation = await Conversation.create({
+        type: "direct",
         participants: [
           currentUserId,
           userId,
@@ -187,6 +188,54 @@ const deleteConversation = async (req, res) => {
   }
 };
 
+const createGroupConversation = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+    const { name, participantIds } = req.body;
+
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Chỉ admin được tạo nhóm chat" });
+    }
+
+    const groupName = String(name || "").trim();
+    const uniqueIds = [...new Set((Array.isArray(participantIds) ? participantIds : []).map(String))]
+      .filter((id) => id !== String(currentUserId));
+
+    if (!groupName) {
+      return res.status(400).json({ success: false, message: "Vui lòng nhập tên nhóm" });
+    }
+    if (!uniqueIds.length) {
+      return res.status(400).json({ success: false, message: "Vui lòng chọn ít nhất một thành viên" });
+    }
+
+    const users = await User.find({ _id: { $in: uniqueIds }, status: "active" }).select("_id");
+    if (users.length !== uniqueIds.length) {
+      return res.status(400).json({ success: false, message: "Một hoặc nhiều thành viên không hợp lệ" });
+    }
+
+    const conversation = await Conversation.create({
+      type: "group",
+      name: groupName,
+      createdBy: currentUserId,
+      participants: [currentUserId, ...uniqueIds],
+    });
+    const populatedConversation = await Conversation.findById(conversation._id).populate(
+      "participants",
+      "_id username email avatar phone role status fullName",
+    );
+
+    const io = req.app.get("io");
+    populatedConversation.participants.forEach((participant) => {
+      io?.to(`user:${participant._id}`).emit("conversation:created", populatedConversation);
+    });
+
+    return res.status(201).json({ success: true, message: "Tạo nhóm chat thành công", data: populatedConversation });
+  } catch (error) {
+    console.error("Create group conversation error:", error);
+    return res.status(500).json({ success: false, message: "Không thể tạo nhóm chat" });
+  }
+};
+
 // =========================
 // GET ONE CONVERSATION
 // =========================
@@ -252,6 +301,7 @@ const getConversationById = async (req, res) => {
 
 module.exports = {
   createConversation,
+  createGroupConversation,
   getMyConversations,
   getConversationById,
   deleteConversation,

@@ -2,6 +2,26 @@ const mongoose = require("mongoose");
 
 const conversationSchema = new mongoose.Schema(
   {
+    type: {
+      type: String,
+      enum: ["direct", "group"],
+      default: "direct",
+      index: true,
+    },
+
+    name: {
+      type: String,
+      trim: true,
+      maxlength: 80,
+      default: "",
+    },
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
     // Danh sách user tham gia cuộc trò chuyện
     participants: [
       {

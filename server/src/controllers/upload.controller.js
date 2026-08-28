@@ -69,6 +69,28 @@ const uploadImage = async (req, res) => {
   }
 };
 
+const uploadChatImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Vui lòng chọn ảnh hoặc GIF" });
+    }
+
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: "yakiuo-erp/chat", resource_type: "image" },
+        (error, uploadResult) => (error ? reject(error) : resolve(uploadResult)),
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
+    return res.status(201).json({ success: true, data: { url: result.secure_url, format: result.format } });
+  } catch (error) {
+    console.error("Upload chat image failed:", error);
+    return res.status(500).json({ success: false, message: "Không thể tải ảnh lên" });
+  }
+};
+
 module.exports = {
   uploadImage,
+  uploadChatImage,
 };

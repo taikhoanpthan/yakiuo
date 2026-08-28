@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   Avatar,
   Button,
   Empty,
   Input,
+  Modal,
   Popconfirm,
+  Select,
   Spin,
   Tooltip,
   message as antMessage,
@@ -20,6 +23,7 @@ import {
   FileImageOutlined,
   HeartOutlined,
   InfoCircleOutlined,
+  PlusOutlined,
   PhoneOutlined,
   SearchOutlined,
   SmileOutlined,
@@ -184,11 +188,20 @@ const getInitial = (user) => {
   return getUserName(user).charAt(0).toUpperCase();
 };
 
+const isImageMessage = (message) => {
+  const content = message?.content || "";
+
+  return message?.type === "image" ||
+    /^https?:\/\/res\.cloudinary\.com\/.*\/image\/upload\//i.test(content);
+};
+
 // =====================================================
 // COMPONENT
 // =====================================================
 
 export default function ChatPage() {
+  const navigate = useNavigate();
+
   // ===================================================
   // CURRENT USER
   // ===================================================
@@ -231,6 +244,10 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
 
   const [mobileChat, setMobileChat] = useState(false);
+  const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [groupName, setGroupName] = useState("");
+  const [groupMemberIds, setGroupMemberIds] = useState([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // ===================================================
   // LOADING
@@ -256,6 +273,7 @@ export default function ChatPage() {
   // ===================================================
 
   const messagesContainerRef = useRef(null);
+  const imageInputRef = useRef(null);
 
   const currentConversationRef = useRef(null);
 
@@ -307,6 +325,14 @@ export default function ChatPage() {
     },
     [currentUserId],
   );
+
+  const getConversationName = useCallback((conversation) => {
+    if (conversation?.type === "group") {
+      return conversation.name || "Nhóm chat";
+    }
+
+    return getUserName(getOtherParticipant(conversation));
+  }, [getOtherParticipant]);
 
   // ===================================================
   // LOAD USERS
@@ -803,6 +829,10 @@ export default function ChatPage() {
       );
     };
 
+    const handleConversationCreated = () => {
+      loadConversations();
+    };
+
     // =================================================
     // REGISTER LISTENERS
     // =================================================
@@ -860,6 +890,8 @@ export default function ChatPage() {
       "chat:error",
       handleChatError,
     );
+
+    socket.on("conversation:created", handleConversationCreated);
 
     // =================================================
     // SOCKET ĐÃ CONNECT SẴN
@@ -927,6 +959,8 @@ export default function ChatPage() {
         "chat:error",
         handleChatError,
       );
+
+      socket.off("conversation:created", handleConversationCreated);
 
       // KHÔNG gọi disconnectSocket()
       //
@@ -1099,6 +1133,10 @@ export default function ChatPage() {
 
     return conversations.filter(
       (conversation) => {
+        if (conversation.type === "group") {
+          return (conversation.name || "").toLowerCase().includes(keyword);
+        }
+
         const user =
           getOtherParticipant(
             conversation,
@@ -1279,6 +1317,35 @@ export default function ChatPage() {
     setMobileChat(true);
   };
 
+  const handleCreateGroup = async () => {
+    const name = groupName.trim();
+
+    if (!name || groupMemberIds.length === 0) {
+      antMessage.warning("Nhập tên nhóm và chọn ít nhất một thành viên");
+      return;
+    }
+
+    try {
+      const response = await api.post("/conversations/group", {
+        name,
+        participantIds: groupMemberIds,
+      });
+      const conversation = response?.data?.data;
+
+      if (!conversation?._id) throw new Error("Không nhận được thông tin nhóm");
+
+      setConversations((prev) => [conversation, ...prev]);
+      setSelectedConversationId(conversation._id);
+      setMobileChat(true);
+      setGroupModalOpen(false);
+      setGroupName("");
+      setGroupMemberIds([]);
+      antMessage.success("Đã tạo nhóm chat");
+    } catch (error) {
+      antMessage.error(error?.response?.data?.message || "Không thể tạo nhóm chat");
+    }
+  };
+
   const handleDeleteMessage = async (messageId) => {
     if (!messageId) return;
 
@@ -1321,12 +1388,7 @@ export default function ChatPage() {
   // SEND MESSAGE
   // ===================================================
 
-  const handleSendMessage = () => {
-    const content = input.trim();
-
-    if (!content) {
-      return;
-    }
+  const sendMessage = (content, type = "text") => {
 
     if (!selectedConversationId) {
       antMessage.warning(
@@ -1383,6 +1445,8 @@ export default function ChatPage() {
 
       content,
 
+      type,
+
       clientMessageId,
     });
 
@@ -1390,7 +1454,32 @@ export default function ChatPage() {
     // CLEAR
     // ===============================================
 
-    setInput("");
+    if (type === "text") setInput("");
+  };
+
+  const handleSendMessage = () => {
+    const content = input.trim();
+    if (content) sendMessage(content);
+  };
+
+  const handleImageSelected = async (event) => {
+    const [file] = event.target.files || [];
+    event.target.value = "";
+    if (!file || !selectedConversationId) return;
+
+    try {
+      setUploadingImage(true);
+      const formData = new FormData();
+      formData.append("image", file);
+      const response = await api.post("/upload/chat-image", formData);
+      const imageUrl = response?.data?.data?.url;
+      if (!imageUrl) throw new Error("Không nhận được URL ảnh");
+      sendMessage(imageUrl, "image");
+    } catch (error) {
+      antMessage.error(error?.response?.data?.message || "Không thể gửi ảnh hoặc GIF");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   // ===================================================
@@ -1427,6 +1516,10 @@ export default function ChatPage() {
     }
 
     setMobileChat(false);
+  };
+
+  const handlePageBack = () => {
+    navigate("/dashboard");
   };
 
   // ===================================================
@@ -1523,6 +1616,15 @@ export default function ChatPage() {
           <div className="shrink-0 px-4 pb-3 pt-5">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
+                <Button
+                  type="text"
+                  shape="circle"
+                  icon={<ArrowLeftOutlined />}
+                  className="lg:hidden"
+                  aria-label="Quay lại trang tổng quan"
+                  onClick={handlePageBack}
+                />
+
                 <h1 className="m-0 text-[22px] font-bold tracking-tight text-gray-900">
                   Tin nhắn
                 </h1>
@@ -1549,12 +1651,26 @@ export default function ChatPage() {
                 </Tooltip>
               </div>
 
-              <Avatar
-                size={34}
-                src={currentUser?.avatar}
-              >
-                {getInitial(currentUser)}
-              </Avatar>
+              <div className="flex items-center gap-1">
+                <Avatar
+                  size={34}
+                  src={currentUser?.avatar}
+                >
+                  {getInitial(currentUser)}
+                </Avatar>
+
+                {currentUser?.role === "admin" && (
+                  <Tooltip title="Tạo nhóm chat">
+                    <Button
+                      type="text"
+                      shape="circle"
+                      icon={<PlusOutlined />}
+                      aria-label="Tạo nhóm chat"
+                      onClick={() => setGroupModalOpen(true)}
+                    />
+                  </Tooltip>
+                )}
+              </div>
             </div>
 
             {/* SEARCH */}
@@ -1800,7 +1916,7 @@ export default function ChatPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate text-sm font-medium text-gray-900">
-                            {getUserName(user)}
+                            {getConversationName(conversation)}
                           </span>
 
                           {lastMessage?.createdAt && (
@@ -1813,8 +1929,9 @@ export default function ChatPage() {
                         </div>
 
                         <p className="m-0 mt-0.5 truncate text-[13px] text-gray-500">
-                          {lastMessage?.content ||
-                            "Chưa có tin nhắn"}
+                          {isImageMessage(lastMessage)
+                            ? "Đã gửi ảnh / GIF"
+                            : lastMessage?.content || "Chưa có tin nhắn"}
                         </p>
                       </div>
                     </button>
@@ -1943,11 +2060,15 @@ export default function ChatPage() {
 
                   <div className="min-w-0">
                     <h2 className="m-0 max-w-[150px] truncate text-sm font-semibold text-gray-900 sm:max-w-none">
-                      {getUserName(otherUser)}
+                      {getConversationName(selectedConversation)}
                     </h2>
 
                     <p className="m-0 text-[11px]">
-                      {isUserOnline(
+                      {selectedConversation?.type === "group" ? (
+                        <span className="text-gray-400">
+                          {selectedConversation.participants?.length || 0} thành viên
+                        </span>
+                      ) : isUserOnline(
                         getUserId(otherUser),
                       ) ? (
                         <span className="text-green-500">
@@ -2074,7 +2195,7 @@ export default function ChatPage() {
                       </Avatar>
 
                       <p className="m-0 text-base font-semibold text-gray-900">
-                        {getUserName(otherUser)}
+                        {getConversationName(selectedConversation)}
                       </p>
 
                       <p className="m-0 text-sm text-gray-400">
@@ -2105,6 +2226,8 @@ export default function ChatPage() {
                             currentUserId;
 
                           const isDeleted = Boolean(item.deletedAt);
+
+                          const imageMessage = isImageMessage(item);
 
                           const seenByOther = isMe && Array.isArray(item.seenBy) && item.seenBy.some(
                             (user) => normalizeId(getUserId(user)) !== currentUserId,
@@ -2225,6 +2348,13 @@ export default function ChatPage() {
                                     <span className="italic text-gray-500">
                                       Tin nhắn đã bị xoá
                                     </span>
+                                  ) : imageMessage ? (
+                                    <img
+                                      src={item.content}
+                                      alt="Ảnh đã gửi"
+                                      className="max-h-80 max-w-full rounded-xl object-contain"
+                                      loading="lazy"
+                                    />
                                   ) : (
                                     item.content
                                   )}
@@ -2368,12 +2498,23 @@ export default function ChatPage() {
                       <Button
                         type="text"
                         shape="circle"
+                        loading={uploadingImage}
+                        disabled={uploadingImage}
+                        onClick={() => imageInputRef.current?.click()}
                         icon={
                           <FileImageOutlined className="text-xl text-gray-700" />
                         }
                         className="shrink-0"
                       />
                     </Tooltip>
+
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      accept="image/*,.gif"
+                      className="hidden"
+                      onChange={handleImageSelected}
+                    />
 
                     {/* SEND */}
 
@@ -2428,6 +2569,48 @@ export default function ChatPage() {
           )}
         </main>
       </div>
+
+      <Modal
+        open={groupModalOpen}
+        title="Tạo nhóm chat"
+        okText="Tạo nhóm"
+        cancelText="Hủy"
+        onCancel={() => setGroupModalOpen(false)}
+        onOk={handleCreateGroup}
+      >
+        <div className="space-y-4 pt-2">
+          <Input
+            value={groupName}
+            onChange={(event) => setGroupName(event.target.value)}
+            placeholder="Tên nhóm"
+            maxLength={80}
+          />
+          <Button
+            type="link"
+            className="!px-0"
+            onClick={() => setGroupMemberIds(
+              users
+                .filter((user) => normalizeId(getUserId(user)) !== currentUserId)
+                .map((user) => getUserId(user)),
+            )}
+          >
+            Thêm toàn bộ nhân viên đang hoạt động
+          </Button>
+          <Select
+            mode="multiple"
+            value={groupMemberIds}
+            onChange={setGroupMemberIds}
+            placeholder="Chọn thành viên"
+            className="w-full"
+            options={users
+              .filter((user) => normalizeId(getUserId(user)) !== currentUserId)
+              .map((user) => ({
+                value: getUserId(user),
+                label: user.fullName || user.username || user.email,
+              }))}
+          />
+        </div>
+      </Modal>
     </div>
   );
 }

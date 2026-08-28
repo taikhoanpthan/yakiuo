@@ -80,7 +80,16 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null }) => {
       title={isEdit ? "Chỉnh sửa nhân viên" : "Thêm nhân viên"}
       okText={isEdit ? "Cập nhật" : "Tạo nhân viên"}
       cancelText="Hủy"
+      className="user-modal"
       centered
+      styles={{
+        body: {
+          maxHeight: "calc(100dvh - 190px)",
+          overflowY: "auto",
+          paddingBottom: 24,
+        },
+      }}
+      zIndex={10001}
       destroyOnClose
       onCancel={onClose}
       onOk={() => form.submit()}
@@ -174,6 +183,7 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null }) => {
             ]}
           >
             <Select
+              getPopupContainer={(triggerNode) => triggerNode.parentElement}
               options={[
                 {
                   value: "employee",

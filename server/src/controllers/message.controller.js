@@ -91,6 +91,7 @@ const getMessages = async (req, res) => {
 
     const messageFilter = {
       conversationId,
+      deletedAt: null,
       ...(clearEntry?.clearedAt
         ? { createdAt: { $gt: clearEntry.clearedAt } }
         : {}),
@@ -190,9 +191,9 @@ const deleteMessage = async (req, res) => {
   try {
     const currentUserId = req.user._id;
     const { messageId } = req.params;
-    const message = await Message.findById(messageId);
+    const message = await Message.findOne({ _id: messageId, deletedAt: null });
 
-    if (!message || message.deletedAt) {
+    if (!message) {
       return res.status(404).json({ success: false, message: "Tin nhắn không tồn tại" });
     }
 
@@ -200,10 +201,8 @@ const deleteMessage = async (req, res) => {
       return res.status(403).json({ success: false, message: "Bạn chỉ có thể xóa tin nhắn của mình" });
     }
 
-    message.deletedAt = new Date();
-    message.deletedBy = currentUserId;
-    message.content = "";
-    await message.save();
+    const deletedAt = new Date();
+    await Message.deleteOne({ _id: message._id });
 
     const conversation = await Conversation.findById(message.conversationId);
     if (conversation && String(conversation.lastMessage || "") === String(message._id)) {
@@ -216,7 +215,7 @@ const deleteMessage = async (req, res) => {
     req.app.get("io")?.to(`conversation:${message.conversationId}`).emit("message:deleted", {
       messageId: String(message._id),
       conversationId: String(message.conversationId),
-      deletedAt: message.deletedAt,
+      deletedAt,
     });
 
     return res.json({
@@ -224,7 +223,7 @@ const deleteMessage = async (req, res) => {
       data: {
         messageId: String(message._id),
         conversationId: String(message.conversationId),
-        deletedAt: message.deletedAt,
+        deletedAt,
       },
     });
   } catch (error) {

@@ -248,6 +248,7 @@ export default function ChatPage() {
   const [groupName, setGroupName] = useState("");
   const [groupMemberIds, setGroupMemberIds] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [isComposerFocused, setIsComposerFocused] = useState(false);
 
   // ===================================================
   // LOADING
@@ -786,11 +787,9 @@ export default function ChatPage() {
         return;
       }
 
-      setMessages((prev) => prev.map((item) => (
-        normalizeId(item._id) === normalizeId(payload.messageId)
-          ? { ...item, content: "", deletedAt: payload.deletedAt || new Date().toISOString() }
-          : item
-      )));
+      setMessages((prev) => prev.filter(
+        (item) => normalizeId(item._id) !== normalizeId(payload.messageId),
+      ));
 
       loadConversations();
     };
@@ -1357,11 +1356,9 @@ export default function ChatPage() {
       await api.delete(`/messages/${messageId}`);
 
       // Event Socket.IO sẽ đồng bộ đối phương; cập nhật ngay cả khi socket vừa mất kết nối.
-      setMessages((prev) => prev.map((item) => (
-        normalizeId(item._id) === normalizeId(messageId)
-          ? { ...item, content: "", deletedAt: new Date().toISOString() }
-          : item
-      )));
+      setMessages((prev) => prev.filter(
+        (item) => normalizeId(item._id) !== normalizeId(messageId),
+      ));
       loadConversations();
       antMessage.success("Đã xóa tin nhắn");
     } catch (error) {
@@ -1569,7 +1566,7 @@ export default function ChatPage() {
 
   return (
     <div
-      className="
+      className={`
         flex
         h-full
         min-h-0
@@ -1578,7 +1575,8 @@ export default function ChatPage() {
         overflow-hidden
         bg-white
         pb-0
-      "
+        ${isComposerFocused ? "chat-composer-focused" : ""}
+      `}
     >
       <div
         className="
@@ -2473,6 +2471,8 @@ export default function ChatPage() {
 
                     <Input.TextArea
                       value={input}
+                      onFocus={() => setIsComposerFocused(true)}
+                      onBlur={() => setIsComposerFocused(false)}
                       onChange={(event) =>
                         setInput(
                           event.target.value,

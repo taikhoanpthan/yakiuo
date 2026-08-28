@@ -1469,6 +1469,24 @@ button {
     padding: 0 !important;
   }
 
+  /* Khi bàn phím mở, nhường phần header hệ thống cho khung soạn tin. */
+  body:has(.chat-composer-focused) .erp-header {
+    flex-basis: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+
+    overflow: hidden;
+    opacity: 0;
+
+    transition:
+      height 0.2s ease,
+      flex-basis 0.2s ease,
+      opacity 0.16s ease;
+  }
+
   /* -------------------------------------------------------
      FOOTER
   ------------------------------------------------------- */

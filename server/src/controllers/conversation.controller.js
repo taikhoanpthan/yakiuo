@@ -59,8 +59,10 @@ const createConversation = async (req, res) => {
     // =========================
 
     let conversation = await Conversation.findOne({
+      type: { $ne: "group" },
       participants: {
         $all: [currentUserId, userId],
+        $size: 2,
       },
     }).populate(
       "participants",

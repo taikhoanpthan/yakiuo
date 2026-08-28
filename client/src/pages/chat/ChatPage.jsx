@@ -251,6 +251,41 @@ export default function ChatPage() {
   const [isComposerFocused, setIsComposerFocused] = useState(false);
 
   // ===================================================
+  // MOBILE KEYBOARD / IOS VISUAL VIEWPORT
+  // ===================================================
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+
+    const updateChatViewport = () => {
+      const viewportHeight = viewport?.height || window.innerHeight;
+
+      document.documentElement.style.setProperty(
+        "--chat-viewport-height",
+        `${Math.round(viewportHeight)}px`,
+      );
+    };
+
+    updateChatViewport();
+
+    viewport?.addEventListener("resize", updateChatViewport);
+    viewport?.addEventListener("scroll", updateChatViewport);
+    window.addEventListener("resize", updateChatViewport);
+    window.addEventListener("orientationchange", updateChatViewport);
+
+    return () => {
+      viewport?.removeEventListener("resize", updateChatViewport);
+      viewport?.removeEventListener("scroll", updateChatViewport);
+      window.removeEventListener("resize", updateChatViewport);
+      window.removeEventListener("orientationchange", updateChatViewport);
+
+      document.documentElement.style.removeProperty(
+        "--chat-viewport-height",
+      );
+    };
+  }, []);
+
+  // ===================================================
   // LOADING
   // ===================================================
 
@@ -1567,6 +1602,7 @@ export default function ChatPage() {
   return (
     <div
       className={`
+        chat-page-root
         flex
         h-full
         min-h-0
@@ -2430,6 +2466,7 @@ export default function ChatPage() {
 
               <div
                 className="
+                  chat-composer
                   shrink-0
                   bg-white
                   px-3

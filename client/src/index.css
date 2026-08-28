@@ -1939,3 +1939,44 @@ button {
     overscroll-behavior: none;
   }
 }
+
+/* =========================================================
+   CHAT MOBILE KEYBOARD FIX
+
+   visualViewport phản ánh đúng phần màn hình còn nhìn thấy
+   khi bàn phím Safari/iOS mở. Không cộng safe-area lần nữa
+   trong trạng thái nhập tin vì Safari đã loại phần đó khỏi
+   chiều cao visual viewport.
+========================================================= */
+
+@media (max-width: 991px) {
+  .erp-page-chat,
+  .chat-page-root {
+    height: var(--chat-viewport-height, 100dvh) !important;
+    max-height: var(--chat-viewport-height, 100dvh) !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .chat-page-root {
+    overscroll-behavior: none;
+  }
+
+  .chat-composer-focused .chat-composer {
+    padding-bottom: 4px !important;
+  }
+
+  body:has(.chat-composer-focused) {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
+
+  body:has(.chat-composer-focused) .erp-content,
+  body:has(.chat-composer-focused) .erp-content-chat {
+    padding-bottom: 0 !important;
+  }
+
+  body:has(.chat-composer-focused) .erp-mobile-taskbar {
+    display: none !important;
+  }
+}

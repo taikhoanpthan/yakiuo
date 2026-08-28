@@ -1185,6 +1185,10 @@ export default function ChatPage() {
         return (
           conversations.find(
             (conversation) => {
+              if (conversation.type === "group") {
+                return false;
+              }
+
               const user =
                 getOtherParticipant(
                   conversation,

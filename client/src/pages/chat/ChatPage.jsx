@@ -280,6 +280,8 @@ export default function ChatPage() {
 
   const previousConversationRef = useRef(null);
 
+  const conversationsRef = useRef([]);
+
   // ===================================================
   // KEEP CURRENT CONVERSATION REF
   // ===================================================
@@ -288,6 +290,10 @@ export default function ChatPage() {
     currentConversationRef.current =
       selectedConversationId;
   }, [selectedConversationId]);
+
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
 
   // ===================================================
   // CHECK ONLINE
@@ -673,6 +679,17 @@ export default function ChatPage() {
 
       if (!conversationId) {
         return;
+      }
+
+      // Tin đầu tiên có thể đến trước khi recipient có cuộc hội thoại trong
+      // state (họ chưa từng mở đoạn chat này). Đồng bộ sidebar ngay tại đây.
+      const conversationExists = conversationsRef.current.some(
+        (conversation) =>
+          normalizeId(conversation._id) === normalizeId(conversationId),
+      );
+
+      if (!conversationExists) {
+        loadConversations();
       }
 
       // ===============================================

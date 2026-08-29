@@ -761,27 +761,27 @@ module.exports = (io) => {
             );
 
           // -------------------------------------------------
-          // Room
-          // -------------------------------------------------
-
-          const roomName =
-            `conversation:${conversationId}`;
-
-          // -------------------------------------------------
           // Emit
           // -------------------------------------------------
 
-          io.to(roomName).emit(
-            "message:new",
-            {
-              ...populatedMessage.toObject(),
+          const messagePayload = {
+            ...populatedMessage.toObject(),
 
-              clientMessageId,
+            clientMessageId,
 
-              conversationId:
-                String(conversationId),
-            }
-          );
+            conversationId:
+              String(conversationId),
+          };
+
+          // Người nhận chưa từng mở đoạn chat sẽ chưa join room conversation.
+          // Phát theo room của từng user để họ nhận được tin nhắn đầu tiên và
+          // sidebar có thể xuất hiện ngay, không cần tải lại trang.
+          conversation.participants.forEach((participantId) => {
+            io.to(`user:${participantId}`).emit(
+              "message:new",
+              messagePayload,
+            );
+          });
         } catch (error) {
           console.error(
             "❌ SEND MESSAGE ERROR:",

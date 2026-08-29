@@ -65,6 +65,12 @@ const updateWorkSchedule = async (req, res) => {
       });
     }
 
+    // Lịch làm việc hiển thị ở Dashboard của tất cả nhân viên.
+    // Phát sự kiện sau khi lưu thành công để các màn hình đang mở cập nhật ngay.
+    req.app.get("io")?.emit("work-schedule:updated", {
+      data: schedule,
+    });
+
     return res.status(200).json({
       success: true,
       message: "Cập nhật lịch làm việc thành công",

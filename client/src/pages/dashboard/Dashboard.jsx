@@ -13,6 +13,7 @@ import dayjs from "dayjs";
 
 import { getDashboardStats } from "../../services/dashboardService";
 import { getWorkSchedule } from "../../services/workSchedule.service";
+import { connectSocket } from "../../services/socket";
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -108,6 +109,21 @@ const Dashboard = () => {
   useEffect(() => {
     void loadDashboard();
   }, [loadDashboard]);
+
+  // Nhận lịch mới do Admin/Manager cập nhật mà không cần người dùng tải lại trang.
+  useEffect(() => {
+    const socket = connectSocket();
+
+    const handleWorkScheduleUpdated = (payload = {}) => {
+      setWorkSchedule(payload.data ?? payload ?? null);
+    };
+
+    socket.on("work-schedule:updated", handleWorkScheduleUpdated);
+
+    return () => {
+      socket.off("work-schedule:updated", handleWorkScheduleUpdated);
+    };
+  }, []);
 
   // =========================
   // FORMAT DATE

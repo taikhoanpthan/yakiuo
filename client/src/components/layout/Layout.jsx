@@ -179,6 +179,8 @@ const Layout = ({ children }) => {
   // ===================================================
 
   const mobileMenuItems = useMemo(() => {
+    // Các trang quản trị (như Nhân viên) nằm trong menu tài khoản trên header
+    // để taskbar điện thoại luôn gọn và dễ bấm.
     const keys = ["/dashboard", "/feedback", "/chat", "/todos"];
 
     if (["admin", "manager"].includes(user?.role)) {
@@ -511,6 +513,25 @@ const Layout = ({ children }) => {
     };
   }, []);
 
+  // Khi iOS mở bàn phím, visual viewport thay đổi sau sự kiện focus một nhịp.
+  // Đưa ô đang nhập vào vùng nhìn thấy để không tạo một khoảng trống lớn phía
+  // dưới form và tránh việc người dùng phải cuộn lại để tiếp tục nhập.
+  useEffect(() => {
+    const scrollFocusedFieldIntoView = (event) => {
+      if (!window.matchMedia("(max-width: 991px)").matches) return;
+
+      const field = event.target;
+      if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) return;
+
+      window.setTimeout(() => {
+        field.scrollIntoView({ block: "center", behavior: "smooth" });
+      }, 250);
+    };
+
+    document.addEventListener("focusin", scrollFocusedFieldIntoView);
+    return () => document.removeEventListener("focusin", scrollFocusedFieldIntoView);
+  }, []);
+
   // ===================================================
   // NOTIFICATION DATA
   // ===================================================
@@ -692,7 +713,7 @@ const Layout = ({ children }) => {
       label: "Tài khoản của tôi",
     },
 
-    ...(user?.role === "admin"
+    ...(["admin", "manager"].includes(user?.role)
       ? [
           {
             key: "users",
@@ -992,7 +1013,11 @@ const Layout = ({ children }) => {
                     <strong>{user?.fullName || "Người dùng"}</strong>
 
                     <small>
-                      {user?.role === "admin" ? "Quản trị viên" : "Nhân viên"}
+                      {user?.role === "admin"
+                        ? "Quản trị viên"
+                        : user?.role === "manager"
+                          ? "Quản lý"
+                          : "Nhân viên"}
                     </small>
                   </span>
                 </button>

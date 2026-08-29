@@ -534,7 +534,7 @@ const Feedback = () => {
             borderRadius: 16,
 
             maxHeight:
-              "calc(100dvh - 16px)",
+              "calc(var(--erp-viewport-height, 100dvh) - 16px)",
 
             display: "flex",
 
@@ -711,7 +711,7 @@ const Feedback = () => {
             // Quan trọng:
             // modal không vượt quá viewport thật
             maxHeight:
-              "calc(100dvh - 16px)",
+              "calc(var(--erp-viewport-height, 100dvh) - 16px)",
 
             display: "flex",
 
@@ -751,7 +751,7 @@ const Feedback = () => {
             overflowX: "hidden",
 
             padding:
-              "0 16px 24px",
+              "0 16px 16px",
 
             WebkitOverflowScrolling:
               "touch",
@@ -988,7 +988,7 @@ const Feedback = () => {
           >
             <Input.TextArea
               placeholder="Nhập nội dung phản hồi..."
-              rows={4}
+              rows={3}
               showCount
               maxLength={2000}
               style={{

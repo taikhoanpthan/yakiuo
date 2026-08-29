@@ -140,7 +140,7 @@ button {
   }
 
   .erp-feedback-modal .ant-modal-content {
-    max-height: calc(100dvh - 24px);
+    max-height: calc(var(--erp-viewport-height, 100dvh) - 24px);
     display: flex;
     flex-direction: column;
   }
@@ -152,6 +152,32 @@ button {
 
   .erp-feedback-modal .ant-modal-footer {
     flex-shrink: 0;
+  }
+
+  /* Form ngắn hơn trên điện thoại, nhưng vẫn giữ vùng chạm thoải mái. */
+  .erp-feedback-form-modal .ant-form {
+    padding-top: 12px !important;
+  }
+
+  .erp-feedback-form-modal .ant-form-item {
+    margin-bottom: 12px;
+  }
+
+  .erp-feedback-form-modal .ant-form-item-label {
+    padding-bottom: 4px;
+  }
+
+  .erp-feedback-form-modal .ant-form-item-label > label {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .erp-feedback-form-modal .ant-modal-header {
+    padding: 12px 16px 10px !important;
+  }
+
+  .erp-feedback-form-modal .ant-modal-footer {
+    padding: 10px 16px max(10px, env(safe-area-inset-bottom)) !important;
   }
 }
 
@@ -1553,7 +1579,9 @@ button {
   .erp-mobile-task-item {
     position: relative;
 
-    width: 20%;
+    width: auto;
+    min-width: 0;
+    flex: 1 1 0;
     height: 46px;
 
     display: flex;

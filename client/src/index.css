@@ -1190,6 +1190,7 @@ button:focus-visible,
 
   object-fit: cover;
   object-position: var(--avatar-position, 50% 50%);
+  transform-origin: center;
   transform: scale(var(--avatar-zoom, 1));
 }
 

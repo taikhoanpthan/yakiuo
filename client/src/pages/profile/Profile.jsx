@@ -411,6 +411,7 @@ const Profile = () => {
                 style={{
                   objectPosition: `${user?.coverPosition?.x ?? 50}% ${user?.coverPosition?.y ?? 50}%`,
                   transform: `scale(${user?.coverZoom ?? 1})`,
+                  transformOrigin: "center",
                 }}
               />
             )}
@@ -911,20 +912,24 @@ const Profile = () => {
                 style={{
                   objectPosition: `${imagePosition.x}% ${imagePosition.y}%`,
                   transform: `scale(${imageZoom})`,
+                  transformOrigin: "center",
                 }}
               />
             </div>
           ) : (
             <div className="flex justify-center">
-              <img
-                src={user?.avatar}
-                alt="Xem trước ảnh đại diện"
-                className="h-40 w-40 rounded-full bg-slate-100 object-cover"
-                style={{
-                  objectPosition: `${imagePosition.x}% ${imagePosition.y}%`,
-                  transform: `scale(${imageZoom})`,
-                }}
-              />
+              <div className="h-40 w-40 overflow-hidden rounded-full bg-slate-100">
+                <img
+                  src={user?.avatar}
+                  alt="Xem trước ảnh đại diện"
+                  className="h-full w-full object-cover"
+                  style={{
+                    objectPosition: `${imagePosition.x}% ${imagePosition.y}%`,
+                    transform: `scale(${imageZoom})`,
+                    transformOrigin: "center",
+                  }}
+                />
+              </div>
             </div>
           )}
 

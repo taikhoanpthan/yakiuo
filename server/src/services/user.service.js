@@ -11,13 +11,21 @@ const sanitizeUser = (user) => {
   return data;
 };
 
-const getUsers = async ({ page = 1, limit = 20, search = "" }) => {
+const getUsers = async ({ page = 1, limit = 20, search = "", role, status }) => {
   const currentPage = Math.max(Number(page) || 1, 1);
   const currentLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
 
   const skip = (currentPage - 1) * currentLimit;
 
   const filter = {};
+
+  if (["employee", "premium", "manager", "admin"].includes(role)) {
+    filter.role = role;
+  }
+
+  if (["active", "inactive"].includes(status)) {
+    filter.status = status;
+  }
 
   if (search.trim()) {
     const keyword = search.trim();

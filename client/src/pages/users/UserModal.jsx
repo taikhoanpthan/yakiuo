@@ -3,10 +3,11 @@ import { Form, Input, Modal, Select, message } from "antd";
 
 import { createUser, updateUser } from "../../services/user.service";
 
-const UserModal = ({ open, onClose, onSuccess, editingUser = null }) => {
+const UserModal = ({ open, onClose, onSuccess, editingUser = null, canManageRoles = false }) => {
   const [form] = Form.useForm();
 
   const isEdit = !!editingUser;
+  const isManagerRestricted = isEdit && !canManageRoles;
 
   useEffect(() => {
     if (!open) return;
@@ -31,16 +32,21 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null }) => {
   const handleSubmit = async (values) => {
     try {
       if (isEdit) {
-        const data = {
-          username: values.username,
-          email: values.email,
-          fullName: values.fullName,
-          phone: values.phone,
-          role: values.role,
-        };
+        const data = isManagerRestricted
+          ? {
+              fullName: values.fullName,
+              phone: values.phone,
+            }
+          : {
+              username: values.username,
+              email: values.email,
+              fullName: values.fullName,
+              phone: values.phone,
+              role: values.role,
+            };
 
         // Chỉ gửi password nếu admin nhập mật khẩu mới
-        if (values.password?.trim()) {
+        if (!isManagerRestricted && values.password?.trim()) {
           data.password = values.password.trim();
         }
 
@@ -109,8 +115,10 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null }) => {
           <Input placeholder="Nguyễn Văn A" />
         </Form.Item>
 
-        {/* USERNAME */}
-        <Form.Item
+        {!isManagerRestricted && (
+          <>
+            {/* USERNAME */}
+            <Form.Item
           label="Tên đăng nhập"
           name="username"
           rules={[
@@ -119,12 +127,12 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null }) => {
               message: "Vui lòng nhập username",
             },
           ]}
-        >
-          <Input placeholder="employee01" />
-        </Form.Item>
+            >
+              <Input placeholder="employee01" />
+            </Form.Item>
 
-        {/* EMAIL */}
-        <Form.Item
+            {/* EMAIL */}
+            <Form.Item
           label="Email"
           name="email"
           rules={[
@@ -133,12 +141,12 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null }) => {
               message: "Email không hợp lệ",
             },
           ]}
-        >
-          <Input placeholder="employee@yakiuo.com" />
-        </Form.Item>
+            >
+              <Input placeholder="employee@yakiuo.com" />
+            </Form.Item>
 
-        {/* PASSWORD */}
-        <Form.Item
+            {/* PASSWORD */}
+            <Form.Item
           label={isEdit ? "Mật khẩu mới" : "Mật khẩu"}
           name="password"
           rules={
@@ -160,19 +168,19 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null }) => {
                   },
                 ]
           }
-        >
-          <Input.Password
-            placeholder={isEdit ? "Để trống nếu không đổi" : "Nhập mật khẩu"}
-          />
-        </Form.Item>
+            >
+              <Input.Password
+                placeholder={isEdit ? "Để trống nếu không đổi" : "Nhập mật khẩu"}
+              />
+            </Form.Item>
 
-        {/* PHONE + ROLE */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Form.Item label="Số điện thoại" name="phone">
-            <Input placeholder="0900000000" />
-          </Form.Item>
+            {/* PHONE + ROLE */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Form.Item label="Số điện thoại" name="phone">
+                <Input placeholder="0900000000" />
+              </Form.Item>
 
-          <Form.Item
+              <Form.Item
             label="Vai trò"
             name="role"
             rules={[
@@ -181,8 +189,8 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null }) => {
                 message: "Vui lòng chọn vai trò",
               },
             ]}
-          >
-            <Select
+              >
+                <Select
               getPopupContainer={(triggerNode) => triggerNode.parentElement}
               options={[
                 {
@@ -202,9 +210,17 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null }) => {
                   label: "Admin",
                 },
               ]}
-            />
+                />
+              </Form.Item>
+            </div>
+          </>
+        )}
+
+        {isManagerRestricted && (
+          <Form.Item label="Số điện thoại" name="phone">
+            <Input placeholder="0900000000" />
           </Form.Item>
-        </div>
+        )}
       </Form>
     </Modal>
   );

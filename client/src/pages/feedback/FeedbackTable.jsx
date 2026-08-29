@@ -1,4 +1,3 @@
-import React from "react";
 import { Button, Popconfirm, Space, Table, Tag, Tooltip } from "antd";
 
 import { DeleteOutlined, EditOutlined, EyeOutlined } from "@ant-design/icons";
@@ -14,6 +13,7 @@ const FeedbackTable = ({
   onEdit,
   onView,
   onDelete,
+  onUserClick,
 }) => {
   const columns = [
     // =========================
@@ -133,10 +133,18 @@ const FeedbackTable = ({
               <img
                 src={user.avatar}
                 alt={name}
-                className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-200"
+                className={`w-9 h-9 rounded-full object-cover shrink-0 border border-slate-200 ${
+                  onUserClick && user._id ? "cursor-pointer" : ""
+                }`}
+                onClick={() => onUserClick?.(user)}
               />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center font-semibold text-sm shrink-0">
+              <div
+                className={`w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center font-semibold text-sm shrink-0 ${
+                  onUserClick && user._id ? "cursor-pointer" : ""
+                }`}
+                onClick={() => onUserClick?.(user)}
+              >
                 {name.charAt(0).toUpperCase()}
               </div>
             )}
@@ -203,7 +211,6 @@ const FeedbackTable = ({
     {
       title: "Thao tác",
       key: "actions",
-      fixed: "right",
       width: 140,
       align: "center",
 
@@ -258,13 +265,28 @@ const FeedbackTable = ({
     },
   ];
 
+  const columnOrder = [
+    "stt",
+    "date",
+    "createdBy",
+    "content",
+    "customer",
+    "tableNumber",
+    "meal",
+    "actions",
+  ];
+
+  const orderedColumns = columnOrder
+    .map((key) => columns.find((column) => column.key === key))
+    .filter(Boolean);
+
   return (
     <div className="w-full overflow-hidden">
       <Table
         rowKey="_id"
         loading={loading}
         dataSource={feedbacks}
-        columns={columns}
+        columns={orderedColumns}
         scroll={{
           x: 1250,
         }}

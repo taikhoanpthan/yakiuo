@@ -130,6 +130,25 @@ const createUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
+    if (req.user.role === "manager") {
+      const targetUser = await userService.getUserById(req.params.id);
+
+      if (targetUser.role !== "employee") {
+        return res.status(403).json({
+          success: false,
+          message: "Manager chỉ có thể quản lý tài khoản nhân viên",
+        });
+      }
+
+      const restrictedFields = ["username", "email", "role", "password"];
+      if (restrictedFields.some((field) => req.body[field] !== undefined)) {
+        return res.status(403).json({
+          success: false,
+          message: "Manager chỉ được cập nhật họ tên, số điện thoại và ảnh đại diện",
+        });
+      }
+    }
+
     if (req.body.role) {
       if (!["employee", "premium", "manager", "admin"].includes(req.body.role)) {
         return res.status(400).json({
@@ -165,6 +184,17 @@ const updateUserStatus = async (req, res) => {
         success: false,
         message: "Status must be active or inactive",
       });
+    }
+
+    if (req.user.role === "manager") {
+      const targetUser = await userService.getUserById(req.params.id);
+
+      if (targetUser.role !== "employee") {
+        return res.status(403).json({
+          success: false,
+          message: "Manager chỉ có thể thay đổi trạng thái tài khoản nhân viên",
+        });
+      }
     }
 
     const user = await userService.updateUserStatus(req.params.id, status);

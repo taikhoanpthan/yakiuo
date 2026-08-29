@@ -4,11 +4,13 @@ const {
   getWorkSchedule,
   updateWorkSchedule,
 } = require("../controllers/workSchedule.controller");
+const { authenticate } = require("../middleware/auth.middleware");
+const { requirePermission } = require("../middleware/permission.middleware");
 
 const router = express.Router();
 
-router.get("/", getWorkSchedule);
+router.get("/", authenticate, getWorkSchedule);
 
-router.put("/", updateWorkSchedule);
+router.put("/", authenticate, requirePermission("workSchedule.update"), updateWorkSchedule);
 
 module.exports = router;

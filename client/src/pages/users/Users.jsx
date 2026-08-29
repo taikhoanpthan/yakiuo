@@ -34,7 +34,8 @@ import { useAuth } from "../../store/AuthContext";
 
 const Users = () => {
   const { user: currentUser } = useAuth();
-  const canManageUsers = currentUser?.role === "admin";
+  const canManageUsers = ["admin", "manager"].includes(currentUser?.role);
+  const canManageRoles = currentUser?.role === "admin";
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -225,48 +226,54 @@ const Users = () => {
       render: (_, record) => (
         <Space>
           {/* CHỈNH SỬA */}
-          <Button
-            icon={<EditOutlined />}
-            onClick={() => {
-              setEditingUser(record);
-              setModalOpen(true);
-            }}
-          />
+          {(canManageRoles || record.role === "employee") && (
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => {
+                setEditingUser(record);
+                setModalOpen(true);
+              }}
+            />
+          )}
 
           {/* KHÓA / MỞ KHÓA */}
-          <Button
-            danger={record.status === "active"}
-            type={record.status === "active" ? "default" : "primary"}
-            icon={
-              record.status === "active" ? (
-                <StopOutlined />
-              ) : (
-                <CheckCircleOutlined />
-              )
-            }
-            onClick={() => handleToggleStatus(record)}
-          />
+          {(canManageRoles || record.role === "employee") && (
+            <Button
+              danger={record.status === "active"}
+              type={record.status === "active" ? "default" : "primary"}
+              icon={
+                record.status === "active" ? (
+                  <StopOutlined />
+                ) : (
+                  <CheckCircleOutlined />
+                )
+              }
+              onClick={() => handleToggleStatus(record)}
+            />
+          )}
 
           {/* XÓA */}
-          <Popconfirm
-            title="Xóa tài khoản?"
-            description={`Bạn có chắc muốn xóa tài khoản "${record.username}"?`}
-            okText="Xóa"
-            cancelText="Hủy"
-            okButtonProps={{
-              danger: true,
-            }}
-            onConfirm={() => handleDeleteUser(record)}
-          >
-            <Button danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          {canManageRoles && (
+            <Popconfirm
+              title="Xóa tài khoản?"
+              description={`Bạn có chắc muốn xóa tài khoản "${record.username}"?`}
+              okText="Xóa"
+              cancelText="Hủy"
+              okButtonProps={{
+                danger: true,
+              }}
+              onConfirm={() => handleDeleteUser(record)}
+            >
+              <Button danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
   ];
 
-  // Manager chỉ được xem hồ sơ nhân viên; các thao tác đổi thông tin/mật khẩu
-  // vẫn dành riêng cho admin ở cả UI lẫn backend permission.
+  // Manager có thể quản lý thông tin cơ bản và trạng thái của nhân viên.
+  // Các quyền nhạy cảm vẫn chỉ dành cho admin.
   if (!canManageUsers) {
     columns.pop();
   }
@@ -289,7 +296,7 @@ const Users = () => {
           </p>
         </div>
 
-        {canManageUsers && (
+        {canManageRoles && (
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -400,6 +407,7 @@ const Users = () => {
           setEditingUser(null);
         }}
         onSuccess={fetchUsers}
+        canManageRoles={canManageRoles}
       />
     </div>
   );

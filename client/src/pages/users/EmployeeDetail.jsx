@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  Avatar,
   Button,
   Card,
   DatePicker,
@@ -31,12 +30,15 @@ import { getUserCommissions } from "../../services/commission.service";
 import {
   getUserCommissionGGImages,
 } from "../../services/commissionGG.service";
+import { useAuth } from "../../store/AuthContext";
 
 // =====================================================
 // EMPLOYEE DETAIL
 // =====================================================
 
 const EmployeeDetail = ({ user, onBack }) => {
+  const { user: currentUser } = useAuth();
+  const canViewPerformance = ["admin", "manager"].includes(currentUser?.role);
   // =====================================================
   // STATE
   // =====================================================
@@ -55,7 +57,7 @@ const EmployeeDetail = ({ user, onBack }) => {
   // =====================================================
 
   const fetchCommissions = async () => {
-    if (!user?._id) return;
+    if (!user?._id || !canViewPerformance) return;
 
     try {
       setLoading(true);
@@ -93,7 +95,7 @@ const EmployeeDetail = ({ user, onBack }) => {
   // =====================================================
 
   const fetchGGImages = async () => {
-    if (!user?._id) return;
+    if (!user?._id || !canViewPerformance) return;
 
     try {
       setLoadingGGImages(true);
@@ -132,11 +134,11 @@ const EmployeeDetail = ({ user, onBack }) => {
 
   useEffect(() => {
     fetchCommissions();
-  }, [user?._id]);
+  }, [user?._id, canViewPerformance]);
 
   useEffect(() => {
     fetchGGImages();
-  }, [user?._id, ggMonth]);
+  }, [user?._id, ggMonth, canViewPerformance]);
 
   // =====================================================
   // TOTAL COMMISSION
@@ -321,7 +323,7 @@ const EmployeeDetail = ({ user, onBack }) => {
         onClick={onBack}
         className="mb-3 rounded-xl px-2 font-semibold text-slate-600"
       >
-        Danh sách nhân viên
+        Quay lại
       </Button>
 
       {/* =================================================

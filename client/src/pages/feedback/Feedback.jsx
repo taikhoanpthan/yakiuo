@@ -29,6 +29,7 @@ import {
 } from "../../services/feedbackService";
 
 import FeedbackTable from "./FeedbackTable";
+import EmployeeDetail from "../users/EmployeeDetail";
 
 import { useAuth } from "../../store/AuthContext";
 
@@ -49,6 +50,7 @@ const Feedback = () => {
 
   const [selectedFeedback, setSelectedFeedback] =
     useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   const [deletingId, setDeletingId] =
     useState(null);
@@ -412,6 +414,15 @@ const Feedback = () => {
     );
   };
 
+  if (selectedUser) {
+    return (
+      <EmployeeDetail
+        user={selectedUser}
+        onBack={() => setSelectedUser(null)}
+      />
+    );
+  }
+
   // =====================================================
   // RENDER
   // =====================================================
@@ -482,6 +493,7 @@ const Feedback = () => {
           onView={setSelectedFeedback}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onUserClick={setSelectedUser}
           onPaginationChange={(
             current,
             pageSize,

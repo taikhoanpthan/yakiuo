@@ -35,6 +35,7 @@ import {
 } from "../../services/todo.service";
 
 import TodoModal from "./TodoModal";
+import EmployeeDetail from "../users/EmployeeDetail";
 
 const priorityConfig = {
   high: {
@@ -73,6 +74,7 @@ const Todos = () => {
   // Modal xem chi tiết
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedTodo, setSelectedTodo] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   // =====================================================
   // GET TODOS
@@ -213,6 +215,15 @@ const Todos = () => {
     setSelectedTodo(todo);
     setDetailOpen(true);
   };
+
+  if (selectedUser) {
+    return (
+      <EmployeeDetail
+        user={selectedUser}
+        onBack={() => setSelectedUser(null)}
+      />
+    );
+  }
 
   // =====================================================
   // RENDER
@@ -371,6 +382,10 @@ const Todos = () => {
                           size={30}
                           src={todo.createdBy?.avatar}
                           icon={<UserOutlined />}
+                          className={todo.createdBy?._id ? "cursor-pointer" : ""}
+                          onClick={() => {
+                            if (todo.createdBy?._id) setSelectedUser(todo.createdBy);
+                          }}
                         />
 
                         <div>
@@ -528,6 +543,12 @@ const Todos = () => {
                 size={44}
                 src={selectedTodo.createdBy?.avatar}
                 icon={<UserOutlined />}
+                className={selectedTodo.createdBy?._id ? "cursor-pointer" : ""}
+                onClick={() => {
+                  if (selectedTodo.createdBy?._id) {
+                    setSelectedUser(selectedTodo.createdBy);
+                  }
+                }}
               />
 
               <div>

@@ -5,6 +5,8 @@ const ROLE_PERMISSIONS = {
     "users.update",
     "users.delete",
 
+    "workSchedule.update",
+
     "feedback.read",
     "feedback.create",
     "feedback.update",
@@ -25,6 +27,9 @@ const ROLE_PERMISSIONS = {
 
   manager: [
     "users.read",
+    "users.update",
+
+    "workSchedule.update",
 
     "notifications.read",
     "notifications.create",

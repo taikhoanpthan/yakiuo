@@ -29,11 +29,12 @@ import { getUserCommissions } from "../../services/commission.service";
 
 import {
   getUserCommissionGGImages,
+  downloadUserCommissionGGImages,
 } from "../../services/commissionGG.service";
 import { useAuth } from "../../store/AuthContext";
 import HamsterLoader from "../../components/common/HamsterLoader";
 import { onOnlineUsers } from "../../services/socket";
-import { downloadImages } from "../../utils/downloadImages";
+import { downloadFile, saveImageToPhotos } from "../../utils/downloadImages";
 
 // =====================================================
 // EMPLOYEE DETAIL
@@ -238,12 +239,21 @@ const EmployeeDetail = ({ user, onBack }) => {
   const handleDownloadAllGGImages = async () => {
     try {
       setDownloadingGGImages(true);
-      await downloadImages(ggImages, `commission-gg-${ggMonth.format("YYYY-MM")}`);
+      const archive = await downloadUserCommissionGGImages(user._id, ggMonth.format("YYYY-MM"));
+      downloadFile(archive, `commission-gg-${ggMonth.format("YYYY-MM")}.zip`);
       message.success(`Đã tải ${ggImages.length} ảnh`);
     } catch (error) {
       message.error(error.message || "Không thể tải tất cả ảnh");
     } finally {
       setDownloadingGGImages(false);
+    }
+  };
+
+  const handleSaveGGImage = async (url) => {
+    try {
+      await saveImageToPhotos(url, `commission-gg-${ggMonth.format("YYYY-MM")}.jpg`);
+    } catch (error) {
+      if (error.name !== "AbortError") message.error(error.message || "Không thể lưu ảnh");
     }
   };
 
@@ -953,23 +963,25 @@ const EmployeeDetail = ({ user, onBack }) => {
                 <HamsterLoader size="md" />
               </div>
             ) : ggImages.length ? (
-              <div className="grid grid-cols-2 gap-2 lg:max-h-[480px] lg:overflow-y-auto lg:pr-1 lg:overscroll-contain">
-                {ggImages.map((image) => (
-                  <Image
-                    key={image._id}
-                    src={image.imageUrl}
-                    alt={`Commission GG ${ggMonth.format(
-                      "MM/YYYY",
-                    )}`}
-                    className="
-                      aspect-square
-                      overflow-hidden
-                      rounded-xl
-                      object-cover
-                    "
-                  />
-                ))}
-              </div>
+              <Image.PreviewGroup toolbarRender={(node, info) => <>{node}<Button type="primary" size="small" onClick={() => handleSaveGGImage(info.image.url)}>Lưu vào Ảnh</Button></>}>
+                <div className="grid grid-cols-2 gap-2 lg:max-h-[480px] lg:overflow-y-auto lg:pr-1 lg:overscroll-contain">
+                  {ggImages.map((image) => (
+                    <Image
+                      key={image._id}
+                      src={image.imageUrl}
+                      alt={`Commission GG ${ggMonth.format(
+                        "MM/YYYY",
+                      )}`}
+                      className="
+                        aspect-square
+                        overflow-hidden
+                        rounded-xl
+                        object-cover
+                      "
+                    />
+                  ))}
+                </div>
+              </Image.PreviewGroup>
             ) : (
               <Empty
                 image={

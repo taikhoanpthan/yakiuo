@@ -5,6 +5,16 @@ export const getMyCommissionGGImages = async (month) => {
   return response.data;
 };
 
+export const downloadMyCommissionGGImages = async (month) => {
+  const response = await api.get("/commission-gg/my/download", { params: { month }, responseType: "blob" });
+  return response.data;
+};
+
+export const downloadUserCommissionGGImages = async (userId, month) => {
+  const response = await api.get(`/commission-gg/user/${userId}/download`, { params: { month }, responseType: "blob" });
+  return response.data;
+};
+
 export const getUserCommissionGGImages = async (userId, month) => {
   const response = await api.get(`/commission-gg/user/${userId}`, { params: { month } });
   return response.data;

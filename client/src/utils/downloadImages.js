@@ -1,25 +1,25 @@
-const getExtension = (blob, url) => {
-  const fromType = blob?.type?.split("/")[1];
-  if (fromType) return fromType.replace("jpeg", "jpg");
-
-  const fromUrl = url?.split("?")[0]?.match(/\.([a-z0-9]+)$/i)?.[1];
-  return fromUrl || "jpg";
+export const downloadFile = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
-export const downloadImages = async (images, filenamePrefix) => {
-  for (const [index, image] of images.entries()) {
-    const response = await fetch(image.imageUrl);
-    if (!response.ok) throw new Error("Không thể tải một trong các ảnh");
+export const saveImageToPhotos = async (imageUrl, filename = "commission-gg.jpg") => {
+  const response = await fetch(imageUrl);
+  if (!response.ok) throw new Error("Không thể tải ảnh");
 
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+  const blob = await response.blob();
+  const file = new File([blob], filename, { type: blob.type || "image/jpeg" });
 
-    link.href = url;
-    link.download = `${filenamePrefix}-${String(index + 1).padStart(2, "0")}.${getExtension(blob, image.imageUrl)}`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+  if (navigator.canShare?.({ files: [file] })) {
+    await navigator.share({ files: [file], title: "Lưu ảnh" });
+    return;
   }
+
+  downloadFile(blob, filename);
 };

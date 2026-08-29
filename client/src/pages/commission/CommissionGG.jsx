@@ -3,11 +3,12 @@ import { Button, Card, DatePicker, Empty, Image, Popconfirm, Upload, message } f
 import { CloudUploadOutlined, DeleteOutlined, DownloadOutlined, FolderOpenOutlined } from "@ant-design/icons";
 import HamsterLoader from "../../components/common/HamsterLoader";
 import dayjs from "dayjs";
-import { downloadImages } from "../../utils/downloadImages";
+import { downloadFile, saveImageToPhotos } from "../../utils/downloadImages";
 
 import {
   deleteMyCommissionGGImagesByMonth,
   getMyCommissionGGImages,
+  downloadMyCommissionGGImages,
   uploadCommissionGGImages,
 } from "../../services/commissionGG.service";
 
@@ -71,12 +72,21 @@ const CommissionGG = () => {
   const handleDownloadAll = async () => {
     try {
       setDownloading(true);
-      await downloadImages(images, `commission-gg-${monthKey}`);
+      const archive = await downloadMyCommissionGGImages(monthKey);
+      downloadFile(archive, `commission-gg-${monthKey}.zip`);
       message.success(`Đã tải ${images.length} ảnh`);
     } catch (error) {
       message.error(error.message || "Không thể tải tất cả ảnh");
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleSaveImage = async (url) => {
+    try {
+      await saveImageToPhotos(url, `commission-gg-${monthKey}.jpg`);
+    } catch (error) {
+      if (error.name !== "AbortError") message.error(error.message || "Không thể lưu ảnh");
     }
   };
 
@@ -118,11 +128,13 @@ const CommissionGG = () => {
       {loading ? (
         <div className="flex h-40 items-center justify-center"><HamsterLoader size="sm" /></div>
       ) : images.length ? (
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {images.map((image) => (
-            <Image key={image._id} src={image.imageUrl} alt="Commission GG" className="aspect-square overflow-hidden rounded-xl object-cover" />
-          ))}
-        </div>
+        <Image.PreviewGroup toolbarRender={(node, info) => <>{node}<Button type="primary" size="small" onClick={() => handleSaveImage(info.image.url)}>Lưu vào Ảnh</Button></>}>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {images.map((image) => (
+              <Image key={image._id} src={image.imageUrl} alt="Commission GG" className="aspect-square overflow-hidden rounded-xl object-cover" />
+            ))}
+          </div>
+        </Image.PreviewGroup>
       ) : (
         <div className="mt-4"><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Chưa có ảnh Commission GG trong tháng này" /></div>
       )}

@@ -1,5 +1,6 @@
 const cloudinary = require("../config/cloudinary");
 const CommissionGGImage = require("../models/CommissionGGImage");
+const { zipImages } = require("../utils/zip");
 
 const isMonthKey = (value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value || "");
 
@@ -42,6 +43,37 @@ const getCommissionGGImagesByUser = async (req, res) => {
   } catch (error) {
     console.error("Get employee Commission GG images error:", error);
     return res.status(500).json({ success: false, message: "Không thể tải ảnh Commission GG của nhân viên" });
+  }
+};
+
+const downloadCommissionGGImages = async (req, res) => {
+  try {
+    const monthKey = req.query.month;
+    if (!isMonthKey(monthKey)) return res.status(400).json({ success: false, message: "Tháng không hợp lệ" });
+
+    const isOwnArchive = req.params.userId === undefined;
+    if (!isOwnArchive && !["admin", "manager"].includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: "Bạn không có quyền tải ảnh Commission GG của nhân viên" });
+    }
+
+    const createdBy = isOwnArchive ? req.user._id : req.params.userId;
+    const images = await CommissionGGImage.find({ createdBy, monthKey }).sort({ createdAt: -1 }).lean();
+    if (!images.length) return res.status(404).json({ success: false, message: "Không có ảnh để tải" });
+
+    const files = await Promise.all(images.map(async (image, index) => {
+      const response = await fetch(image.imageUrl);
+      if (!response.ok) throw new Error("Không thể tải ảnh");
+      const type = response.headers.get("content-type") || "image/jpeg";
+      const extension = type.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
+      return { name: `commission-gg-${monthKey}-${String(index + 1).padStart(2, "0")}.${extension}`, data: Buffer.from(await response.arrayBuffer()) };
+    }));
+
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", `attachment; filename="commission-gg-${monthKey}.zip"`);
+    return res.send(zipImages(files));
+  } catch (error) {
+    console.error("Download Commission GG archive error:", error);
+    return res.status(500).json({ success: false, message: "Không thể tạo file tải xuống" });
   }
 };
 
@@ -100,6 +132,7 @@ const deleteMyCommissionGGImagesByMonth = async (req, res) => {
 module.exports = {
   getMyCommissionGGImages,
   getCommissionGGImagesByUser,
+  downloadCommissionGGImages,
   uploadCommissionGGImages,
   deleteMyCommissionGGImagesByMonth,
 };

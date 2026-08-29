@@ -250,14 +250,12 @@ const FeedbackTable = ({
               }}
               onConfirm={() => onDelete(record._id)}
             >
-              <Tooltip title="Xóa">
-                <Button
-                  danger
-                  type="text"
-                  icon={<DeleteOutlined />}
-                  loading={deletingId === record._id}
-                />
-              </Tooltip>
+              <Button
+                danger
+                type="text"
+                icon={<DeleteOutlined />}
+                loading={deletingId === record._id}
+              />
             </Popconfirm>
           )}
         </Space>

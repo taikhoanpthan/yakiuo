@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @import "./App.css";
 
+@keyframes cube-loader {
+  0% { transform: rotate(45deg) rotateX(-25deg) rotateY(25deg); }
+  50% { transform: rotate(45deg) rotateX(-385deg) rotateY(25deg); }
+  100% { transform: rotate(45deg) rotateX(-385deg) rotateY(385deg); }
+}
+
 /* =========================================================
    GLOBAL
 ========================================================= */
@@ -1745,7 +1751,7 @@ button:focus-visible,
     left: max(12px, env(safe-area-inset-left));
     right: max(12px, env(safe-area-inset-right));
 
-    bottom: calc(10px + env(safe-area-inset-bottom));
+    bottom: calc(5px + env(safe-area-inset-bottom));
 
     z-index: 9999;
 

@@ -5,8 +5,10 @@ export const createCommission = async (data) => {
   return response.data;
 };
 
-export const getMyCommissions = async () => {
-  const response = await api.get("/commissions/my");
+export const getMyCommissions = async ({ page = 1, limit = 2 } = {}) => {
+  const response = await api.get("/commissions/my", {
+    params: { page, limit },
+  });
   return response.data;
 };
 

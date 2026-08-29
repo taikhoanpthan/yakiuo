@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { Card, Empty, Image, Spin, message } from "antd";
+import { Card, Empty, Image, message } from "antd";
 
 import {
   CalendarOutlined,
@@ -13,6 +13,7 @@ import { getWorkSchedule } from "../../services/workSchedule.service";
 import { connectSocket } from "../../services/socket";
 import weeklyCleaningMonThuImage from "../../assets/dashboard/weekly-cleaning-mon-thu.jpg";
 import weeklyCleaningFriSunImage from "../../assets/dashboard/weekly-cleaning-fri-sun.jpg";
+import HamsterLoader from "../../components/common/HamsterLoader";
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -86,7 +87,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Spin size="large" />
+        <HamsterLoader size="lg" />
       </div>
     );
   }

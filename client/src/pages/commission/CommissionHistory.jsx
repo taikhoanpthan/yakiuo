@@ -1,7 +1,6 @@
 import {
   Button,
   Card,
-  Spin,
   Tag,
   Empty,
 } from "antd";
@@ -13,12 +12,17 @@ import {
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
+import HamsterLoader from "../../components/common/HamsterLoader";
 
 const CommissionHistory = ({
   commissions = [],
+  total = 0,
   loading = false,
+  loadingMore = false,
+  hasMore = false,
   onEdit,
   onDelete,
+  onLoadMore,
 }) => {
   const formatMoney = (value) => {
     return `${Number(value || 0).toLocaleString(
@@ -66,7 +70,7 @@ const CommissionHistory = ({
 
           <span>Lịch sử commission</span>
 
-          <Tag>{commissions.length}</Tag>
+          <Tag>{total}</Tag>
         </div>
       }
       className="erp-section-card"
@@ -75,7 +79,7 @@ const CommissionHistory = ({
 
       {loading ? (
         <div className="flex justify-center py-8">
-          <Spin />
+          <HamsterLoader size="sm" />
         </div>
       ) : commissions.length === 0 ? (
         /* EMPTY */
@@ -195,6 +199,14 @@ const CommissionHistory = ({
               </div>
             </div>
           ))}
+
+          {hasMore && (
+            <div className="flex justify-center pt-2">
+              <Button type="link" loading={loadingMore} onClick={onLoadMore}>
+                Xem thêm
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </Card>

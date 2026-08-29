@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { Button, Card, DatePicker, Empty, Image, Popconfirm, Spin, Upload, message } from "antd";
+import { Button, Card, DatePicker, Empty, Image, Popconfirm, Upload, message } from "antd";
 import { CloudUploadOutlined, DeleteOutlined, FolderOpenOutlined } from "@ant-design/icons";
+import HamsterLoader from "../../components/common/HamsterLoader";
 import dayjs from "dayjs";
 
 import {
@@ -100,7 +101,7 @@ const CommissionGG = () => {
       <div className="mt-4 text-sm text-slate-500">{images.length} ảnh trong tháng {month.format("MM/YYYY")}</div>
 
       {loading ? (
-        <div className="flex h-40 items-center justify-center"><Spin /></div>
+        <div className="flex h-40 items-center justify-center"><HamsterLoader size="sm" /></div>
       ) : images.length ? (
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {images.map((image) => (

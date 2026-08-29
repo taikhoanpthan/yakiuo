@@ -1,7 +1,6 @@
 import { Navigate } from "react-router-dom";
-import { Spin } from "antd";
-
 import { useAuth } from "../store/AuthContext";
+import HamsterLoader from "../components/common/HamsterLoader";
 
 const ProtectedRoute = ({ children }) => {
   const {
@@ -12,7 +11,7 @@ const ProtectedRoute = ({ children }) => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Spin size="large" />
+        <HamsterLoader size="lg" />
       </div>
     );
   }

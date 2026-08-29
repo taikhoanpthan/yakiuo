@@ -20,7 +20,6 @@ import {
   CheckCircleFilled,
   CloseOutlined,
   DollarOutlined,
-  DownOutlined,
   DragOutlined,
   EditOutlined,
   EyeInvisibleOutlined,
@@ -31,15 +30,19 @@ import {
   SafetyOutlined,
   SaveOutlined,
   UserOutlined,
-  UpOutlined,
 } from "@ant-design/icons";
 
 import api from "../../services/api";
 
-import { getMe, updateMyProfile, changePassword } from "../../services/user.service";
+import {
+  getMe,
+  updateMyProfile,
+  changePassword,
+} from "../../services/user.service";
 
 import Commission from "../commission/Commission";
 import CommissionGG from "../commission/CommissionGG";
+import HamsterLoader from "../../components/common/HamsterLoader";
 
 const Profile = () => {
   const [form] = Form.useForm();
@@ -47,7 +50,9 @@ const Profile = () => {
   const { updateUser } = useAuth();
 
   const [user, setUser] = useState(null);
-  const canEditAccountIdentity = ["admin", "manager", "premium"].includes(user?.role);
+  const canEditAccountIdentity = ["admin", "manager", "premium"].includes(
+    user?.role,
+  );
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -56,8 +61,6 @@ const Profile = () => {
   const [changingPassword, setChangingPassword] = useState(false);
 
   const [showEditForm, setShowEditForm] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showRegularCommission, setShowRegularCommission] = useState(false);
 
   // Xem avatar
   const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -201,7 +204,11 @@ const Profile = () => {
       onSuccess?.(response.data);
     } catch (error) {
       console.error("Upload cover failed:", error);
-      message.error(error.response?.data?.message || error.message || "Không thể cập nhật ảnh bìa");
+      message.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể cập nhật ảnh bìa",
+      );
       onError?.(error);
     } finally {
       setUploadingCover(false);
@@ -265,9 +272,12 @@ const Profile = () => {
   };
 
   const openImageAdjuster = (target) => {
-    const position = target === "avatar" ? user?.avatarPosition : user?.coverPosition;
+    const position =
+      target === "avatar" ? user?.avatarPosition : user?.coverPosition;
     setImagePosition({ x: position?.x ?? 50, y: position?.y ?? 50 });
-    setImageZoom(target === "avatar" ? (user?.avatarZoom ?? 1) : (user?.coverZoom ?? 1));
+    setImageZoom(
+      target === "avatar" ? (user?.avatarZoom ?? 1) : (user?.coverZoom ?? 1),
+    );
     setImageAdjustTarget(target);
   };
 
@@ -276,8 +286,10 @@ const Profile = () => {
 
     try {
       setSavingImagePosition(true);
-      const positionField = imageAdjustTarget === "avatar" ? "avatarPosition" : "coverPosition";
-      const zoomField = imageAdjustTarget === "avatar" ? "avatarZoom" : "coverZoom";
+      const positionField =
+        imageAdjustTarget === "avatar" ? "avatarPosition" : "coverPosition";
+      const zoomField =
+        imageAdjustTarget === "avatar" ? "avatarZoom" : "coverZoom";
       const response = await updateMyProfile({
         [positionField]: imagePosition,
         [zoomField]: imageZoom,
@@ -291,7 +303,11 @@ const Profile = () => {
       setImageAdjustTarget(null);
       message.success("Đã lưu vị trí ảnh");
     } catch (error) {
-      message.error(error?.response?.data?.message || error.message || "Không thể lưu vị trí ảnh");
+      message.error(
+        error?.response?.data?.message ||
+          error.message ||
+          "Không thể lưu vị trí ảnh",
+      );
     } finally {
       setSavingImagePosition(false);
     }
@@ -313,8 +329,6 @@ const Profile = () => {
       message.success("Đã cập nhật mật khẩu thành công");
 
       passwordForm.resetFields();
-
-      setShowPasswordModal(false);
     } catch (error) {
       console.error("Change password failed:", error);
 
@@ -326,22 +340,6 @@ const Profile = () => {
     } finally {
       setChangingPassword(false);
     }
-  };
-
-  // =====================================================
-  // PASSWORD MODAL
-  // =====================================================
-
-  const openPasswordModal = () => {
-    passwordForm.resetFields();
-    setShowPasswordModal(true);
-  };
-
-  const closePasswordModal = () => {
-    if (changingPassword) return;
-
-    passwordForm.resetFields();
-    setShowPasswordModal(false);
   };
 
   // =====================================================
@@ -381,10 +379,9 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-[500px] items-center justify-center">
-        <div className="text-sm text-slate-500">
-          Đang tải thông tin cá nhân...
-        </div>
+      <div className="flex min-h-[500px] flex-col items-center justify-center gap-3">
+        <HamsterLoader size="lg" />
+        <div className="text-sm text-slate-500">Đang tải thông tin cá nhân...</div>
       </div>
     );
   }
@@ -542,7 +539,11 @@ const Profile = () => {
                 <Button
                   type={showEditForm ? "default" : "primary"}
                   icon={showEditForm ? <CloseOutlined /> : <EditOutlined />}
-                  onClick={() => setShowEditForm((prev) => !prev)}
+                  onClick={() => {
+                    if (showEditForm && changingPassword) return;
+                    if (showEditForm) passwordForm.resetFields();
+                    setShowEditForm((prev) => !prev);
+                  }}
                 >
                   <span className="hidden sm:inline">
                     {showEditForm ? "Đóng" : "Chỉnh sửa"}
@@ -614,11 +615,11 @@ const Profile = () => {
                   <div className="yakiuo-card-heading">
                     <div>
                       <div className="yakiuo-card-title">
-                        Chỉnh sửa thông tin
+                        Chỉnh sửa thông tin & bảo mật
                       </div>
 
                       <div className="yakiuo-card-subtitle">
-                        Cập nhật thông tin cá nhân của bạn.
+                        Cập nhật thông tin cá nhân và mật khẩu tài khoản.
                       </div>
                     </div>
                   </div>
@@ -714,6 +715,120 @@ const Profile = () => {
                       </Button>
                     </div>
                   </Form>
+
+                  <Divider />
+
+                  <div className="mb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="yakiuo-small-icon">
+                        <LockOutlined />
+                      </div>
+
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          Đổi mật khẩu
+                        </div>
+                        <div className="mt-1 text-sm text-slate-500">
+                          Nên thay đổi mật khẩu định kỳ để bảo vệ tài khoản.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Form
+                    form={passwordForm}
+                    layout="vertical"
+                    requiredMark={false}
+                    onFinish={handleChangePassword}
+                  >
+                    <Form.Item
+                      label="Mật khẩu hiện tại"
+                      name="currentPassword"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng nhập mật khẩu hiện tại",
+                        },
+                      ]}
+                    >
+                      <Input.Password
+                        size="large"
+                        prefix={<LockOutlined />}
+                        placeholder="Nhập mật khẩu hiện tại"
+                        iconRender={(visible) =>
+                          visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+                        }
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      label="Mật khẩu mới"
+                      name="newPassword"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng nhập mật khẩu mới",
+                        },
+                        { min: 6, message: "Mật khẩu phải có ít nhất 6 ký tự" },
+                      ]}
+                      hasFeedback
+                    >
+                      <Input.Password
+                        size="large"
+                        prefix={<LockOutlined />}
+                        placeholder="Nhập mật khẩu mới"
+                        iconRender={(visible) =>
+                          visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+                        }
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      label="Xác nhận mật khẩu mới"
+                      name="confirmPassword"
+                      dependencies={["newPassword"]}
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng xác nhận mật khẩu mới",
+                        },
+                        ({ getFieldValue }) => ({
+                          validator(_, value) {
+                            if (
+                              !value ||
+                              getFieldValue("newPassword") === value
+                            )
+                              return Promise.resolve();
+                            return Promise.reject(
+                              new Error("Mật khẩu xác nhận không khớp"),
+                            );
+                          },
+                        }),
+                      ]}
+                      hasFeedback
+                    >
+                      <Input.Password
+                        size="large"
+                        prefix={<LockOutlined />}
+                        placeholder="Nhập lại mật khẩu mới"
+                        iconRender={(visible) =>
+                          visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+                        }
+                      />
+                    </Form.Item>
+
+                    <div className="flex justify-end">
+                      <Button
+                        type="primary"
+                        size="large"
+                        htmlType="submit"
+                        icon={<SaveOutlined />}
+                        loading={changingPassword}
+                      >
+                        Cập nhật mật khẩu
+                      </Button>
+                    </div>
+                  </Form>
                 </Card>
               )}
             </div>
@@ -723,73 +838,19 @@ const Profile = () => {
             ================================================= */}
 
             <div className="yakiuo-profile-right">
-              {/* SECURITY */}
-
-              <Card bordered={false} className="yakiuo-social-card">
-                <div className="yakiuo-card-heading">
-                  <div className="flex items-center gap-3">
-                    <div className="yakiuo-small-icon">
-                      <LockOutlined />
-                    </div>
-
-                    <div>
-                      <div className="yakiuo-card-title">Bảo mật tài khoản</div>
-
-                      <div className="yakiuo-card-subtitle">
-                        Quản lý mật khẩu đăng nhập.
-                      </div>
-                    </div>
-                  </div>
-
-                  <SafetyOutlined className="yakiuo-card-icon" />
-                </div>
-
-                <Divider />
-
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <div className="font-semibold text-slate-900">Mật khẩu</div>
-
-                    <div className="mt-1 text-sm text-slate-500">
-                      Nên thay đổi mật khẩu định kỳ để bảo vệ tài khoản.
-                    </div>
-                  </div>
-
-                  <Button icon={<LockOutlined />} onClick={openPasswordModal}>
-                    Đổi mật khẩu
-                  </Button>
-                </div>
-              </Card>
-
               {/* COMMISSION */}
 
               <Card bordered={false} className="yakiuo-social-card">
-                <button
-                  type="button"
-                  className="yakiuo-card-heading w-full cursor-pointer border-0 bg-transparent p-0 text-left"
-                  onClick={() => setShowRegularCommission((visible) => !visible)}
-                  aria-expanded={showRegularCommission}
-                >
+                <div className="yakiuo-card-heading">
                   <div>
-                    <div className="yakiuo-card-title">Hoa hồng</div>
-
-                    <div className="yakiuo-card-subtitle">
-                      Commission thường · chạm để {showRegularCommission ? "thu gọn" : "mở"}.
-                    </div>
+                    <div className="yakiuo-card-title">Rượu / Bào Ngư</div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <DollarOutlined className="yakiuo-card-icon" />
-                    {showRegularCommission ? <UpOutlined /> : <DownOutlined />}
-                  </div>
-                </button>
+                  <DollarOutlined className="yakiuo-card-icon" />
+                </div>
 
-                {showRegularCommission && (
-                  <>
-                    <Divider />
-                    <Commission />
-                  </>
-                )}
+                <Divider />
+                <Commission />
               </Card>
 
               <CommissionGG />
@@ -868,158 +929,37 @@ const Profile = () => {
           )}
 
           <div className="mt-6">
-            <div className="mb-2 text-sm font-medium text-slate-700">Căn ngang</div>
-            <Slider value={imagePosition.x} onChange={(x) => setImagePosition((prev) => ({ ...prev, x }))} />
+            <div className="mb-2 text-sm font-medium text-slate-700">
+              Căn ngang
+            </div>
+            <Slider
+              value={imagePosition.x}
+              onChange={(x) => setImagePosition((prev) => ({ ...prev, x }))}
+            />
           </div>
           <div className="mt-4">
-            <div className="mb-2 text-sm font-medium text-slate-700">Căn dọc</div>
-            <Slider value={imagePosition.y} onChange={(y) => setImagePosition((prev) => ({ ...prev, y }))} />
+            <div className="mb-2 text-sm font-medium text-slate-700">
+              Căn dọc
+            </div>
+            <Slider
+              value={imagePosition.y}
+              onChange={(y) => setImagePosition((prev) => ({ ...prev, y }))}
+            />
           </div>
           <div className="mt-4">
             <div className="mb-2 flex justify-between text-sm font-medium text-slate-700">
               <span>Thu phóng</span>
               <span>{imageZoom.toFixed(2)}×</span>
             </div>
-            <Slider min={1} max={2.5} step={0.05} value={imageZoom} onChange={setImageZoom} />
+            <Slider
+              min={1}
+              max={2.5}
+              step={0.05}
+              value={imageZoom}
+              onChange={setImageZoom}
+            />
           </div>
         </div>
-      </Modal>
-
-      {/* =====================================================
-          CHANGE PASSWORD MODAL
-      ===================================================== */}
-
-      <Modal
-        title={
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-              <LockOutlined />
-            </div>
-
-            <div>
-              <div className="text-base font-semibold text-slate-900">
-                Đổi mật khẩu
-              </div>
-
-              <div className="text-xs font-normal text-slate-500">
-                Cập nhật mật khẩu tài khoản
-              </div>
-            </div>
-          </div>
-        }
-        open={showPasswordModal}
-        onCancel={closePasswordModal}
-        footer={null}
-        destroyOnHidden
-        centered
-        width={460}
-      >
-        <Divider />
-
-        <Form
-          form={passwordForm}
-          layout="vertical"
-          requiredMark={false}
-          onFinish={handleChangePassword}
-        >
-          <Form.Item
-            label="Mật khẩu hiện tại"
-            name="currentPassword"
-            rules={[
-              {
-                required: true,
-                message: "Vui lòng nhập mật khẩu hiện tại",
-              },
-            ]}
-          >
-            <Input.Password
-              size="large"
-              prefix={<LockOutlined />}
-              placeholder="Nhập mật khẩu hiện tại"
-              iconRender={(visible) =>
-                visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
-              }
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="Mật khẩu mới"
-            name="newPassword"
-            rules={[
-              {
-                required: true,
-                message: "Vui lòng nhập mật khẩu mới",
-              },
-              {
-                min: 6,
-                message: "Mật khẩu phải có ít nhất 6 ký tự",
-              },
-            ]}
-            hasFeedback
-          >
-            <Input.Password
-              size="large"
-              prefix={<LockOutlined />}
-              placeholder="Nhập mật khẩu mới"
-              iconRender={(visible) =>
-                visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
-              }
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="Xác nhận mật khẩu mới"
-            name="confirmPassword"
-            dependencies={["newPassword"]}
-            rules={[
-              {
-                required: true,
-                message: "Vui lòng xác nhận mật khẩu mới",
-              },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue("newPassword") === value) {
-                    return Promise.resolve();
-                  }
-
-                  return Promise.reject(
-                    new Error("Mật khẩu xác nhận không khớp"),
-                  );
-                },
-              }),
-            ]}
-            hasFeedback
-          >
-            <Input.Password
-              size="large"
-              prefix={<LockOutlined />}
-              placeholder="Nhập lại mật khẩu mới"
-              iconRender={(visible) =>
-                visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
-              }
-            />
-          </Form.Item>
-
-          <div className="mt-6 flex justify-end gap-2">
-            <Button
-              size="large"
-              onClick={closePasswordModal}
-              disabled={changingPassword}
-            >
-              Hủy
-            </Button>
-
-            <Button
-              type="primary"
-              size="large"
-              htmlType="submit"
-              icon={<SaveOutlined />}
-              loading={changingPassword}
-            >
-              Cập nhật mật khẩu
-            </Button>
-          </div>
-        </Form>
       </Modal>
     </>
   );

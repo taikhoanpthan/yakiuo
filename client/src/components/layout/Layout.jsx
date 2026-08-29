@@ -10,7 +10,6 @@ import {
   Layout as AntLayout,
   Popover,
   Space,
-  Spin,
   Tooltip,
   message,
   notification,
@@ -45,6 +44,7 @@ import { getNotifications } from "../../services/notificationService";
 import { onOnlineUsers } from "../../services/socket";
 import MobileTaskbar from "./MobileTaskbar";
 import DesktopSidebar from "./DesktopSidebar";
+import HamsterLoader from "../common/HamsterLoader";
 
 const { Content, Header, Sider } = AntLayout;
 
@@ -699,7 +699,7 @@ const Layout = ({ children }) => {
             padding: 30,
           }}
         >
-          <Spin size="small" />
+          <HamsterLoader size="sm" />
         </div>
       )}
 

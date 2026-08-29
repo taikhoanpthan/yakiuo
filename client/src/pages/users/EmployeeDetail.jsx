@@ -6,7 +6,6 @@ import {
   DatePicker,
   Empty,
   Image,
-  Spin,
   Tag,
   message,
 } from "antd";
@@ -31,6 +30,7 @@ import {
   getUserCommissionGGImages,
 } from "../../services/commissionGG.service";
 import { useAuth } from "../../store/AuthContext";
+import HamsterLoader from "../../components/common/HamsterLoader";
 
 // =====================================================
 // EMPLOYEE DETAIL
@@ -775,7 +775,7 @@ const EmployeeDetail = ({ user, onBack }) => {
 
             {loading ? (
               <div className="flex justify-center py-8">
-                <Spin />
+                <HamsterLoader size="md" />
               </div>
             ) : (
               <>
@@ -904,7 +904,7 @@ const EmployeeDetail = ({ user, onBack }) => {
 
             {loadingGGImages ? (
               <div className="flex justify-center py-8">
-                <Spin />
+                <HamsterLoader size="md" />
               </div>
             ) : ggImages.length ? (
               <div className="grid grid-cols-2 gap-2">
@@ -1015,7 +1015,7 @@ const EmployeeDetail = ({ user, onBack }) => {
 
           {loading ? (
             <div className="flex justify-center py-16">
-              <Spin />
+              <HamsterLoader size="md" />
             </div>
           ) : commissions.length === 0 ? (
             <Empty

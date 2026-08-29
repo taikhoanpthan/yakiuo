@@ -9,7 +9,6 @@ import {
   Modal,
   Popconfirm,
   Select,
-  Spin,
   Tooltip,
   message as antMessage,
 } from "antd";
@@ -33,6 +32,7 @@ import {
 import { connectSocket, getSocket } from "../../services/socket";
 import api from "../../services/api";
 import { useAuth } from "../../store/AuthContext";
+import HamsterLoader from "../../components/common/HamsterLoader";
 
 // =====================================================
 // HELPERS
@@ -1572,7 +1572,7 @@ export default function ChatPage() {
   if (loadingConversations) {
     return (
       <div className="flex h-full min-h-0 w-full items-center justify-center overflow-hidden bg-white">
-        <Spin size="large" />
+        <HamsterLoader size="lg" />
       </div>
     );
   }
@@ -1739,7 +1739,7 @@ export default function ChatPage() {
 
             {loadingUsers ? (
               <div className="flex h-[70px] items-center justify-center">
-                <Spin size="small" />
+                <HamsterLoader size="sm" />
               </div>
             ) : onlineUserList.length === 0 ? (
               <div className="py-3 text-center text-xs text-gray-400">
@@ -2147,16 +2147,14 @@ export default function ChatPage() {
                     okButtonProps={{ danger: true }}
                     onConfirm={handleDeleteConversation}
                   >
-                    <Tooltip title="Xóa cuộc trò chuyện">
-                      <Button
-                        type="text"
-                        shape="circle"
-                        size="large"
-                        danger
-                        icon={<DeleteOutlined />}
-                        aria-label="Xóa cuộc trò chuyện"
-                      />
-                    </Tooltip>
+                    <Button
+                      type="text"
+                      shape="circle"
+                      size="large"
+                      danger
+                      icon={<DeleteOutlined />}
+                      aria-label="Xóa cuộc trò chuyện"
+                    />
                   </Popconfirm>
                 </div>
               </header>
@@ -2192,7 +2190,7 @@ export default function ChatPage() {
                 >
                   {loadingMessages ? (
                     <div className="flex min-h-[300px] items-center justify-center">
-                      <Spin />
+                      <HamsterLoader size="md" />
                     </div>
                   ) : messages.length === 0 ? (
                     <div

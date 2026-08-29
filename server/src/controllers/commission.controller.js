@@ -116,17 +116,35 @@ const createCommission = async (req, res) => {
 
 const getMyCommissions = async (req, res) => {
   try {
-    const commissions = await Commission.find({
+    const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(
+      Math.max(Number.parseInt(req.query.limit, 10) || 2, 1),
+      50,
+    );
+    const filter = {
       createdBy: req.user._id,
-    })
-      .populate("createdBy", "fullName username avatar")
-      .sort({
-        date: -1,
-        createdAt: -1,
-      });
+    };
+
+    const [commissions, total] = await Promise.all([
+      Commission.find(filter)
+        .populate("createdBy", "fullName username avatar")
+        .sort({
+          date: -1,
+          createdAt: -1,
+        })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      Commission.countDocuments(filter),
+    ]);
 
     return res.json({
       data: commissions,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore: page * limit < total,
+      },
     });
   } catch (error) {
     console.error("getMyCommissions:", error);

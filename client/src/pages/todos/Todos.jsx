@@ -8,7 +8,6 @@ import {
   Modal,
   Popconfirm,
   Select,
-  Spin,
   Tag,
   message,
 } from "antd";
@@ -36,6 +35,7 @@ import {
 
 import TodoModal from "./TodoModal";
 import EmployeeDetail from "../users/EmployeeDetail";
+import HamsterLoader from "../../components/common/HamsterLoader";
 
 const priorityConfig = {
   high: {
@@ -327,7 +327,7 @@ const Todos = () => {
       <Card className="erp-section-card">
         {loading ? (
           <div className="flex justify-center py-16">
-            <Spin />
+            <HamsterLoader size="md" />
           </div>
         ) : filteredTodos.length === 0 ? (
           <Empty description="Chưa có công việc" className="py-12" />

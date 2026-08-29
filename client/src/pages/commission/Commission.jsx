@@ -54,8 +54,12 @@ const Commission = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const [loadingCommissions, setLoadingCommissions] = useState(false);
+  const [loadingMoreCommissions, setLoadingMoreCommissions] = useState(false);
 
   const [commissions, setCommissions] = useState([]);
+  const [commissionPage, setCommissionPage] = useState(1);
+  const [commissionTotal, setCommissionTotal] = useState(0);
+  const [hasMoreCommissions, setHasMoreCommissions] = useState(false);
 
   const [editingId, setEditingId] = useState(null);
 
@@ -113,13 +117,23 @@ const Commission = () => {
   // LOAD COMMISSIONS
   // =========================
 
-  const loadCommissions = async () => {
+  const loadCommissions = async ({ page = 1, append = false } = {}) => {
     try {
-      setLoadingCommissions(true);
+      if (append) {
+        setLoadingMoreCommissions(true);
+      } else {
+        setLoadingCommissions(true);
+      }
 
-      const response = await getMyCommissions();
+      const response = await getMyCommissions({ page, limit: 2 });
+      const nextCommissions = response?.data || [];
 
-      setCommissions(response?.data || []);
+      setCommissions((current) =>
+        append ? [...current, ...nextCommissions] : nextCommissions,
+      );
+      setCommissionPage(response?.pagination?.page || page);
+      setCommissionTotal(response?.pagination?.total || nextCommissions.length);
+      setHasMoreCommissions(Boolean(response?.pagination?.hasMore));
     } catch (error) {
       console.error("GET COMMISSIONS ERROR:", error);
 
@@ -127,8 +141,17 @@ const Commission = () => {
         error?.response?.data?.message || "Không thể tải danh sách commission",
       );
     } finally {
-      setLoadingCommissions(false);
+      if (append) {
+        setLoadingMoreCommissions(false);
+      } else {
+        setLoadingCommissions(false);
+      }
     }
+  };
+
+  const handleLoadMoreCommissions = () => {
+    if (!hasMoreCommissions || loadingMoreCommissions) return;
+    loadCommissions({ page: commissionPage + 1, append: true });
   };
 
   // =========================
@@ -324,10 +347,7 @@ const Commission = () => {
 
       content: (
         <div className="space-y-2">
-          <p>
-            Bạn đang chuẩn bị xóa{" "}
-            <strong>{monthCommissions.length} commission</strong>.
-          </p>
+          <p>Bạn đang chuẩn bị xóa toàn bộ commission tháng {month}/{year}.</p>
 
           <p className="text-red-500">
             Toàn bộ commission của tháng {month}/{year} sẽ bị xóa.
@@ -345,10 +365,11 @@ const Commission = () => {
         try {
           setLoadingCommissions(true);
 
-          await deleteMyCommissionsByMonth(month, year);
+          const response = await deleteMyCommissionsByMonth(month, year);
+          const deletedCount = response?.data?.deletedCount ?? monthCommissions.length;
 
           message.success(
-            `Đã xóa ${monthCommissions.length} commission tháng ${month}/${year}`,
+            `Đã xóa ${deletedCount} commission tháng ${month}/${year}`,
           );
 
           await loadCommissions();
@@ -390,13 +411,7 @@ const Commission = () => {
               </div>
 
               <div className="min-w-0">
-                <h3 className="m-0 text-base font-semibold text-slate-800">
-                  Commission thường
-                </h3>
-
-                <p className="mt-1 mb-0 text-xs text-slate-400">
-                  Rượu & Bào ngư
-                </p>
+                <h3>Commission</h3>
               </div>
             </div>
 
@@ -782,7 +797,7 @@ const Commission = () => {
               </div>
 
               <div className="mt-1 text-xs text-slate-400">
-                Tổng cộng {commissions.length} commission
+                Tổng cộng {commissionTotal} commission
               </div>
             </div>
 
@@ -799,7 +814,11 @@ const Commission = () => {
 
         <CommissionHistory
           commissions={commissions}
+          total={commissionTotal}
           loading={loadingCommissions}
+          loadingMore={loadingMoreCommissions}
+          hasMore={hasMoreCommissions}
+          onLoadMore={handleLoadMoreCommissions}
           onEdit={handleEdit}
           onDelete={(item) => handleDelete(item._id)}
         />

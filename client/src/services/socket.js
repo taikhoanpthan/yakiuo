@@ -22,6 +22,7 @@ let socket = null;
 
 // User mà client hiện tại muốn đăng nhập socket
 let currentUserId = null;
+let latestOnlineUsers = [];
 
 // =====================================================
 // CREATE SOCKET
@@ -286,6 +287,7 @@ export const onOnlineUsers = (callback) => {
 
   const handler = (data = {}) => {
     const userIds = Array.isArray(data.userIds) ? data.userIds.map(String) : [];
+    latestOnlineUsers = userIds;
 
     const count = Number(data.count ?? userIds.length);
 
@@ -301,6 +303,11 @@ export const onOnlineUsers = (callback) => {
   };
 
   currentSocket.on("users:online", handler);
+
+  callback({
+    userIds: latestOnlineUsers,
+    count: latestOnlineUsers.length,
+  });
 
   return () => {
     currentSocket.off("users:online", handler);

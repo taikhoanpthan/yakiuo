@@ -31,6 +31,7 @@ import {
 } from "../../services/commissionGG.service";
 import { useAuth } from "../../store/AuthContext";
 import HamsterLoader from "../../components/common/HamsterLoader";
+import { onOnlineUsers } from "../../services/socket";
 
 // =====================================================
 // EMPLOYEE DETAIL
@@ -49,6 +50,7 @@ const EmployeeDetail = ({ user, onBack }) => {
   const [ggImages, setGgImages] = useState([]);
   const [loadingGGImages, setLoadingGGImages] = useState(false);
   const [ggMonth, setGgMonth] = useState(dayjs());
+  const [onlineUserIds, setOnlineUserIds] = useState([]);
 
   const currentMonth = dayjs();
 
@@ -140,6 +142,14 @@ const EmployeeDetail = ({ user, onBack }) => {
     fetchGGImages();
   }, [user?._id, ggMonth, canViewPerformance]);
 
+  useEffect(() => {
+    const unsubscribe = onOnlineUsers((payload) => {
+      setOnlineUserIds(Array.isArray(payload?.userIds) ? payload.userIds : []);
+    });
+
+    return unsubscribe;
+  }, []);
+
   // =====================================================
   // TOTAL COMMISSION
   // =====================================================
@@ -221,6 +231,9 @@ const EmployeeDetail = ({ user, onBack }) => {
     label:
       user?.role?.toUpperCase() || "--",
   };
+
+  const isOnline = onlineUserIds.includes(String(user?._id));
+  const isAccountLocked = user?.status === "inactive";
 
   // =====================================================
   // COVER
@@ -571,9 +584,7 @@ const EmployeeDetail = ({ user, onBack }) => {
             <div className="mt-4 flex gap-2 sm:mt-0 sm:pb-1">
               <Tag
                 color={
-                  user.status === "active"
-                    ? "success"
-                    : "error"
+                  isAccountLocked ? "error" : isOnline ? "success" : "default"
                 }
                 className="
                   m-0
@@ -583,9 +594,11 @@ const EmployeeDetail = ({ user, onBack }) => {
                   text-sm
                 "
               >
-                {user.status === "active"
-                  ? "Đang hoạt động"
-                  : "Đã khóa"}
+                {isAccountLocked
+                  ? "Đã khóa"
+                  : isOnline
+                    ? "Đang hoạt động"
+                    : "Ngoại tuyến"}
               </Tag>
             </div>
           </div>
@@ -631,7 +644,7 @@ const EmployeeDetail = ({ user, onBack }) => {
             LEFT COLUMN
         ================================================= */}
 
-        <div className="space-y-4 lg:sticky lg:top-20">
+        <div className="contents">
           {/* =================================================
               INTRO
           ================================================= */}
@@ -639,6 +652,7 @@ const EmployeeDetail = ({ user, onBack }) => {
           <Card
             className="
               erp-section-card
+              lg:col-start-1
               !rounded-2xl
               !border-slate-200
               shadow-sm
@@ -730,6 +744,7 @@ const EmployeeDetail = ({ user, onBack }) => {
           <Card
             className="
               erp-section-card
+              lg:col-start-1
               !rounded-2xl
               !border-slate-200
               shadow-sm
@@ -846,6 +861,9 @@ const EmployeeDetail = ({ user, onBack }) => {
           <Card
             className="
               erp-section-card
+              lg:col-start-2
+              lg:row-start-1
+              lg:row-span-3
               !rounded-2xl
               !border-slate-200
               shadow-sm
@@ -942,6 +960,7 @@ const EmployeeDetail = ({ user, onBack }) => {
         <Card
           className="
             erp-section-card
+            lg:col-start-1
             !rounded-2xl
             !border-slate-200
             shadow-sm

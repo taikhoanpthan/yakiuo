@@ -2,7 +2,10 @@ const Todo = require("../models/Todo");
 
 const getTodos = async () => {
   return Todo.find()
-    .populate("createdBy", "username fullName avatar")
+    .populate(
+      "createdBy",
+      "username fullName avatar avatarPosition avatarZoom coverImage coverPosition coverZoom",
+    )
     .sort({
       dueDate: 1,
       createdAt: -1,

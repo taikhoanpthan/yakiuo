@@ -461,7 +461,7 @@ const Commission = () => {
                   DATE + SHIFT
               =============================== */}
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 {/* DATE */}
 
                 <Form.Item
@@ -561,7 +561,7 @@ const Commission = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="grid grid-cols-2 gap-3 md:gap-4">
                     {/* WINE LEVEL */}
 
                     <Form.Item
@@ -639,7 +639,7 @@ const Commission = () => {
 
                   {/* WINE INFO */}
 
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-xl bg-white p-4">
                       <div className="text-xs text-slate-400">
                         Commission / chai
@@ -677,51 +677,53 @@ const Commission = () => {
                     </div>
                   </div>
 
-                  {/* TABLE */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* TABLE */}
 
-                  <Form.Item
-                    label="Bàn"
-                    name="tableNumber"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Vui lòng nhập số bàn",
-                      },
-                    ]}
-                  >
-                    <Input
-                      size="large"
-                      prefix={<ShopOutlined />}
-                      placeholder="VD: T2, A12, VIP01..."
-                    />
-                  </Form.Item>
+                    <Form.Item
+                      label="Bàn"
+                      name="tableNumber"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng nhập số bàn",
+                        },
+                      ]}
+                    >
+                      <Input
+                        size="large"
+                        prefix={<ShopOutlined />}
+                        placeholder="VD: T2, A12, VIP01..."
+                      />
+                    </Form.Item>
 
-                  {/* QTY */}
+                    {/* QTY */}
 
-                  <Form.Item
-                    label="Số lượng bào ngư"
-                    name="abaloneQty"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Vui lòng nhập số lượng bào ngư",
-                      },
-                      {
-                        type: "number",
-                        min: 1,
-                        message: "Số lượng tối thiểu là 1",
-                      },
-                    ]}
-                  >
-                    <InputNumber
-                      size="large"
-                      className="w-full"
-                      prefix={<NumberOutlined />}
-                      min={1}
-                      precision={0}
-                      placeholder="Nhập số lượng"
-                    />
-                  </Form.Item>
+                    <Form.Item
+                      label="Số lượng bào ngư"
+                      name="abaloneQty"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng nhập số lượng bào ngư",
+                        },
+                        {
+                          type: "number",
+                          min: 1,
+                          message: "Số lượng tối thiểu là 1",
+                        },
+                      ]}
+                    >
+                      <InputNumber
+                        size="large"
+                        className="w-full"
+                        prefix={<NumberOutlined />}
+                        min={1}
+                        precision={0}
+                        placeholder="Nhập số lượng"
+                      />
+                    </Form.Item>
+                  </div>
 
                   {/* INFO */}
 

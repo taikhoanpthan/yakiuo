@@ -20,6 +20,7 @@ import {
   CheckCircleFilled,
   CloseOutlined,
   DollarOutlined,
+  DownOutlined,
   DragOutlined,
   EditOutlined,
   EyeInvisibleOutlined,
@@ -30,6 +31,7 @@ import {
   SafetyOutlined,
   SaveOutlined,
   UserOutlined,
+  UpOutlined,
 } from "@ant-design/icons";
 
 import api from "../../services/api";
@@ -55,6 +57,7 @@ const Profile = () => {
 
   const [showEditForm, setShowEditForm] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showRegularCommission, setShowRegularCommission] = useState(false);
 
   // Xem avatar
   const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -761,21 +764,32 @@ const Profile = () => {
               {/* COMMISSION */}
 
               <Card bordered={false} className="yakiuo-social-card">
-                <div className="yakiuo-card-heading">
+                <button
+                  type="button"
+                  className="yakiuo-card-heading w-full cursor-pointer border-0 bg-transparent p-0 text-left"
+                  onClick={() => setShowRegularCommission((visible) => !visible)}
+                  aria-expanded={showRegularCommission}
+                >
                   <div>
                     <div className="yakiuo-card-title">Hoa hồng</div>
 
                     <div className="yakiuo-card-subtitle">
-                      Theo dõi hoa hồng của bạn.
+                      Commission thường · chạm để {showRegularCommission ? "thu gọn" : "mở"}.
                     </div>
                   </div>
 
-                  <DollarOutlined className="yakiuo-card-icon" />
-                </div>
+                  <div className="flex items-center gap-3">
+                    <DollarOutlined className="yakiuo-card-icon" />
+                    {showRegularCommission ? <UpOutlined /> : <DownOutlined />}
+                  </div>
+                </button>
 
-                <Divider />
-
-                <Commission />
+                {showRegularCommission && (
+                  <>
+                    <Divider />
+                    <Commission />
+                  </>
+                )}
               </Card>
 
               <CommissionGG />

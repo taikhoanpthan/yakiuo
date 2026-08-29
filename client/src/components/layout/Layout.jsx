@@ -102,9 +102,22 @@ const Layout = ({ children }) => {
     const viewport = window.visualViewport;
 
     const syncViewportHeight = () => {
+      const viewportHeight =
+        viewport?.height || window.innerHeight;
+
       document.documentElement.style.setProperty(
         "--erp-viewport-height",
-        `${viewport?.height || window.innerHeight}px`,
+        `${viewportHeight}px`,
+      );
+
+      // iOS giữ layout viewport ở chiều cao cũ khi bàn phím mở. Khoảng lệch
+      // này giúp các phần tử fixed (khung soạn tin) nằm sát phía trên bàn phím.
+      document.documentElement.style.setProperty(
+        "--erp-keyboard-offset",
+        `${Math.max(
+          0,
+          window.innerHeight - viewportHeight - (viewport?.offsetTop || 0),
+        )}px`,
       );
     };
 
@@ -116,6 +129,7 @@ const Layout = ({ children }) => {
       viewport?.removeEventListener("resize", syncViewportHeight);
       window.removeEventListener("resize", syncViewportHeight);
       document.documentElement.style.removeProperty("--erp-viewport-height");
+      document.documentElement.style.removeProperty("--erp-keyboard-offset");
     };
   }, []);
 

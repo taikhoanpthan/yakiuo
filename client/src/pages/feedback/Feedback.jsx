@@ -67,6 +67,9 @@ const Feedback = () => {
   const [presetTags, setPresetTags] =
     useState([]);
 
+  const [showPresetTags, setShowPresetTags] =
+    useState(false);
+
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 20,
@@ -190,6 +193,8 @@ const Feedback = () => {
   const handleCreate = () => {
     setEditingFeedback(null);
 
+    setShowPresetTags(false);
+
     form.resetFields();
 
     form.setFieldsValue({
@@ -205,6 +210,8 @@ const Feedback = () => {
 
   const handleEdit = (record) => {
     setEditingFeedback(record);
+
+    setShowPresetTags(false);
 
     form.setFieldsValue({
       customerName:
@@ -833,57 +840,31 @@ const Feedback = () => {
               />
             </Form.Item>
 
-            {/* TABLE */}
+            <div className="grid grid-cols-2 gap-x-3 md:contents">
+              {/* TABLE */}
 
-            <Form.Item
-              label="Số bàn"
-              name="tableNumber"
-            >
-              <Input
-                placeholder="Ví dụ: A12"
-                size="large"
-                autoComplete="off"
-              />
-            </Form.Item>
+              <Form.Item
+                label="Số bàn"
+                name="tableNumber"
+              >
+                <Input
+                  placeholder="Ví dụ: A12"
+                  size="large"
+                  autoComplete="off"
+                />
+              </Form.Item>
 
-            {/* DATE */}
+              {/* MEAL */}
 
-            <Form.Item
-              label="Ngày feedback"
-              name="dateTime"
-              rules={[
-                {
-                  required: true,
-
-                  message:
-                    "Vui lòng chọn ngày feedback",
-                },
-              ]}
-            >
-              <DatePicker
-                size="large"
-                style={{
-                  width: "100%",
-                }}
-                format="DD/MM/YYYY"
-                placeholder="Chọn ngày feedback"
-                allowClear={false}
-                inputReadOnly
-              />
-            </Form.Item>
-
-            {/* MEAL */}
-
-            <Form.Item
-              label="Bữa ăn"
-              name="meal"
-              className="md:col-span-2"
-            >
-              <Select
-                size="large"
-                placeholder="Chọn bữa ăn"
-                allowClear
-                options={[
+              <Form.Item
+                label="Bữa ăn"
+                name="meal"
+              >
+                <Select
+                  size="large"
+                  placeholder="Chọn bữa ăn"
+                  allowClear
+                  options={[
                   {
                     label: "Alacarte",
                     value: "Alacarte",
@@ -918,7 +899,34 @@ const Feedback = () => {
                     label: "Yakiuo",
                     value: "Yakiuo",
                   },
-                ]}
+                  ]}
+                />
+              </Form.Item>
+            </div>
+
+            {/* DATE */}
+
+            <Form.Item
+              label="Ngày feedback"
+              name="dateTime"
+              rules={[
+                {
+                  required: true,
+
+                  message:
+                    "Vui lòng chọn ngày feedback",
+                },
+              ]}
+            >
+              <DatePicker
+                size="large"
+                style={{
+                  width: "100%",
+                }}
+                format="DD/MM/YYYY"
+                placeholder="Chọn ngày feedback"
+                allowClear={false}
+                inputReadOnly
               />
             </Form.Item>
           </div>
@@ -931,14 +939,20 @@ const Feedback = () => {
             presetTags.length >
               0 && (
               <div className="mb-4 rounded-xl border border-purple-100 bg-purple-50/60 p-3">
-                <div className="mb-2 text-xs font-semibold text-purple-700">
-                  Nhãn gợi ý — bấm để
-                  chèn vào nội dung
-                </div>
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between gap-3 text-left text-xs font-semibold text-purple-700"
+                  onClick={() => setShowPresetTags((visible) => !visible)}
+                  aria-expanded={showPresetTags}
+                >
+                  <span>Nhãn gợi ý Premium ({presetTags.length})</span>
+                  <span>{showPresetTags ? "Thu gọn" : "Chạm để mở"}</span>
+                </button>
 
-                <div className="flex flex-wrap gap-2">
-                  {presetTags.map(
-                    (tag) => (
+                {showPresetTags && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {presetTags.map(
+                      (tag) => (
                       <button
                         key={tag._id}
                         type="button"
@@ -964,9 +978,10 @@ const Feedback = () => {
                       >
                         {tag.label}
                       </button>
-                    ),
-                  )}
-                </div>
+                      ),
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

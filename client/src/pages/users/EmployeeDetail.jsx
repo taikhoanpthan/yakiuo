@@ -15,6 +15,7 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   DollarOutlined,
+  DownloadOutlined,
   FolderOpenOutlined,
   MailOutlined,
   PhoneOutlined,
@@ -32,6 +33,7 @@ import {
 import { useAuth } from "../../store/AuthContext";
 import HamsterLoader from "../../components/common/HamsterLoader";
 import { onOnlineUsers } from "../../services/socket";
+import { downloadImages } from "../../utils/downloadImages";
 
 // =====================================================
 // EMPLOYEE DETAIL
@@ -51,6 +53,7 @@ const EmployeeDetail = ({ user, onBack }) => {
   const [loadingGGImages, setLoadingGGImages] = useState(false);
   const [ggMonth, setGgMonth] = useState(dayjs());
   const [onlineUserIds, setOnlineUserIds] = useState([]);
+  const [downloadingGGImages, setDownloadingGGImages] = useState(false);
 
   const currentMonth = dayjs();
 
@@ -230,6 +233,18 @@ const EmployeeDetail = ({ user, onBack }) => {
     color: "default",
     label:
       user?.role?.toUpperCase() || "--",
+  };
+
+  const handleDownloadAllGGImages = async () => {
+    try {
+      setDownloadingGGImages(true);
+      await downloadImages(ggImages, `commission-gg-${ggMonth.format("YYYY-MM")}`);
+      message.success(`Đã tải ${ggImages.length} ảnh`);
+    } catch (error) {
+      message.error(error.message || "Không thể tải tất cả ảnh");
+    } finally {
+      setDownloadingGGImages(false);
+    }
   };
 
   const isOnline = onlineUserIds.includes(String(user?._id));
@@ -906,18 +921,31 @@ const EmployeeDetail = ({ user, onBack }) => {
                 </div>
               </div>
 
-              <DatePicker
-                picker="month"
-                value={ggMonth}
-                onChange={(value) =>
-                  setGgMonth(
-                    value || dayjs(),
-                  )
-                }
-                format="MM/YYYY"
-                allowClear={false}
-                size="small"
-              />
+              <div className="flex items-center gap-2">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<DownloadOutlined />}
+                  disabled={!ggImages.length}
+                  loading={downloadingGGImages}
+                  onClick={handleDownloadAllGGImages}
+                >
+                  Tải tất cả
+                </Button>
+
+                <DatePicker
+                  picker="month"
+                  value={ggMonth}
+                  onChange={(value) =>
+                    setGgMonth(
+                      value || dayjs(),
+                    )
+                  }
+                  format="MM/YYYY"
+                  allowClear={false}
+                  size="small"
+                />
+              </div>
             </div>
 
             {loadingGGImages ? (
@@ -925,7 +953,7 @@ const EmployeeDetail = ({ user, onBack }) => {
                 <HamsterLoader size="md" />
               </div>
             ) : ggImages.length ? (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 lg:max-h-[480px] lg:overflow-y-auto lg:pr-1 lg:overscroll-contain">
                 {ggImages.map((image) => (
                   <Image
                     key={image._id}

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button, Card, DatePicker, Empty, Image, Popconfirm, Upload, message } from "antd";
-import { CloudUploadOutlined, DeleteOutlined, FolderOpenOutlined } from "@ant-design/icons";
+import { CloudUploadOutlined, DeleteOutlined, DownloadOutlined, FolderOpenOutlined } from "@ant-design/icons";
 import HamsterLoader from "../../components/common/HamsterLoader";
 import dayjs from "dayjs";
+import { downloadImages } from "../../utils/downloadImages";
 
 import {
   deleteMyCommissionGGImagesByMonth,
@@ -16,6 +17,7 @@ const CommissionGG = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const monthKey = month.format("YYYY-MM");
 
@@ -66,6 +68,18 @@ const CommissionGG = () => {
     }
   };
 
+  const handleDownloadAll = async () => {
+    try {
+      setDownloading(true);
+      await downloadImages(images, `commission-gg-${monthKey}`);
+      message.success(`Đã tải ${images.length} ảnh`);
+    } catch (error) {
+      message.error(error.message || "Không thể tải tất cả ảnh");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <Card bordered={false} className="yakiuo-social-card">
       <div className="yakiuo-card-heading">
@@ -81,6 +95,7 @@ const CommissionGG = () => {
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <DatePicker picker="month" value={month} onChange={(value) => setMonth(value || dayjs())} format="MM/YYYY" allowClear={false} />
         <div className="flex gap-2">
+          <Button icon={<DownloadOutlined />} disabled={!images.length} loading={downloading} onClick={handleDownloadAll}>Tải tất cả</Button>
           <Upload multiple showUploadList={false} accept="image/png,image/jpeg,image/webp" customRequest={handleUpload} disabled={uploading}>
             <Button type="primary" icon={<CloudUploadOutlined />} loading={uploading}>Thêm ảnh</Button>
           </Upload>

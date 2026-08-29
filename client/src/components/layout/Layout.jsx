@@ -241,15 +241,16 @@ const Layout = ({ children }) => {
 
     ];
 
-    // ADMIN + MANAGER: đều có thể xem nhân viên và quản lý thông báo.
-    if (["admin", "manager"].includes(user?.role)) {
-      items.splice(1, 0, {
-        key: "/users",
-        label: "Nhân viên",
-        shortLabel: "Nhân viên",
-        icon: <TeamOutlined />,
-      });
+    // Mọi tài khoản đã đăng nhập đều có thể xem hồ sơ nhân viên.
+    items.splice(1, 0, {
+      key: "/users",
+      label: "Nhân viên",
+      shortLabel: "Nhân viên",
+      icon: <TeamOutlined />,
+    });
 
+    // Chỉ admin và manager có quyền quản lý thông báo.
+    if (["admin", "manager"].includes(user?.role)) {
       items.push({
         key: "/notifications",
         label: "Thông báo",
@@ -828,15 +829,11 @@ const Layout = ({ children }) => {
       label: "Tài khoản của tôi",
     },
 
-    ...(["admin", "manager"].includes(user?.role)
-      ? [
-          {
-            key: "users",
-            icon: <TeamOutlined />,
-            label: "Quản lý nhân viên",
-          },
-        ]
-      : []),
+    {
+      key: "users",
+      icon: <TeamOutlined />,
+      label: "Nhân viên",
+    },
 
     {
       type: "divider",

@@ -50,6 +50,8 @@ const ROLE_PERMISSIONS = {
   ],
 
   employee: [
+    "users.read",
+
     "feedback.read",
     "feedback.create",
     "feedback.update",
@@ -59,6 +61,8 @@ const ROLE_PERMISSIONS = {
   ],
 
   premium: [
+    "users.read",
+
     "feedback.read",
     "feedback.create",
     "feedback.update",

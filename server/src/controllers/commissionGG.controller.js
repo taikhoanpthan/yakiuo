@@ -26,10 +26,6 @@ const getMyCommissionGGImages = async (req, res) => {
 
 const getCommissionGGImagesByUser = async (req, res) => {
   try {
-    if (!["admin", "manager"].includes(req.user.role)) {
-      return res.status(403).json({ success: false, message: "Bạn không có quyền xem ảnh Commission GG của nhân viên" });
-    }
-
     const monthKey = req.query.month;
     if (!isMonthKey(monthKey)) {
       return res.status(400).json({ success: false, message: "Tháng không hợp lệ" });
@@ -52,10 +48,6 @@ const downloadCommissionGGImages = async (req, res) => {
     if (!isMonthKey(monthKey)) return res.status(400).json({ success: false, message: "Tháng không hợp lệ" });
 
     const isOwnArchive = req.params.userId === undefined;
-    if (!isOwnArchive && !["admin", "manager"].includes(req.user.role)) {
-      return res.status(403).json({ success: false, message: "Bạn không có quyền tải ảnh Commission GG của nhân viên" });
-    }
-
     const createdBy = isOwnArchive ? req.user._id : req.params.userId;
     const images = await CommissionGGImage.find({ createdBy, monthKey }).sort({ createdAt: -1 }).lean();
     if (!images.length) return res.status(404).json({ success: false, message: "Không có ảnh để tải" });

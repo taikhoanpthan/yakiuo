@@ -31,7 +31,6 @@ import {
   getUserCommissionGGImages,
   downloadUserCommissionGGImages,
 } from "../../services/commissionGG.service";
-import { useAuth } from "../../store/AuthContext";
 import HamsterLoader from "../../components/common/HamsterLoader";
 import { onOnlineUsers } from "../../services/socket";
 import { downloadFile, saveImageToPhotos } from "../../utils/downloadImages";
@@ -41,8 +40,6 @@ import { downloadFile, saveImageToPhotos } from "../../utils/downloadImages";
 // =====================================================
 
 const EmployeeDetail = ({ user, onBack }) => {
-  const { user: currentUser } = useAuth();
-  const canViewPerformance = ["admin", "manager"].includes(currentUser?.role);
   // =====================================================
   // STATE
   // =====================================================
@@ -63,7 +60,7 @@ const EmployeeDetail = ({ user, onBack }) => {
   // =====================================================
 
   const fetchCommissions = async () => {
-    if (!user?._id || !canViewPerformance) return;
+    if (!user?._id) return;
 
     try {
       setLoading(true);
@@ -101,7 +98,7 @@ const EmployeeDetail = ({ user, onBack }) => {
   // =====================================================
 
   const fetchGGImages = async () => {
-    if (!user?._id || !canViewPerformance) return;
+    if (!user?._id) return;
 
     try {
       setLoadingGGImages(true);
@@ -140,11 +137,11 @@ const EmployeeDetail = ({ user, onBack }) => {
 
   useEffect(() => {
     fetchCommissions();
-  }, [user?._id, canViewPerformance]);
+  }, [user?._id]);
 
   useEffect(() => {
     fetchGGImages();
-  }, [user?._id, ggMonth, canViewPerformance]);
+  }, [user?._id, ggMonth]);
 
   useEffect(() => {
     const unsubscribe = onOnlineUsers((payload) => {
@@ -964,7 +961,7 @@ const EmployeeDetail = ({ user, onBack }) => {
               </div>
             ) : ggImages.length ? (
               <Image.PreviewGroup toolbarRender={(node, info) => <>{node}<Button type="primary" size="small" onClick={() => handleSaveGGImage(info.image.url)}>Lưu vào Ảnh</Button></>}>
-                <div className="grid grid-cols-2 gap-2 lg:max-h-[480px] lg:overflow-y-auto lg:pr-1 lg:overscroll-contain">
+                <div className="commission-gg-image-scroll grid grid-cols-2 gap-2">
                   {ggImages.map((image) => (
                     <Image
                       key={image._id}

@@ -24,7 +24,6 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  MessageOutlined,
   TeamOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -154,13 +153,6 @@ const Layout = ({ children }) => {
       },
 
       {
-        key: "/chat",
-        label: "Tin nhắn",
-        shortLabel: "Tin nhắn",
-        icon: <MessageOutlined />,
-      },
-
-      {
         key: "/todos",
         label: "Todo List",
         shortLabel: "Todo",
@@ -195,7 +187,7 @@ const Layout = ({ children }) => {
   const mobileMenuItems = useMemo(() => {
     // Các trang quản trị (như Nhân viên) nằm trong menu tài khoản trên header
     // để taskbar điện thoại luôn gọn và dễ bấm.
-    const keys = ["/dashboard", "/feedback", "/chat", "/todos"];
+    const keys = ["/dashboard", "/feedback", "/todos"];
 
     if (["admin", "manager"].includes(user?.role)) {
       keys.push("/notifications");

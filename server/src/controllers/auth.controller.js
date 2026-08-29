@@ -47,6 +47,27 @@ const login = async (req, res) => {
   }
 };
 
+// Danh sách tối thiểu để chọn tài khoản ở màn đăng nhập nội bộ.
+const getLoginUsers = async (_req, res) => {
+  try {
+    const users = await User.find({ status: "active" })
+      .select("_id fullName username avatar role")
+      .sort({ fullName: 1, username: 1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      data: { users },
+    });
+  } catch (error) {
+    console.error("Get login users failed:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Không thể tải danh sách tài khoản đăng nhập",
+    });
+  }
+};
+
 // =====================================================
 // REFRESH
 // =====================================================
@@ -198,6 +219,7 @@ const changePassword = async (
 
 module.exports = {
   login,
+  getLoginUsers,
   refresh,
   logout,
   me,

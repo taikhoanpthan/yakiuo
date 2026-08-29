@@ -1,282 +1,140 @@
-import { useEffect, useRef, useState } from "react";
-import { Alert, Button, Card, Form, Input, Typography, message } from "antd";
-
+import { useEffect, useState } from "react";
+import { Alert, Button, Form, Input, Select, message } from "antd";
 import {
-  LockOutlined,
-  UserOutlined,
-  SafetyCertificateOutlined,
+  ArrowRightOutlined,
+  CheckCircleFilled,
   EyeInvisibleOutlined,
   EyeOutlined,
+  LockOutlined,
+  SafetyCertificateOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
-
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../store/AuthContext";
+import { getLoginUsers } from "../../services/auth.service";
 
-const { Title, Text } = Typography;
+const getLoginError = (error) => {
+  const status = error?.response?.status;
+  const serverMessage = error?.response?.data?.message;
+
+  if (!error?.response) return "Không thể kết nối máy chủ. Hãy kiểm tra Internet rồi thử lại.";
+  if (status === 401) return "Tên đăng nhập hoặc mật khẩu chưa đúng. Vui lòng kiểm tra lại.";
+  if (status === 403) return "Tài khoản đang bị khóa hoặc chưa được cấp quyền đăng nhập. Hãy liên hệ quản lý.";
+  if (status === 404) return "Không tìm thấy tài khoản này. Hãy kiểm tra tên đăng nhập.";
+  if (status === 429) return "Bạn đã thử quá nhiều lần. Vui lòng chờ ít phút rồi thử lại.";
+  if (status >= 500) return "Máy chủ đang gặp sự cố tạm thời. Vui lòng thử lại sau vài phút.";
+
+  return serverMessage || "Đăng nhập chưa thành công. Vui lòng thử lại.";
+};
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const loginPageRef = useRef(null);
-
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
-  const [passwordFocus, setPasswordFocus] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [loginUsers, setLoginUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [usersError, setUsersError] = useState("");
 
-  // Giữ nguyên chiều cao ban đầu để Safari không căn giữa lại toàn bộ form
-  // khi bàn phím ảo làm visual viewport bị thu nhỏ.
   useEffect(() => {
-    const root = document.documentElement;
-    const body = document.body;
-
-    const lockLoginHeight = () => {
-      root.style.setProperty("--login-stable-height", `${window.innerHeight}px`);
-    };
-
-    lockLoginHeight();
-
-    const oldBodyOverflow = body.style.overflow;
-    const oldBodyOverscroll = body.style.overscrollBehavior;
-
-    body.style.overflow = "hidden";
-    body.style.overscrollBehavior = "none";
-
-    const handleOrientationChange = () => {
-      window.setTimeout(lockLoginHeight, 350);
-    };
-
-    window.addEventListener("orientationchange", handleOrientationChange);
-
-    return () => {
-      window.removeEventListener("orientationchange", handleOrientationChange);
-      root.style.removeProperty("--login-stable-height");
-      body.style.overflow = oldBodyOverflow;
-      body.style.overscrollBehavior = oldBodyOverscroll;
-    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
   }, []);
 
-  const handleSubmit = async (values) => {
+  useEffect(() => {
+    const loadLoginUsers = async () => {
+      try {
+        setLoadingUsers(true);
+        setUsersError("");
+        const response = await getLoginUsers();
+        const users = response?.data?.users ?? [];
+        setLoginUsers(Array.isArray(users) ? users : []);
+      } catch (error) {
+        setUsersError(error?.response?.data?.message || "Không tải được danh sách tài khoản. Vui lòng tải lại trang.");
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    void loadLoginUsers();
+  }, []);
+
+  const handleSubmit = async ({ username, password }) => {
     try {
       setLoading(true);
       setLoginError("");
-
-      await login(values.username, values.password);
-
-      message.success("Đăng nhập thành công");
+      await login(username.trim(), password);
+      message.success("Đăng nhập thành công. Chào mừng bạn trở lại!");
       navigate("/dashboard");
     } catch (error) {
-      const status = error?.response?.status;
-      const serverMessage = error?.response?.data?.message;
-
-      let errorMessage =
-        serverMessage || "Đăng nhập thất bại. Vui lòng thử lại.";
-
-      if (!error?.response) {
-        errorMessage = "Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng.";
-      } else if (status === 401) {
-        errorMessage = "Tên đăng nhập hoặc mật khẩu không đúng.";
-      } else if (status === 403) {
-        errorMessage = "Tài khoản đã bị khóa hoặc không có quyền đăng nhập.";
-      } else if (status === 404) {
-        errorMessage = "Tài khoản không tồn tại.";
-      } else if (status === 429) {
-        errorMessage = "Bạn thử đăng nhập quá nhiều lần. Vui lòng chờ một lát.";
-      } else if (status >= 500) {
-        errorMessage = "Hệ thống đang gặp sự cố. Vui lòng thử lại sau.";
-      }
-
-      setLoginError(errorMessage);
-      message.error(errorMessage);
+      setLoginError(getLoginError(error));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      ref={loginPageRef}
-      className="fixed inset-x-0 top-0 overflow-x-hidden overflow-y-auto overscroll-none bg-slate-50"
-      style={{
-        height: "var(--login-stable-height, 100svh)",
-        WebkitOverflowScrolling: "touch",
-      }}
-    >
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-blue-100/70 blur-3xl" />
-        <div className="absolute -bottom-40 -right-32 h-[500px] w-[500px] rounded-full bg-indigo-100/60 blur-3xl" />
-        <div className="absolute left-1/2 top-1/3 h-72 w-72 -translate-x-1/2 rounded-full bg-white/80 blur-3xl" />
-      </div>
+    <div className="erp-auth-page">
+      <div className="erp-auth-orb erp-auth-orb-one" />
+      <div className="erp-auth-orb erp-auth-orb-two" />
 
-      <main
-        className="relative z-10 flex min-h-full items-center justify-center px-4 py-6 sm:py-10"
-        style={{
-          paddingTop: "max(24px, env(safe-area-inset-top))",
-          paddingBottom: "max(24px, env(safe-area-inset-bottom))",
-        }}
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 24, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
-          className="w-full max-w-[430px]"
-        >
-          <div className="mb-[-42px] flex justify-center">
-            <motion.div
-              animate={{
-                y: passwordFocus ? -4 : 0,
-                rotate: passwordFocus ? -3 : 0,
-              }}
-              transition={{ duration: 0.25 }}
-              className="relative z-20 flex h-24 w-24 items-center justify-center rounded-[28px] border-4 border-white bg-white text-[58px] shadow-xl"
-            >
-              {passwordFocus ? "🙈" : "🐵"}
-            </motion.div>
+      <motion.main initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: "easeOut" }} className="erp-auth-panel">
+        <section className="erp-auth-showcase">
+          <div className="erp-auth-brand"><span className="erp-auth-mark">Y</span><span>YAKIUO ERP</span></div>
+          <div className="erp-auth-showcase-copy">
+            <span className="erp-auth-kicker">WORKSPACE</span>
+            <h1>Quản lý công việc, rõ ràng và liền mạch.</h1>
+            <p>Theo dõi lịch làm, phản hồi và hoa hồng trong một không gian chung.</p>
+          </div>
+          <div className="erp-auth-benefits">
+            <span><CheckCircleFilled /> Cập nhật theo thời gian thực</span>
+            <span><CheckCircleFilled /> Phân quyền theo vai trò</span>
+            <span><CheckCircleFilled /> Tối ưu cho điện thoại</span>
+          </div>
+        </section>
+
+        <section className="erp-auth-form-section">
+          <div className="erp-auth-form-heading">
+            <div className="erp-auth-mobile-brand"><span className="erp-auth-mark">Y</span><span>YAKIUO ERP</span></div>
+            <span className="erp-auth-kicker">ĐĂNG NHẬP</span>
+            <h2>Chào mừng trở lại</h2>
+            <p>Nhập thông tin tài khoản để tiếp tục làm việc.</p>
           </div>
 
-          <Card
-            bordered={false}
-            className="overflow-hidden rounded-[28px] border border-slate-200/70 bg-white/95 shadow-[0_25px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
-            styles={{ body: { padding: 0 } }}
-          >
-            <div className="px-7 pb-2 pt-16 text-center sm:px-9">
-              <Title
-                level={2}
-                style={{
-                  margin: 0,
-                  marginBottom: 6,
-                  fontSize: 27,
-                  fontWeight: 750,
-                  letterSpacing: "-0.5px",
-                  color: "#0f172a",
-                }}
-              >
-                YAKIUO ERP
-              </Title>
+          <Form layout="vertical" onFinish={handleSubmit} onValuesChange={() => loginError && setLoginError("")} requiredMark={false} size="large">
+            {usersError && <Alert type="warning" showIcon message="Chưa tải được tài khoản" description={usersError} className="erp-auth-error" />}
+            {loginError && <Alert type="error" showIcon closable message="Không thể đăng nhập" description={loginError} onClose={() => setLoginError("")} className="erp-auth-error" />}
 
-              <Text style={{ color: "#64748b", fontSize: 14 }}>
-                Đăng nhập vào hệ thống quản lý
-              </Text>
-            </div>
+            <Form.Item label="Chọn tài khoản" name="username" rules={[{ required: true, message: "Hãy chọn tên của bạn." }]}>
+              <Select
+                showSearch
+                loading={loadingUsers}
+                disabled={Boolean(usersError)}
+                placeholder="Chọn tên của bạn"
+                optionFilterProp="label"
+                suffixIcon={<UserOutlined />}
+                options={loginUsers.map((user) => ({
+                  value: user.username,
+                  label: `${user.fullName} — @${user.username}`,
+                }))}
+              />
+            </Form.Item>
 
-            <div className="px-7 pb-8 pt-7 sm:px-9">
-              <Form
-                layout="vertical"
-                onFinish={handleSubmit}
-                onValuesChange={() => {
-                  if (loginError) {
-                    setLoginError("");
-                  }
-                }}
-                size="large"
-                requiredMark={false}
-              >
-                {loginError && (
-                  <Alert
-                    type="error"
-                    showIcon
-                    closable
-                    message="Không thể đăng nhập"
-                    description={loginError}
-                    onClose={() => setLoginError("")}
-                    className="mb-5 !rounded-xl"
-                  />
-                )}
+            <Form.Item label="Mật khẩu" name="password" rules={[{ required: true, message: "Hãy nhập mật khẩu để đăng nhập." }]}>
+              <Input.Password prefix={<LockOutlined />} placeholder="Nhập mật khẩu" autoComplete="current-password" visibilityToggle={{ visible: passwordVisible, onVisibleChange: setPasswordVisible }} iconRender={(visible) => visible ? <EyeOutlined /> : <EyeInvisibleOutlined />} />
+            </Form.Item>
 
-                <Form.Item
-                  label={
-                    <span className="font-medium text-slate-700">
-                      Tên đăng nhập
-                    </span>
-                  }
-                  name="username"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Vui lòng nhập tên đăng nhập",
-                    },
-                  ]}
-                >
-                  <Input
-                    prefix={<UserOutlined className="text-slate-400" />}
-                    placeholder="Nhập tên đăng nhập"
-                    className="rounded-xl !text-[16px]"
-                    styles={{ input: { fontSize: "16px" } }}
-                    autoComplete="username"
-                    autoCapitalize="none"
-                    autoCorrect="off"
-                    spellCheck={false}
-                  />
-                </Form.Item>
+            <Button type="primary" htmlType="submit" block loading={loading} className="erp-auth-submit">
+              {loading ? "Đang xác thực..." : <>Đăng nhập <ArrowRightOutlined /></>}
+            </Button>
+          </Form>
 
-                <Form.Item
-                  label={
-                    <span className="font-medium text-slate-700">Mật khẩu</span>
-                  }
-                  name="password"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Vui lòng nhập mật khẩu",
-                    },
-                  ]}
-                >
-                  <Input.Password
-                    prefix={<LockOutlined className="text-slate-400" />}
-                    placeholder="Nhập mật khẩu"
-                    className="rounded-xl !text-[16px]"
-                    styles={{ input: { fontSize: "16px" } }}
-                    autoComplete="current-password"
-                    visibilityToggle={{
-                      visible: passwordVisible,
-                      onVisibleChange: setPasswordVisible,
-                    }}
-                    iconRender={(visible) =>
-                      visible ? (
-                        <EyeOutlined className="text-slate-400" />
-                      ) : (
-                        <EyeInvisibleOutlined className="text-slate-400" />
-                      )
-                    }
-                    onFocus={() => setPasswordFocus(true)}
-                    onBlur={() => setPasswordFocus(false)}
-                  />
-                </Form.Item>
-
-                <Form.Item className="mb-0 mt-7">
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    block
-                    loading={loading}
-                    className="!h-12 !rounded-xl !text-[15px] !font-semibold !shadow-lg !shadow-blue-500/20"
-                  >
-                    {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-                  </Button>
-                </Form.Item>
-              </Form>
-
-              <div className="mt-6 flex items-center justify-center gap-2 text-center text-xs text-slate-400">
-                <SafetyCertificateOutlined />
-                <span>Kết nối được bảo vệ và mã hóa</span>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-100 bg-slate-50/70 px-7 py-4 text-center">
-              <span className="text-xs text-slate-400">
-                Yakiuo ERP · Hệ thống quản trị nội bộ
-              </span>
-            </div>
-          </Card>
-
-          <div className="mt-5 text-center">
-            <span className="text-xs text-slate-400">
-              © {new Date().getFullYear()} Yakiuo ERP · v1.0.0
-            </span>
-          </div>
-        </motion.div>
-      </main>
+          <div className="erp-auth-security"><SafetyCertificateOutlined /> Kết nối của bạn được mã hóa và bảo vệ.</div>
+        </section>
+      </motion.main>
     </div>
   );
 };

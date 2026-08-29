@@ -18,6 +18,11 @@ router.post(
   authController.login
 );
 
+router.get(
+  "/login-users",
+  authController.getLoginUsers,
+);
+
 // =====================================================
 // REFRESH
 // Không authenticate

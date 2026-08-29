@@ -50,3 +50,8 @@ export const logout = async () => {
     localStorage.removeItem("user");
   }
 };
+
+export const getLoginUsers = async () => {
+  const response = await api.get("/auth/login-users");
+  return response.data;
+};

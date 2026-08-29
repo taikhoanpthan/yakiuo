@@ -15,23 +15,25 @@
     "Segoe UI",
     sans-serif;
 
-  color: #1c1e21;
-  background: #f5f7fb;
+  color: #172033;
+  background: #f6f8fc;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  --erp-bg: #f5f7fb;
+  --erp-bg: #f6f8fc;
   --erp-card: #ffffff;
-  --erp-sidebar: #111b31;
-  --erp-sidebar-text: #aab6ca;
-  --erp-primary: #3977f6;
-  --erp-primary-soft: rgba(57, 119, 246, 0.1);
-  --erp-border: #e4e6eb;
-  --erp-text: #1c1e21;
-  --erp-muted: #65676b;
+  --erp-sidebar: #101a2f;
+  --erp-sidebar-text: #b7c2d6;
+  --erp-primary: #2563eb;
+  --erp-primary-soft: rgba(37, 99, 235, 0.1);
+  --erp-border: #e2e8f0;
+  --erp-text: #172033;
+  --erp-muted: #64748b;
+  --erp-accent: #7c3aed;
+  --erp-success: #16a34a;
 }
 
 *,
@@ -71,6 +73,49 @@ select {
 
 button {
   -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+.ant-btn:focus-visible,
+.ant-input:focus-visible,
+.ant-select-focused .ant-select-selector {
+  outline: 3px solid rgba(37, 99, 235, 0.18);
+  outline-offset: 2px;
+}
+
+/* Vùng chào mừng trên Dashboard: viền màu chuyển động nhẹ, không làm nhấp nháy nội dung. */
+.dashboard-greeting {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 8px 14px;
+
+  border: 1px solid transparent;
+  border-radius: 16px;
+
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.22), rgba(30, 64, 175, 0.16)) padding-box,
+    linear-gradient(120deg, #67e8f9, #a78bfa, #f9a8d4, #fde68a, #67e8f9) border-box;
+  background-size: 100% 100%, 300% 300%;
+
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  animation: dashboard-gradient-border 7s ease infinite;
+}
+
+@keyframes dashboard-gradient-border {
+  0%,
+  100% {
+    background-position: 0 0, 0% 50%;
+  }
+
+  50% {
+    background-position: 0 0, 100% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-greeting {
+    animation: none;
+  }
 }
 
 /* iOS tránh tự zoom input */
@@ -464,9 +509,9 @@ button {
 
   padding: 0 24px !important;
 
-  background: rgba(255, 255, 255, 0.94) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
 
-  border-bottom: 1px solid #e7ebf1;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
 
   line-height: normal !important;
 
@@ -741,8 +786,28 @@ button {
 }
 
 .ant-btn-primary {
+  background: linear-gradient(135deg, #2563eb, #4f46e5) !important;
+  border-color: #2563eb !important;
   box-shadow:
-    0 5px 12px rgba(49, 114, 245, 0.22);
+    0 6px 16px rgba(37, 99, 235, 0.22);
+}
+
+.ant-btn-primary:hover {
+  background: linear-gradient(135deg, #1d4ed8, #4338ca) !important;
+}
+
+.erp-section-card,
+.yakiuo-social-card {
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+@media (hover: hover) {
+  .erp-section-card:hover,
+  .yakiuo-social-card:hover {
+    border-color: #d8e3f5 !important;
+    box-shadow: 0 12px 30px rgba(30, 64, 175, 0.075) !important;
+    transform: translateY(-1px);
+  }
 }
 
 .ant-message-notice-content {
@@ -754,6 +819,113 @@ button {
     0 12px 32px rgba(16, 31, 56, 0.16) !important;
 
   font-weight: 600;
+}
+
+/* =========================================================
+   MODERN LOGIN
+========================================================= */
+
+.erp-auth-page {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  overflow: auto;
+  padding: 24px;
+  background: #eef4ff;
+  color: #172033;
+}
+
+.erp-auth-orb {
+  position: fixed;
+  width: 40rem;
+  height: 40rem;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(74px);
+  opacity: 0.5;
+}
+
+.erp-auth-orb-one { top: -19rem; left: -13rem; background: #93c5fd; }
+.erp-auth-orb-two { right: -16rem; bottom: -23rem; background: #c4b5fd; }
+
+.erp-auth-panel {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: min(440px, 100%);
+  min-height: 0;
+  grid-template-columns: 1fr;
+  overflow: hidden;
+  border: 1px solid rgba(203, 213, 225, 0.75);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 28px 80px rgba(30, 64, 175, 0.16);
+  backdrop-filter: blur(18px);
+}
+
+.erp-auth-showcase {
+  display: none;
+  flex-direction: column;
+  padding: 36px;
+  background: radial-gradient(circle at 82% 15%, rgba(125, 211, 252, 0.28), transparent 32%), linear-gradient(145deg, #102a67, #2563eb 55%, #4f46e5);
+  color: #fff;
+}
+
+.erp-auth-brand,
+.erp-auth-mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.erp-auth-mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 11px;
+  background: #fff;
+  color: #2563eb;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.erp-auth-showcase-copy { margin: auto 0 36px; max-width: 390px; }
+.erp-auth-kicker { color: #7dd3fc; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; }
+.erp-auth-showcase h1 { margin: 12px 0; font-size: clamp(29px, 4vw, 44px); line-height: 1.12; letter-spacing: -0.04em; }
+.erp-auth-showcase p { margin: 0; color: #dbeafe; font-size: 15px; line-height: 1.65; }
+.erp-auth-benefits { display: grid; gap: 12px; color: #e0ecff; font-size: 13px; }
+.erp-auth-benefits .anticon { color: #a7f3d0; margin-right: 8px; }
+
+.erp-auth-form-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 42px 32px 30px;
+}
+
+.erp-auth-mobile-brand { display: flex; color: #1e3a8a; margin-bottom: 30px; }
+.erp-auth-form-heading { margin-bottom: 30px; }
+.erp-auth-form-heading .erp-auth-kicker { color: #2563eb; }
+.erp-auth-form-heading h2 { margin: 8px 0 7px; color: #172033; font-size: 28px; letter-spacing: -0.035em; }
+.erp-auth-form-heading p { margin: 0; color: #64748b; font-size: 14px; }
+.erp-auth-form-section .ant-form-item-label > label { color: #334155; font-size: 13px; font-weight: 700; }
+.erp-auth-form-section .ant-input-affix-wrapper { min-height: 48px; border-radius: 12px; }
+.erp-auth-form-section .ant-input-prefix { color: #64748b; margin-right: 10px; }
+.erp-auth-error { margin-bottom: 18px; border-radius: 12px !important; }
+.erp-auth-submit { height: 50px !important; margin-top: 6px; border-radius: 12px !important; font-size: 15px; }
+.erp-auth-security { margin-top: 24px; color: #94a3b8; font-size: 12px; text-align: center; }
+.erp-auth-security .anticon { color: #16a34a; margin-right: 6px; }
+
+@media (max-width: 760px) {
+  .erp-auth-page { padding: 16px; align-items: center; }
+  .erp-auth-panel { min-height: 0; grid-template-columns: 1fr; border-radius: 24px; }
+  .erp-auth-form-section { padding: 40px 24px 28px; }
 }
 
 .ant-modal-content {

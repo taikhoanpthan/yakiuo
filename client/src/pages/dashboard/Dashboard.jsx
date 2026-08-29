@@ -163,7 +163,7 @@ const Dashboard = () => {
           HERO
       ================================================== */}
 
-      <div className="relative mb-6 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#172554] via-[#1d4ed8] to-[#3977f6] px-6 py-7 text-white shadow-[0_20px_50px_rgba(37,99,235,0.18)] md:px-8 md:py-8">
+      <div className="erp-dashboard-hero relative mb-6 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#172554] via-[#1d4ed8] to-[#3977f6] px-6 py-7 text-white shadow-[0_20px_50px_rgba(37,99,235,0.18)] md:px-8 md:py-8">
         {/* DECORATION */}
 
         <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
@@ -185,7 +185,7 @@ const Dashboard = () => {
 
           {/* TITLE */}
 
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+          <h1 className="dashboard-greeting m-0 text-2xl font-bold tracking-tight md:text-3xl">
             Xin chào, {userName} 👋
           </h1>
 
@@ -215,7 +215,7 @@ const Dashboard = () => {
 
 <Card
   bordered={false}
-  className="overflow-hidden rounded-[24px] shadow-sm"
+  className="erp-schedule-card overflow-hidden rounded-[24px] shadow-sm"
   styles={{
     body: {
       padding: 0,

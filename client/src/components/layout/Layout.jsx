@@ -21,11 +21,15 @@ import {
   BellOutlined,
   CheckSquareOutlined,
   CommentOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  InfoCircleOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   TeamOutlined,
   UserOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
 
 import { useLocation, useNavigate } from "react-router-dom";
@@ -43,6 +47,39 @@ import MobileTaskbar from "./MobileTaskbar";
 import DesktopSidebar from "./DesktopSidebar";
 
 const { Content, Header, Sider } = AntLayout;
+
+const getNotificationTypeConfig = (type) => {
+  switch (type) {
+    case "success":
+      return {
+        label: "Thành công",
+        icon: <CheckCircleOutlined />,
+        background: "#ecfdf3",
+        color: "#15803d",
+      };
+    case "warning":
+      return {
+        label: "Cảnh báo",
+        icon: <WarningOutlined />,
+        background: "#fffbeb",
+        color: "#b45309",
+      };
+    case "error":
+      return {
+        label: "Quan trọng",
+        icon: <ExclamationCircleOutlined />,
+        background: "#fef2f2",
+        color: "#dc2626",
+      };
+    default:
+      return {
+        label: "Thông tin",
+        icon: <InfoCircleOutlined />,
+        background: "#eff6ff",
+        color: "#2563eb",
+      };
+  }
+};
 
 // =====================================================
 // LAYOUT
@@ -305,6 +342,7 @@ const Layout = ({ children }) => {
       const title = notificationItem.title || "Thông báo mới";
 
       const content = notificationItem.content || "";
+      const typeConfig = getNotificationTypeConfig(notificationItem.type);
 
       notificationApi.open({
         message: (
@@ -321,7 +359,7 @@ const Layout = ({ children }) => {
                 height: 38,
                 minWidth: 38,
                 borderRadius: 12,
-                background: "linear-gradient(135deg, #3977f6 0%, #6c9cff 100%)",
+                background: typeConfig.background,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -329,7 +367,7 @@ const Layout = ({ children }) => {
             >
               <BellOutlined
                 style={{
-                  color: "#fff",
+                  color: typeConfig.color,
                   fontSize: 18,
                 }}
               />
@@ -347,11 +385,11 @@ const Layout = ({ children }) => {
                 style={{
                   fontSize: 11,
                   fontWeight: 600,
-                  color: "#3977f6",
+                  color: typeConfig.color,
                   textTransform: "uppercase",
                 }}
               >
-                Thông báo mới
+                {typeConfig.label}
               </span>
 
               <span
@@ -627,33 +665,38 @@ const Layout = ({ children }) => {
             overflowY: "auto",
           }}
         >
-          {recentNotifications.map((item) => (
-            <div
-              key={item._id}
-              style={{
-                display: "flex",
-                gap: 12,
-                padding: "12px 8px",
-                borderRadius: 8,
-              }}
-            >
+          {recentNotifications.map((item) => {
+            const typeConfig = getNotificationTypeConfig(item.type);
+
+            return (
+                <div
+                  key={item._id}
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    padding: "12px 8px",
+                    borderRadius: 8,
+                  }}
+                >
               <div
                 style={{
                   width: 36,
                   height: 36,
                   minWidth: 36,
                   borderRadius: "50%",
-                  background: "#f1f5f9",
+                  background: typeConfig.background,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <BellOutlined
+                <span
                   style={{
-                    color: "#3977f6",
+                    color: typeConfig.color,
                   }}
-                />
+                >
+                  {typeConfig.icon}
+                </span>
               </div>
 
               <div
@@ -689,20 +732,30 @@ const Layout = ({ children }) => {
                   {item.content || ""}
                 </div>
 
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "#94a3b8",
-                    marginTop: 5,
-                  }}
-                >
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 6 }}>
+                  <span
+                    style={{
+                      padding: "2px 6px",
+                      borderRadius: 999,
+                      background: typeConfig.background,
+                      color: typeConfig.color,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {typeConfig.label}
+                  </span>
+                  <span style={{ fontSize: 11, color: "#94a3b8" }}>
                   {item.createdAt
                     ? dayjs(item.createdAt).format("DD/MM/YYYY HH:mm")
                     : ""}
+                  </span>
                 </div>
               </div>
-            </div>
-          ))}
+                </div>
+            );
+          })}
         </div>
       )}
     </div>

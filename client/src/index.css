@@ -1,10 +1,18 @@
 @import "tailwindcss";
 @import "./App.css";
 
-@keyframes cube-loader {
-  0% { transform: rotate(45deg) rotateX(-25deg) rotateY(25deg); }
-  50% { transform: rotate(45deg) rotateX(-385deg) rotateY(25deg); }
-  100% { transform: rotate(45deg) rotateX(-385deg) rotateY(385deg); }
+@keyframes three-body-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes three-body-wobble-up {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 1; }
+  50% { transform: translateY(-66%) scale(0.65); opacity: 0.8; }
+}
+
+@keyframes three-body-wobble-down {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 1; }
+  50% { transform: translateY(66%) scale(0.65); opacity: 0.8; }
 }
 
 /* =========================================================

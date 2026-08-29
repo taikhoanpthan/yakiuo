@@ -5,13 +5,16 @@ const notificationService = require("../services/notification.service");
 // ===============================
 const getNotifications = async (req, res) => {
   try {
-    const notifications =
-      await notificationService.getNotifications();
+    const { notifications, total } =
+      await notificationService.getNotifications({
+        limit: req.query.limit,
+      });
 
     return res.status(200).json({
       success: true,
       data: {
         notifications,
+        total,
       },
     });
   } catch (error) {

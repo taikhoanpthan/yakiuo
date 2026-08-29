@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Button,
   Card,
@@ -118,7 +118,7 @@ const Notifications = () => {
     try {
       const response = await getFeedbackTags();
       setFeedbackTags(Array.isArray(response?.data) ? response.data : []);
-    } catch (error) {
+    } catch {
       setFeedbackTags([]);
     }
   }, [user?.role]);
@@ -248,33 +248,6 @@ const Notifications = () => {
         }),
     });
   };
-
-  // =========================
-  // STATISTICS
-  // =========================
-
-  const statistics = useMemo(() => {
-    const total = notifications.length;
-
-    const active = notifications.filter(
-      (item) => item.isActive !== false,
-    ).length;
-
-    const warning = notifications.filter(
-      (item) => item.type === "warning" || item.type === "error",
-    ).length;
-
-    const success = notifications.filter(
-      (item) => item.type === "success",
-    ).length;
-
-    return {
-      total,
-      active,
-      warning,
-      success,
-    };
-  }, [notifications]);
 
   // =========================
   // CREATE

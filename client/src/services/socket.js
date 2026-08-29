@@ -1,5 +1,11 @@
 import { io } from "socket.io-client";
 
+const debugLog = (...args) => {
+  if (import.meta.env.DEV) {
+    console.log(...args);
+  }
+};
+
 // =====================================================
 // SOCKET CONFIG
 // =====================================================
@@ -17,9 +23,6 @@ let socket = null;
 // User mà client hiện tại muốn đăng nhập socket
 let currentUserId = null;
 
-// User đã thực sự join presence trên server
-let joinedUserId = null;
-
 // =====================================================
 // CREATE SOCKET
 // =====================================================
@@ -33,7 +36,7 @@ const createSocket = () => {
     return socket;
   }
 
-  console.log("🔌 CREATE SOCKET:", SOCKET_URL);
+  debugLog("🔌 CREATE SOCKET:", SOCKET_URL);
 
   socket = io(SOCKET_URL, {
     autoConnect: false,
@@ -63,10 +66,10 @@ const createSocket = () => {
   // =================================================
 
   socket.on("connect", () => {
-    console.log("=================================");
-    console.log("🟢 SOCKET CONNECTED:", socket.id);
-    console.log("👤 CURRENT USER:", currentUserId);
-    console.log("=================================");
+    debugLog("=================================");
+    debugLog("🟢 SOCKET CONNECTED:", socket.id);
+    debugLog("👤 CURRENT USER:", currentUserId);
+    debugLog("=================================");
 
     // -----------------------------------------------
     // Socket reconnect
@@ -74,9 +77,7 @@ const createSocket = () => {
     // -----------------------------------------------
 
     if (currentUserId) {
-      console.log("📤 JOIN PRESENCE AFTER CONNECT:", currentUserId);
-
-      joinedUserId = null;
+      debugLog("📤 JOIN PRESENCE AFTER CONNECT:", currentUserId);
 
       socket.emit("user:join", {
         userId: currentUserId,
@@ -89,15 +90,13 @@ const createSocket = () => {
   // =================================================
 
   socket.on("disconnect", (reason) => {
-    console.log("=================================");
-    console.log("🔴 SOCKET DISCONNECTED");
-    console.log("🔌 Socket:", socket?.id);
-    console.log("👤 User:", currentUserId);
-    console.log("📌 Reason:", reason);
-    console.log("=================================");
+    debugLog("=================================");
+    debugLog("🔴 SOCKET DISCONNECTED");
+    debugLog("🔌 Socket:", socket?.id);
+    debugLog("👤 User:", currentUserId);
+    debugLog("📌 Reason:", reason);
+    debugLog("=================================");
 
-    // Server đã mất socket
-    joinedUserId = null;
   });
 
   // =================================================
@@ -122,7 +121,6 @@ const createSocket = () => {
     console.warn("🔒 ACCOUNT LOCKED:", data.message || "Tài khoản đã bị khóa");
 
     currentUserId = null;
-    joinedUserId = null;
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
@@ -130,13 +128,6 @@ const createSocket = () => {
     socket.disconnect();
     window.location.assign("/login");
   });
-
-  // =================================================
-  // USER JOIN SUCCESS TRACK
-  //
-  // Server hiện tại không emit riêng event success
-  // nên phần này không cần thiết.
-  // =================================================
 
   return socket;
 };
@@ -149,7 +140,7 @@ export const connectSocket = () => {
   const currentSocket = createSocket();
 
   if (!currentSocket.connected) {
-    console.log("🔌 CONNECT SOCKET");
+    debugLog("🔌 CONNECT SOCKET");
 
     currentSocket.connect();
   }
@@ -169,7 +160,7 @@ export const setSocketUser = (userId) => {
   // ============================================
 
   if (!id) {
-    console.log("⚪ CLEAR SOCKET USER");
+    debugLog("⚪ CLEAR SOCKET USER");
 
     currentUserId = null;
 
@@ -187,11 +178,11 @@ export const setSocketUser = (userId) => {
   // ============================================
 
   if (currentUserId === id) {
-    console.log("ℹ️ SOCKET USER ALREADY SET:", id);
+    debugLog("ℹ️ SOCKET USER ALREADY SET:", id);
 
     // Nếu socket chưa connect thì connect
     if (!currentSocket.connected) {
-      console.log("🔌 SOCKET NOT CONNECTED → CONNECT:", id);
+      debugLog("🔌 SOCKET NOT CONNECTED → CONNECT:", id);
 
       currentSocket.connect();
     }
@@ -204,7 +195,7 @@ export const setSocketUser = (userId) => {
   // ============================================
 
   if (currentUserId && currentUserId !== id) {
-    console.log("🔄 CHANGE SOCKET USER:", currentUserId, "→", id);
+    debugLog("🔄 CHANGE SOCKET USER:", currentUserId, "→", id);
 
     if (currentSocket.connected) {
       currentSocket.emit("user:leave");
@@ -222,7 +213,7 @@ export const setSocketUser = (userId) => {
   // ============================================
 
   if (currentSocket.connected) {
-    console.log("📤 SOCKET ALREADY CONNECTED → JOIN:", id);
+    debugLog("📤 SOCKET ALREADY CONNECTED → JOIN:", id);
 
     currentSocket.emit("user:join", {
       userId: id,
@@ -235,7 +226,7 @@ export const setSocketUser = (userId) => {
   // CONNECT
   // ============================================
 
-  console.log("🔌 CONNECT SOCKET FOR USER:", id);
+  debugLog("🔌 CONNECT SOCKET FOR USER:", id);
 
   currentSocket.connect();
 
@@ -257,19 +248,17 @@ export const joinPresence = (userId) => {
 export const leavePresence = () => {
   if (!socket) {
     currentUserId = null;
-    joinedUserId = null;
 
     return;
   }
 
-  console.log("📤 LEAVE PRESENCE:", currentUserId);
+  debugLog("📤 LEAVE PRESENCE:", currentUserId);
 
   if (socket.connected && currentUserId) {
     socket.emit("user:leave");
   }
 
   currentUserId = null;
-  joinedUserId = null;
 };
 
 // =====================================================
@@ -300,7 +289,7 @@ export const onOnlineUsers = (callback) => {
 
     const count = Number(data.count ?? userIds.length);
 
-    console.log("👥 SOCKET ONLINE USERS:", {
+    debugLog("👥 SOCKET ONLINE USERS:", {
       userIds,
       count,
     });
@@ -373,15 +362,13 @@ export const onUserOffline = (callback) => {
 export const disconnectSocket = () => {
   if (!socket) {
     currentUserId = null;
-    joinedUserId = null;
 
     return;
   }
 
-  console.log("🔌 DISCONNECT SOCKET:", socket.id);
+  debugLog("🔌 DISCONNECT SOCKET:", socket.id);
 
   currentUserId = null;
-  joinedUserId = null;
 
   socket.disconnect();
 

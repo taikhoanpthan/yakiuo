@@ -1,36 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { Card, Empty, Image, Spin, Tag, message } from "antd";
+import { Card, Empty, Image, Spin, message } from "antd";
 
 import {
   CalendarOutlined,
-  MessageOutlined,
   ShopOutlined,
-  UserOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
 
-import { getDashboardStats } from "../../services/dashboardService";
 import { getWorkSchedule } from "../../services/workSchedule.service";
 import { connectSocket } from "../../services/socket";
+import weeklyCleaningMonThuImage from "../../assets/dashboard/weekly-cleaning-mon-thu.jpg";
+import weeklyCleaningFriSunImage from "../../assets/dashboard/weekly-cleaning-fri-sun.jpg";
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [workSchedule, setWorkSchedule] = useState(null);
-  const [stats, setStats] = useState({
-    users: {
-      total: 0,
-      active: 0,
-    },
-
-    feedbacks: {
-      total: 0,
-    },
-
-    recentFeedbacks: [],
-  });
-
   // =========================
   // CURRENT USER
   // =========================
@@ -48,9 +34,6 @@ const Dashboard = () => {
 
   const currentUser = getCurrentUser();
 
-  const isAdmin =
-    currentUser?.role === "admin" || currentUser?.role === "ADMIN";
-
   const userName = currentUser?.fullName || currentUser?.username || "bạn";
 
   // =========================
@@ -61,36 +44,7 @@ const Dashboard = () => {
     try {
       setLoading(true);
 
-      const [dashboardResponse, scheduleResponse] = await Promise.all([
-        getDashboardStats(),
-        getWorkSchedule(),
-      ]);
-
-      // =========================
-      // DASHBOARD
-      // =========================
-
-      const data = dashboardResponse.data?.data ?? dashboardResponse.data ?? {};
-
-      setStats({
-        users: {
-          total: data.users?.total ?? 0,
-          active: data.users?.active ?? 0,
-        },
-
-        feedbacks: {
-          total: data.feedbacks?.total ?? 0,
-        },
-
-        recentFeedbacks: Array.isArray(data.recentFeedbacks)
-          ? data.recentFeedbacks
-          : [],
-      });
-
-      // =========================
-      // WORK SCHEDULE
-      // =========================
-
+      const scheduleResponse = await getWorkSchedule();
       const scheduleData =
         scheduleResponse.data?.data ?? scheduleResponse.data ?? null;
 
@@ -124,26 +78,6 @@ const Dashboard = () => {
       socket.off("work-schedule:updated", handleWorkScheduleUpdated);
     };
   }, []);
-
-  // =========================
-  // FORMAT DATE
-  // =========================
-
-  const formatDate = (value) => {
-    if (!value || !dayjs(value).isValid()) {
-      return "—";
-    }
-
-    return dayjs(value).format("DD/MM/YYYY");
-  };
-
-  const formatTime = (value) => {
-    if (!value || !dayjs(value).isValid()) {
-      return "—";
-    }
-
-    return dayjs(value).format("HH:mm");
-  };
 
   // =========================
   // LOADING
@@ -297,6 +231,38 @@ const Dashboard = () => {
       />
     </div>
   )}
+
+  <div className="border-t border-slate-100 bg-slate-50 p-4 md:p-6">
+    <h3 className="mb-4 text-base font-bold text-slate-800">
+      Công việc hàng tuần
+    </h3>
+
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <Image
+          src={weeklyCleaningMonThuImage}
+          alt="Lịch vệ sinh tuần từ thứ 2 đến thứ 5"
+          width="100%"
+          className="block"
+          preview={{
+            mask: <div className="text-sm font-medium">Xem ảnh lớn</div>,
+          }}
+        />
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <Image
+          src={weeklyCleaningFriSunImage}
+          alt="Lịch vệ sinh tuần từ thứ 6 đến Chủ Nhật"
+          width="100%"
+          className="block"
+          preview={{
+            mask: <div className="text-sm font-medium">Xem ảnh lớn</div>,
+          }}
+        />
+      </div>
+    </div>
+  </div>
 </Card>
 
       {/* ==================================================

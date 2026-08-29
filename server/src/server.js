@@ -30,7 +30,6 @@ const User = require("./models/User");
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
 const feedbackRoutes = require("./routes/feedback.routes");
-const dashboardRoutes = require("./routes/dashboard.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const uploadRoutes = require("./routes/upload.routes");
 const todoRoutes = require("./routes/todo.routes");
@@ -164,8 +163,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 
 app.use("/api/feedback", feedbackRoutes);
-
-app.use("/api/dashboard", dashboardRoutes);
 
 app.use("/api/notifications", notificationRoutes);
 

@@ -11,10 +11,10 @@ const createNotification = async (data, userId) => {
   return notification;
 };
 
-const getNotifications = async () => {
-  const notifications = await Notification.find({
-    isActive: true,
-  })
+const getNotifications = async ({ limit } = {}) => {
+  const filter = { isActive: true };
+  const parsedLimit = Number(limit);
+  const query = Notification.find(filter)
     .populate(
       "createdBy",
       "username fullName role"
@@ -23,7 +23,18 @@ const getNotifications = async () => {
       createdAt: -1,
     });
 
-  return notifications;
+  if (Number.isInteger(parsedLimit) && parsedLimit > 0) {
+    query.limit(Math.min(parsedLimit, 50));
+
+    const [notifications, total] = await Promise.all([
+      query.lean(),
+      Notification.countDocuments(filter),
+    ]);
+
+    return { notifications, total };
+  }
+
+  return { notifications: await query.lean(), total: null };
 };
 
 const getNotificationById = async (

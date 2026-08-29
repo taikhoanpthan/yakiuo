@@ -83,7 +83,7 @@ const Login = () => {
 
       <motion.main initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: "easeOut" }} className="erp-auth-panel">
         <section className="erp-auth-showcase">
-          <div className="erp-auth-brand"><span className="erp-auth-mark">Y</span><span>YAKIUO ERP</span></div>
+          <div className="erp-auth-brand"><img className="erp-auth-mark" src="/brand-logo.png" alt="Yakiuo Ishikawa" /><span>YAKIUO ERP</span></div>
           <div className="erp-auth-showcase-copy">
             <span className="erp-auth-kicker">WORKSPACE</span>
             <h1>Quản lý công việc, rõ ràng và liền mạch.</h1>
@@ -98,10 +98,9 @@ const Login = () => {
 
         <section className="erp-auth-form-section">
           <div className="erp-auth-form-heading">
-            <div className="erp-auth-mobile-brand"><span className="erp-auth-mark">Y</span><span>YAKIUO ERP</span></div>
-            <span className="erp-auth-kicker">ĐĂNG NHẬP</span>
-            <h2>Chào mừng trở lại</h2>
-            <p>Nhập thông tin tài khoản để tiếp tục làm việc.</p>
+            <div className="erp-auth-mobile-brand"><img className="erp-auth-mark" src="/brand-logo.png" alt="Yakiuo Ishikawa" /><span>YAKIUO ISHIKAWA SAIGON</span></div>
+            <h2 className="erp-auth-kicker">ĐĂNG NHẬP</h2>
+
           </div>
 
           <Form layout="vertical" onFinish={handleSubmit} onValuesChange={() => loginError && setLoginError("")} requiredMark={false} size="large">

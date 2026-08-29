@@ -9,7 +9,6 @@ import {
   InputNumber,
   Modal,
   Select,
-  Spin,
   Tag,
   message,
 } from "antd";
@@ -366,34 +365,6 @@ const Commission = () => {
       },
     });
   };
-  // =========================
-  // TYPE LABEL
-  // =========================
-
-  const getTypeLabel = (item) => {
-    if (item.type === "wine") {
-      if (item.wineLevel === "3m") {
-        return "Rượu > 3 triệu";
-      }
-
-      return "Rượu > 1 triệu";
-    }
-
-    return "Bào ngư";
-  };
-
-  // =========================
-  // TYPE COLOR
-  // =========================
-
-  const getTypeColor = (item) => {
-    if (item.type === "wine") {
-      return "blue";
-    }
-
-    return "purple";
-  };
-
   // =========================
   // RENDER
   // =========================

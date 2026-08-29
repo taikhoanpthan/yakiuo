@@ -1,8 +1,8 @@
 import api from "./api";
 
 // Lấy danh sách thông báo
-export const getNotifications = async () => {
-  return api.get("/notifications");
+export const getNotifications = async (params) => {
+  return api.get("/notifications", { params });
 };
 
 // Lấy thông báo theo ID

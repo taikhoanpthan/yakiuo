@@ -4,8 +4,8 @@ import { LogoutOutlined, SettingOutlined } from "@ant-design/icons";
 const DesktopSidebar = ({ collapsed, items, pathname, onNavigate, onLogout }) => (
   <div className="erp-sidebar-content">
     <div className="erp-brand">
-      <div className="erp-brand-mark">Y</div>
-      {!collapsed && <div><strong>YAKIUO</strong><span>ERP WORKSPACE</span></div>}
+      <img className="erp-brand-mark" src="/brand-logo.png" alt="Yakiuo Ishikawa" />
+      {!collapsed && <div><strong>YAKIUO</strong><span>ISHIKAWA SAIGON</span></div>}
     </div>
 
     {!collapsed && <div className="erp-nav-label">Điều hướng</div>}

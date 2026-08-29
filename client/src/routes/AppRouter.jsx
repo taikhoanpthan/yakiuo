@@ -1,22 +1,46 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-
-import Login from "../pages/auth/Login";
-import Dashboard from "../pages/dashboard/Dashboard";
-import Users from "../pages/users/Users";
-import Feedback from "../pages/feedback/Feedback";
-import Notifications from "../pages/notifications/Notifications";
-import Profile from "../pages/profile/Profile";
-import Todos from "../pages/todos/Todos";
 
 import Layout from "../components/layout/Layout";
 import ProtectedRoute from "./ProtectedRoute";
-import ChatPage from "../pages/chat/ChatPage";
+
+const Login = lazy(() => import("../pages/auth/Login"));
+const Dashboard = lazy(() => import("../pages/dashboard/Dashboard"));
+const Users = lazy(() => import("../pages/users/Users"));
+const Feedback = lazy(() => import("../pages/feedback/Feedback"));
+const Notifications = lazy(() => import("../pages/notifications/Notifications"));
+const Profile = lazy(() => import("../pages/profile/Profile"));
+const Todos = lazy(() => import("../pages/todos/Todos"));
+const ChatPage = lazy(() => import("../pages/chat/ChatPage"));
+
+const PageLoader = () => (
+  <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">
+    Đang tải...
+  </div>
+);
+
+const renderProtectedPage = (Page) => (
+  <ProtectedRoute>
+    <Layout>
+      <Suspense fallback={<PageLoader />}>
+        <Page />
+      </Suspense>
+    </Layout>
+  </ProtectedRoute>
+);
 
 const AppRouter = () => {
   return (
     <Routes>
       {/* AUTH */}
-      <Route path="/login" element={<Login />} />
+      <Route
+        path="/login"
+        element={
+          <Suspense fallback={<PageLoader />}>
+            <Login />
+          </Suspense>
+        }
+      />
 
       {/* DEFAULT */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -24,96 +48,43 @@ const AppRouter = () => {
       {/* DASHBOARD */}
       <Route
         path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Dashboard />
-            </Layout>
-          </ProtectedRoute>
-        }
+        element={renderProtectedPage(Dashboard)}
       />
 
       {/* USERS */}
       <Route
         path="/users"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Users />
-            </Layout>
-          </ProtectedRoute>
-        }
+        element={renderProtectedPage(Users)}
       />
 
       {/* FEEDBACK */}
       <Route
         path="/feedback"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Feedback />
-            </Layout>
-          </ProtectedRoute>
-        }
+        element={renderProtectedPage(Feedback)}
       />
 
       {/* NOTIFICATIONS */}
       <Route
         path="/notifications"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Notifications />
-            </Layout>
-          </ProtectedRoute>
-        }
+        element={renderProtectedPage(Notifications)}
       />
 
       {/* PROFILE */}
       <Route
         path="/profile"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Profile />
-            </Layout>
-          </ProtectedRoute>
-        }
+        element={renderProtectedPage(Profile)}
       />
 
       {/* TODOS */}
       <Route
         path="/todos"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Todos />
-            </Layout>
-          </ProtectedRoute>
-        }
+        element={renderProtectedPage(Todos)}
       />
 
       {/* CHAT */}
       <Route
         path="/chat"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <ChatPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/chat"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <ChatPage />
-            </Layout>
-          </ProtectedRoute>
-        }
+        element={renderProtectedPage(ChatPage)}
       />
 
       {/* 404 */}

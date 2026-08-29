@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   Avatar,
@@ -98,8 +98,13 @@ const Layout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
 
   const [isMobile, setIsMobile] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const pullStartYRef = useRef(null);
+  const pullDistanceRef = useRef(0);
 
   const [notifications, setNotifications] = useState([]);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
@@ -131,6 +136,44 @@ const Layout = ({ children }) => {
 
   const isChatPage =
     location.pathname === "/chat" || location.pathname.startsWith("/chat/");
+
+  const handlePullToRefreshStart = useCallback((event) => {
+    if (!isMobile || isChatPage || isRefreshing || event.currentTarget.scrollTop > 0) {
+      return;
+    }
+
+    pullStartYRef.current = event.touches[0]?.clientY ?? null;
+  }, [isChatPage, isMobile, isRefreshing]);
+
+  const handlePullToRefreshMove = useCallback((event) => {
+    if (pullStartYRef.current === null || isRefreshing) {
+      return;
+    }
+
+    const currentY = event.touches[0]?.clientY;
+
+    if (!Number.isFinite(currentY)) {
+      return;
+    }
+
+    const distance = Math.max(0, Math.min((currentY - pullStartYRef.current) * 0.5, 88));
+
+    pullDistanceRef.current = distance;
+    setPullDistance(distance);
+  }, [isRefreshing]);
+
+  const handlePullToRefreshEnd = useCallback(() => {
+    const shouldRefresh = pullDistanceRef.current >= 64;
+
+    pullStartYRef.current = null;
+    pullDistanceRef.current = 0;
+    setPullDistance(0);
+
+    if (shouldRefresh) {
+      setIsRefreshing(true);
+      window.setTimeout(() => window.location.reload(), 180);
+    }
+  }, []);
 
   // Safari iOS không luôn cập nhật 100dvh đúng lúc bàn phím mở.
   // Dùng visualViewport để khung chat luôn nằm trong phần màn hình đang thấy.
@@ -195,6 +238,7 @@ const Layout = ({ children }) => {
         shortLabel: "Todo",
         icon: <CheckSquareOutlined />,
       },
+
     ];
 
     // ADMIN + MANAGER: đều có thể xem nhân viên và quản lý thông báo.
@@ -281,7 +325,7 @@ const Layout = ({ children }) => {
 
       message.error("Đăng xuất thất bại");
     }
-  }, [logout, navigate, user?._id]);
+  }, [logout, navigate, user]);
 
   // ===================================================
   // REALTIME PRESENCE
@@ -458,13 +502,18 @@ const Layout = ({ children }) => {
       try {
         setNotificationLoading(true);
 
-        const response = await getNotifications();
-
-        const data = response?.data?.data?.notifications || [];
+        const response = await getNotifications({ limit: 5 });
+        const payload = response?.data?.data ?? {};
+        const data = payload.notifications || [];
 
         const list = Array.isArray(data) ? data : [];
 
         setNotifications(list);
+        setNotificationCount(
+          Number.isFinite(Number(payload.total))
+            ? Number(payload.total)
+            : list.length,
+        );
 
         if (!showPopup || list.length === 0) {
           return;
@@ -504,6 +553,7 @@ const Layout = ({ children }) => {
         console.error("❌ Load notifications error:", error);
 
         setNotifications([]);
+        setNotificationCount(0);
       } finally {
         setNotificationLoading(false);
       }
@@ -518,18 +568,26 @@ const Layout = ({ children }) => {
   useEffect(() => {
     if (!user?._id) {
       setNotifications([]);
+      setNotificationCount(0);
 
       return;
     }
 
     loadNotifications(true);
 
-    const interval = setInterval(() => {
-      loadNotifications(true);
-    }, 10000);
+    const refreshNotifications = () => {
+      if (!document.hidden) {
+        loadNotifications(true);
+      }
+    };
+
+    const interval = setInterval(refreshNotifications, 60000);
+
+    document.addEventListener("visibilitychange", refreshNotifications);
 
     return () => {
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshNotifications);
     };
   }, [user?._id, loadNotifications]);
 
@@ -581,8 +639,6 @@ const Layout = ({ children }) => {
   // ===================================================
 
   const recentNotifications = notifications.slice(0, 5);
-
-  const notificationCount = notifications.length;
 
   // ===================================================
   // NOTIFICATION CONTENT
@@ -903,31 +959,27 @@ const Layout = ({ children }) => {
             }}
           >
             <Space size={12}>
-              <Button
-                type="text"
-                className="erp-menu-button"
-                aria-label="Mở menu"
-                icon={
-                  collapsed || isMobile ? (
-                    <MenuUnfoldOutlined />
-                  ) : (
-                    <MenuFoldOutlined />
-                  )
-                }
-                onClick={() => {
-                  if (isMobile) {
-                    return;
-                  }
+              {!isMobile && (
+                <Button
+                  type="text"
+                  className="erp-menu-button"
+                  aria-label={collapsed ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng"}
+                  icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                  onClick={() => setCollapsed((value) => !value)}
+                />
+              )}
 
-                  setCollapsed((value) => !value);
-                }}
-              />
+              {isMobile && (
+                <button
+                  type="button"
+                  className="erp-mobile-home-logo"
+                  aria-label="Về trang Dashboard"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  <img src="/brand-logo.png" alt="Yakiuo Ishikawa" />
+                </button>
+              )}
 
-              <div className="erp-header-context">
-                <span>Không gian làm việc</span>
-
-                <strong>Yakiuo ERP</strong>
-              </div>
             </Space>
 
             {/* =========================================
@@ -1090,6 +1142,10 @@ const Layout = ({ children }) => {
 
           <Content
             className={`erp-content ${isChatPage ? "erp-content-chat" : ""}`}
+            onTouchStart={handlePullToRefreshStart}
+            onTouchMove={handlePullToRefreshMove}
+            onTouchEnd={handlePullToRefreshEnd}
+            onTouchCancel={handlePullToRefreshEnd}
             style={{
               flex: "1 1 auto",
               minHeight: 0,
@@ -1103,6 +1159,16 @@ const Layout = ({ children }) => {
                   : 0,
             }}
           >
+            {!isChatPage && (
+              <div
+                className="erp-pull-refresh"
+                style={{ height: isRefreshing ? 52 : pullDistance }}
+                aria-live="polite"
+              >
+                <span>{isRefreshing ? "Đang làm mới..." : pullDistance >= 64 ? "Thả để làm mới" : "Kéo xuống để làm mới"}</span>
+              </div>
+            )}
+
             <motion.main
               key={location.pathname}
               className={`erp-page ${isChatPage ? "erp-page-chat" : ""}`}
@@ -1140,7 +1206,7 @@ const Layout = ({ children }) => {
               <footer className="erp-footer">
                 <div className="erp-footer-left">
                   <div className="erp-footer-brand">
-                    <span className="erp-footer-mark" />
+                    <img className="erp-footer-mark" src="/brand-logo.png" alt="Yakiuo Ishikawa" />
 
                     <div>
                       <strong>YAKIUO ISHIKAWA</strong>

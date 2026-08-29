@@ -2,6 +2,12 @@ const Conversation = require("../models/Conversation");
 const Message = require("../models/Message");
 const User = require("../models/User");
 
+const debugLog = (...args) => {
+  if (process.env.NODE_ENV !== "production") {
+    console.log(...args);
+  }
+};
+
 // =====================================================
 // ONLINE USERS
 //
@@ -73,12 +79,12 @@ const debugOnlineMap = () => {
     })
   );
 
-  console.log("=================================");
-  console.log("🗺️ CURRENT ONLINE MAP");
-  console.log(JSON.stringify(map, null, 2));
-  console.log("👥 ONLINE USERS:", onlineUsers.size);
-  console.log("🔌 ONLINE SOCKETS:", getOnlineSocketCount());
-  console.log("=================================");
+  debugLog("=================================");
+  debugLog("🗺️ CURRENT ONLINE MAP");
+  debugLog(JSON.stringify(map, null, 2));
+  debugLog("👥 ONLINE USERS:", onlineUsers.size);
+  debugLog("🔌 ONLINE SOCKETS:", getOnlineSocketCount());
+  debugLog("=================================");
 };
 
 // =====================================================
@@ -188,12 +194,12 @@ const getPresencePayload = () => {
 const broadcastOnlineState = (io) => {
   const payload = getPresencePayload();
 
-  console.log("=================================");
-  console.log("📡 PRESENCE SYNC");
-  console.log("👥 ONLINE USERS:", payload.userIds);
-  console.log("👥 ONLINE COUNT:", payload.count);
-  console.log("🔌 TOTAL SOCKETS:", getOnlineSocketCount());
-  console.log("=================================");
+  debugLog("=================================");
+  debugLog("📡 PRESENCE SYNC");
+  debugLog("👥 ONLINE USERS:", payload.userIds);
+  debugLog("👥 ONLINE COUNT:", payload.count);
+  debugLog("🔌 TOTAL SOCKETS:", getOnlineSocketCount());
+  debugLog("=================================");
 
   io.emit("users:online", payload);
 
@@ -209,7 +215,7 @@ const broadcastOnlineState = (io) => {
 const sendCurrentPresence = (socket) => {
   const payload = getPresencePayload();
 
-  console.log(
+  debugLog(
     "📤 SEND CURRENT PRESENCE:",
     socket.id,
     payload
@@ -232,7 +238,7 @@ const removeSocketPresence = (io, socket, reason = "unknown") => {
 
   // Socket chưa join user
   if (!userId) {
-    console.log(
+    debugLog(
       "⚪ REMOVE PRESENCE SKIPPED:",
       socketId,
       "→ socket chưa có user"
@@ -241,19 +247,19 @@ const removeSocketPresence = (io, socket, reason = "unknown") => {
     return false;
   }
 
-  console.log("=================================");
-  console.log("🔴 REMOVE PRESENCE");
-  console.log("👤 USER:", userId);
-  console.log("🔌 SOCKET:", socketId);
-  console.log("📌 REASON:", reason);
+  debugLog("=================================");
+  debugLog("🔴 REMOVE PRESENCE");
+  debugLog("👤 USER:", userId);
+  debugLog("🔌 SOCKET:", socketId);
+  debugLog("📌 REASON:", reason);
 
   const result = removeOnlineSocket(
     userId,
     socketId
   );
 
-  console.log("🗑️ REMOVED:", result.removed);
-  console.log(
+  debugLog("🗑️ REMOVED:", result.removed);
+  debugLog(
     "🔌 REMAINING USER SOCKETS:",
     result.socketCount
   );
@@ -264,7 +270,7 @@ const removeSocketPresence = (io, socket, reason = "unknown") => {
 
   // User thật sự offline
   if (result.becameOffline) {
-    console.log(
+    debugLog(
       "🔴 USER REALLY OFFLINE:",
       userId
     );
@@ -274,7 +280,7 @@ const removeSocketPresence = (io, socket, reason = "unknown") => {
       lastSeen: new Date(),
     });
   } else {
-    console.log(
+    debugLog(
       "🟡 USER STILL ONLINE:",
       userId
     );
@@ -286,7 +292,7 @@ const removeSocketPresence = (io, socket, reason = "unknown") => {
   // Debug Map
   debugOnlineMap();
 
-  console.log("=================================");
+  debugLog("=================================");
 
   return true;
 };
@@ -297,16 +303,16 @@ const removeSocketPresence = (io, socket, reason = "unknown") => {
 
 module.exports = (io) => {
   io.on("connection", (socket) => {
-    console.log("=================================");
-    console.log("🟢 SOCKET CONNECTED");
-    console.log("🔌 SOCKET:", socket.id);
-    console.log("👤 USER:", socket.userId || null);
-    console.log("👥 ONLINE USERS:", getOnlineUserCount());
-    console.log(
+    debugLog("=================================");
+    debugLog("🟢 SOCKET CONNECTED");
+    debugLog("🔌 SOCKET:", socket.id);
+    debugLog("👤 USER:", socket.userId || null);
+    debugLog("👥 ONLINE USERS:", getOnlineUserCount());
+    debugLog(
       "🔌 ONLINE SOCKETS:",
       getOnlineSocketCount()
     );
-    console.log("=================================");
+    debugLog("=================================");
 
     // =================================================
     // SEND CURRENT PRESENCE
@@ -323,12 +329,12 @@ module.exports = (io) => {
         const requestedUserId = normalizeId(data.userId);
         const authenticatedUserId = normalizeId(socket.data.authUserId);
 
-        console.log("=================================");
-        console.log("📥 USER JOIN REQUEST");
-        console.log("🔌 SOCKET:", socket.id);
-        console.log("👤 USER:", requestedUserId);
-        console.log("👤 CURRENT SOCKET USER:", socket.userId);
-        console.log("=================================");
+        debugLog("=================================");
+        debugLog("📥 USER JOIN REQUEST");
+        debugLog("🔌 SOCKET:", socket.id);
+        debugLog("👤 USER:", requestedUserId);
+        debugLog("👤 CURRENT SOCKET USER:", socket.userId);
+        debugLog("=================================");
 
         // -------------------------------------------------
         // Validate ID
@@ -347,7 +353,7 @@ module.exports = (io) => {
         // -------------------------------------------------
 
         if (socket.userId === authenticatedUserId) {
-          console.log(
+          debugLog(
             "ℹ️ SOCKET ALREADY JOINED:",
             requestedUserId,
             socket.id
@@ -363,7 +369,7 @@ module.exports = (io) => {
         // -------------------------------------------------
 
         if (socket.userId) {
-          console.log(
+          debugLog(
             "🔄 SOCKET CHANGE USER:",
             socket.userId,
             "→",
@@ -388,7 +394,7 @@ module.exports = (io) => {
         );
 
         if (!user) {
-          console.log(
+          debugLog(
             "❌ USER NOT FOUND:",
             requestedUserId
           );
@@ -405,7 +411,7 @@ module.exports = (io) => {
         // -------------------------------------------------
 
         if (user.status !== "active") {
-          console.log(
+          debugLog(
             "❌ USER NOT ACTIVE:",
             requestedUserId,
             user.status
@@ -434,28 +440,28 @@ module.exports = (io) => {
           socket.id
         );
 
-        console.log("=================================");
-        console.log("🟢 USER JOINED PRESENCE");
-        console.log("👤 USER:", requestedUserId);
-        console.log("👤 USERNAME:", user.username);
-        console.log("🔌 SOCKET:", socket.id);
-        console.log(
+        debugLog("=================================");
+        debugLog("🟢 USER JOINED PRESENCE");
+        debugLog("👤 USER:", requestedUserId);
+        debugLog("👤 USERNAME:", user.username);
+        debugLog("🔌 SOCKET:", socket.id);
+        debugLog(
           "🟢 BECAME ONLINE:",
           result.becameOnline
         );
-        console.log(
+        debugLog(
           "🔌 USER SOCKET COUNT:",
           result.socketCount
         );
-        console.log(
+        debugLog(
           "👥 TOTAL ONLINE USERS:",
           getOnlineUserCount()
         );
-        console.log(
+        debugLog(
           "🔌 TOTAL SOCKETS:",
           getOnlineSocketCount()
         );
-        console.log("=================================");
+        debugLog("=================================");
 
         // -------------------------------------------------
         // User vừa online
@@ -496,11 +502,11 @@ module.exports = (io) => {
     // =================================================
 
     socket.on("user:leave", () => {
-      console.log("=================================");
-      console.log("📤 USER LEAVE");
-      console.log("👤 USER:", socket.userId);
-      console.log("🔌 SOCKET:", socket.id);
-      console.log("=================================");
+      debugLog("=================================");
+      debugLog("📤 USER LEAVE");
+      debugLog("👤 USER:", socket.userId);
+      debugLog("🔌 SOCKET:", socket.id);
+      debugLog("=================================");
 
       try {
         removeSocketPresence(
@@ -580,7 +586,7 @@ module.exports = (io) => {
 
           socket.join(roomName);
 
-          console.log(
+          debugLog(
             `👥 ${socket.userId} joined ${roomName}`
           );
 
@@ -624,7 +630,7 @@ module.exports = (io) => {
 
         socket.leave(roomName);
 
-        console.log(
+        debugLog(
           `👋 ${socket.id} left ${roomName}`
         );
       }
@@ -839,12 +845,12 @@ module.exports = (io) => {
     // =================================================
 
     socket.on("disconnect", (reason) => {
-      console.log("=================================");
-      console.log("🔴 SOCKET DISCONNECTED");
-      console.log("🔌 SOCKET:", socket.id);
-      console.log("👤 USER:", socket.userId);
-      console.log("📌 REASON:", reason);
-      console.log("=================================");
+      debugLog("=================================");
+      debugLog("🔴 SOCKET DISCONNECTED");
+      debugLog("🔌 SOCKET:", socket.id);
+      debugLog("👤 USER:", socket.userId);
+      debugLog("📌 REASON:", reason);
+      debugLog("=================================");
 
       try {
         removeSocketPresence(

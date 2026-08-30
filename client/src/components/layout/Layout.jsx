@@ -43,7 +43,7 @@ import { useAuth } from "../../store/AuthContext";
 
 import { getNotifications } from "../../services/notificationService";
 
-import { onOnlineUsers } from "../../services/socket";
+import { onOnlineUsers, setSocketUser } from "../../services/socket";
 import MobileTaskbar from "./MobileTaskbar";
 import DesktopSidebar from "./DesktopSidebar";
 import HamsterLoader from "../common/HamsterLoader";
@@ -369,6 +369,9 @@ const Layout = ({ children }) => {
     }
 
     console.log("👂 LISTEN REALTIME PRESENCE FOR:", user._id);
+
+    // Đảm bảo presence được join lại khi chuyển trang hoặc socket vừa reconnect.
+    setSocketUser(user._id);
 
     const unsubscribeUsers = onOnlineUsers((payload) => {
       console.log("👥 REALTIME ONLINE USERS:", payload);

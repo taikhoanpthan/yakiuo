@@ -23,6 +23,7 @@ import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   InfoCircleOutlined,
+  HistoryOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -257,6 +258,10 @@ const Layout = ({ children }) => {
         shortLabel: "Thông báo",
         icon: <BellOutlined />,
       });
+    }
+
+    if (user?.role === "admin") {
+      items.push({ key: "/admin/user-activity", label: "Lịch sử người dùng", shortLabel: "Lịch sử", icon: <HistoryOutlined /> });
     }
 
     return items;
@@ -835,6 +840,8 @@ const Layout = ({ children }) => {
       label: "Nhân viên",
     },
 
+    ...(user?.role === "admin" ? [{ key: "user-activity", icon: <HistoryOutlined />, label: "Lịch sử người dùng" }] : []),
+
     {
       type: "divider",
     },
@@ -1100,6 +1107,8 @@ const Layout = ({ children }) => {
                     if (key === "users") {
                       navigate("/users");
                     }
+
+                    if (key === "user-activity") navigate("/admin/user-activity");
 
                     if (key === "logout") {
                       handleLogout();

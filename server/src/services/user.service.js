@@ -188,8 +188,8 @@ const updateUser = async (
   }
 
   if (password !== undefined && password.trim()) {
-    if (password.trim().length < 8) {
-      throw new Error("Password must be at least 8 characters");
+    if (password.trim().length < 6) {
+      throw new Error("Password must be at least 6 characters");
     }
 
     user.passwordHash = await bcrypt.hash(password.trim(), 12);
@@ -203,8 +203,8 @@ const updateUser = async (
 };
 
 const normalizeImagePosition = (position = {}) => ({
-  x: Math.min(100, Math.max(0, Number(position.x) || 50)),
-  y: Math.min(100, Math.max(0, Number(position.y) || 50)),
+  x: Math.min(100, Math.max(0, Number.isFinite(Number(position.x)) ? Number(position.x) : 50)),
+  y: Math.min(100, Math.max(0, Number.isFinite(Number(position.y)) ? Number(position.y) : 50)),
 });
 
 const normalizeImageZoom = (zoom) => Math.min(2.5, Math.max(1, Number(zoom) || 1));
@@ -311,8 +311,8 @@ const changePassword = async (userId, currentPassword, newPassword) => {
     throw new Error("New password must be different from current password");
   }
 
-  if (newPassword.length < 8) {
-    throw new Error("New password must be at least 8 characters");
+  if (newPassword.length < 6) {
+    throw new Error("New password must be at least 6 characters");
   }
 
   // Hash mật khẩu mới

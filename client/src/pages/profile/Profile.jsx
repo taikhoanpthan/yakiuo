@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../store/AuthContext";
 
 import {
-  Avatar,
   Button,
   Card,
   Divider,
@@ -43,6 +42,23 @@ import {
 import Commission from "../commission/Commission";
 import CommissionGG from "../commission/CommissionGG";
 import HamsterLoader from "../../components/common/HamsterLoader";
+
+const toSliderNumber = (value, fallback, min, max) => {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  const number = Number(candidate);
+  return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
+};
+
+const getImageTransform = (position, zoom) => {
+  const safeZoom = toSliderNumber(zoom, 1, 1, 2.5);
+  const x = toSliderNumber(position?.x, 50, 0, 100);
+  const y = toSliderNumber(position?.y, 50, 0, 100);
+  // Khi ảnh gốc vuông, object-position không có vùng dư để dịch chuyển.
+  // Dịch phần ảnh đã zoom giúp thanh căn chỉnh luôn phản hồi đúng.
+  const offsetX = (50 - x) * (safeZoom - 1);
+  const offsetY = (50 - y) * (safeZoom - 1);
+  return `translate(${offsetX}%, ${offsetY}%) scale(${safeZoom})`;
+};
 
 const Profile = () => {
   const [form] = Form.useForm();
@@ -274,10 +290,13 @@ const Profile = () => {
   const openImageAdjuster = (target) => {
     const position =
       target === "avatar" ? user?.avatarPosition : user?.coverPosition;
-    setImagePosition({ x: position?.x ?? 50, y: position?.y ?? 50 });
-    setImageZoom(
-      target === "avatar" ? (user?.avatarZoom ?? 1) : (user?.coverZoom ?? 1),
-    );
+    setImagePosition({
+      x: toSliderNumber(position?.x, 50, 0, 100),
+      y: toSliderNumber(position?.y, 50, 0, 100),
+    });
+    // Cần một khoảng crop nhỏ để căn ngang/dọc có tác dụng ngay khi mở.
+    const savedZoom = target === "avatar" ? user?.avatarZoom : user?.coverZoom;
+    setImageZoom(Math.max(target === "avatar" ? 1.1 : 1, toSliderNumber(savedZoom, 1, 1, 2.5)));
     setImageAdjustTarget(target);
   };
 
@@ -460,17 +479,20 @@ const Profile = () => {
                     }
                   }}
                 >
-                  <Avatar
-                    className="yakiuo-profile-avatar"
-                    src={user?.avatar || undefined}
-                    style={{
-                      "--avatar-position": `${user?.avatarPosition?.x ?? 50}% ${user?.avatarPosition?.y ?? 50}%`,
-                      "--avatar-zoom": user?.avatarZoom ?? 1,
-                    }}
-                    icon={!user?.avatar && <UserOutlined />}
-                  >
-                    {!user?.avatar && user?.fullName?.charAt(0)?.toUpperCase()}
-                  </Avatar>
+                  <div className="yakiuo-profile-avatar">
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.fullName || "Avatar"}
+                        style={{
+                          objectPosition: `${toSliderNumber(user.avatarPosition?.x, 50, 0, 100)}% ${toSliderNumber(user.avatarPosition?.y, 50, 0, 100)}%`,
+                          transform: getImageTransform(user.avatarPosition, user.avatarZoom),
+                        }}
+                      />
+                    ) : (
+                      <UserOutlined />
+                    )}
+                  </div>
                 </div>
 
                 {/* CAMERA */}
@@ -911,7 +933,7 @@ const Profile = () => {
                 className="h-full w-full object-cover"
                 style={{
                   objectPosition: `${imagePosition.x}% ${imagePosition.y}%`,
-                  transform: `scale(${imageZoom})`,
+                  transform: getImageTransform(imagePosition, imageZoom),
                   transformOrigin: "center",
                 }}
               />
@@ -925,7 +947,7 @@ const Profile = () => {
                   className="h-full w-full object-cover"
                   style={{
                     objectPosition: `${imagePosition.x}% ${imagePosition.y}%`,
-                    transform: `scale(${imageZoom})`,
+                    transform: getImageTransform(imagePosition, imageZoom),
                     transformOrigin: "center",
                   }}
                 />
@@ -938,8 +960,8 @@ const Profile = () => {
               Căn ngang
             </div>
             <Slider
-              value={imagePosition.x}
-              onChange={(x) => setImagePosition((prev) => ({ ...prev, x }))}
+              value={toSliderNumber(imagePosition.x, 50, 0, 100)}
+              onChange={(x) => setImagePosition((prev) => ({ ...prev, x: toSliderNumber(x, prev.x, 0, 100) }))}
             />
           </div>
           <div className="mt-4">
@@ -947,21 +969,21 @@ const Profile = () => {
               Căn dọc
             </div>
             <Slider
-              value={imagePosition.y}
-              onChange={(y) => setImagePosition((prev) => ({ ...prev, y }))}
+              value={toSliderNumber(imagePosition.y, 50, 0, 100)}
+              onChange={(y) => setImagePosition((prev) => ({ ...prev, y: toSliderNumber(y, prev.y, 0, 100) }))}
             />
           </div>
           <div className="mt-4">
             <div className="mb-2 flex justify-between text-sm font-medium text-slate-700">
               <span>Thu phóng</span>
-              <span>{imageZoom.toFixed(2)}×</span>
+              <span>{toSliderNumber(imageZoom, 1, 1, 2.5).toFixed(2)}×</span>
             </div>
             <Slider
               min={1}
               max={2.5}
               step={0.05}
-              value={imageZoom}
-              onChange={setImageZoom}
+              value={toSliderNumber(imageZoom, 1, 1, 2.5)}
+              onChange={(zoom) => setImageZoom(toSliderNumber(zoom, 1, 1, 2.5))}
             />
           </div>
         </div>

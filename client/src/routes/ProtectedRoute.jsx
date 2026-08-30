@@ -2,9 +2,9 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../store/AuthContext";
 import HamsterLoader from "../components/common/HamsterLoader";
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, roles }) => {
   const {
-    isAuthenticated,
+    isAuthenticated, user,
     loading,
   } = useAuth();
 
@@ -24,6 +24,8 @@ const ProtectedRoute = ({ children }) => {
       />
     );
   }
+
+  if (roles && !roles.includes(user?.role)) return <Navigate to="/dashboard" replace />;
 
   return children;
 };

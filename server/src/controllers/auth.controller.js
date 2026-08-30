@@ -3,6 +3,7 @@ const User = require("../models/User");
 const {
   getPermissionsByRole,
 } = require("../config/permissions");
+const { recordActivity } = require("../services/userActivity.service");
 
 // =====================================================
 // LOGIN
@@ -28,6 +29,13 @@ const login = async (req, res) => {
         username,
         password,
       });
+
+    await recordActivity({
+      user: result.user._id,
+      type: "login",
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent") || "",
+    });
 
     return res.status(200).json({
       success: true,
@@ -198,6 +206,7 @@ const changePassword = async (
       currentPassword,
       newPassword,
     });
+    await recordActivity({ user: req.user._id, type: "password_changed", ipAddress: req.ip, userAgent: req.get("user-agent") || "" });
 
     return res.status(200).json({
       success: true,

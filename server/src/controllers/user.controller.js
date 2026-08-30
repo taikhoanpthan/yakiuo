@@ -1,4 +1,5 @@
 const userService = require("../services/user.service");
+const { getActivities, recordActivity, deleteActivity, deleteAllActivities } = require("../services/userActivity.service");
 
 const forceLogoutUserSockets = (io, userId) => {
   if (!io || !userId) return;
@@ -81,10 +82,10 @@ const createUser = async (req, res) => {
       });
     }
 
-    if (password.length < 8) {
+    if (password.length < 6) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 8 characters",
+        message: "Password must be at least 6 characters",
       });
     }
 
@@ -159,6 +160,10 @@ const updateUser = async (req, res) => {
     }
 
     const user = await userService.updateUser(req.params.id, req.body);
+
+    if (req.body.password?.trim()) {
+      await recordActivity({ user: user._id, type: "password_changed", ipAddress: req.ip, userAgent: req.get("user-agent") || "" });
+    }
 
     return res.status(200).json({
       success: true,
@@ -280,11 +285,11 @@ const changePassword = async (req, res) => {
       });
     }
 
-    if (newPassword.length < 8) {
+    if (newPassword.length < 6) {
       return res.status(400).json({
         success: false,
         message:
-          "New password must be at least 8 characters",
+          "New password must be at least 6 characters",
       });
     }
 
@@ -293,6 +298,7 @@ const changePassword = async (req, res) => {
       currentPassword,
       newPassword
     );
+    await recordActivity({ user: req.user._id, type: "password_changed", ipAddress: req.ip, userAgent: req.get("user-agent") || "" });
 
     return res.status(200).json({
       success: true,
@@ -307,6 +313,32 @@ const changePassword = async (req, res) => {
     });
   }
 };
+const getUserActivities = async (req, res) => {
+  try {
+    const result = await getActivities(req.query);
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    console.error("Get user activities failed:", error);
+    return res.status(500).json({ success: false, message: "Không thể tải lịch sử hoạt động" });
+  }
+};
+const removeUserActivity = async (req, res) => {
+  try {
+    await deleteActivity(req.params.activityId);
+    return res.status(200).json({ success: true, message: "Đã xóa lịch sử hoạt động" });
+  } catch (error) {
+    return res.status(404).json({ success: false, message: error.message });
+  }
+};
+const removeAllUserActivities = async (_req, res) => {
+  try {
+    const deletedCount = await deleteAllActivities();
+    return res.status(200).json({ success: true, message: "Đã xóa toàn bộ lịch sử hoạt động", data: { deletedCount } });
+  } catch (error) {
+    console.error("Delete all user activities failed:", error);
+    return res.status(500).json({ success: false, message: "Không thể xóa toàn bộ lịch sử" });
+  }
+};
 module.exports = {
   getMe,
   updateMyProfile,
@@ -318,4 +350,7 @@ module.exports = {
   updateUserStatus,
   deleteUser,
   changePassword,
+  getUserActivities,
+  removeUserActivity,
+  removeAllUserActivities,
 };

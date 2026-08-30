@@ -18,6 +18,9 @@ router.patch("/me/profile", userController.updateMyProfile);
 
 // Danh sách hồ sơ rút gọn để chọn người trò chuyện.
 router.get("/chat", userController.getChatUsers);
+router.get("/activities", requirePermission("audit.read"), userController.getUserActivities);
+router.delete("/activities", requirePermission("audit.read"), userController.removeAllUserActivities);
+router.delete("/activities/:activityId", requirePermission("audit.read"), userController.removeUserActivity);
 
 // =========================
 // USERS MANAGEMENT

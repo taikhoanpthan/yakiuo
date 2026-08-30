@@ -1,5 +1,6 @@
 const cloudinary = require("../config/cloudinary");
 const User = require("../models/User");
+const { recordActivity } = require("../services/userActivity.service");
 
 const uploadImage = async (req, res) => {
   try {
@@ -50,6 +51,13 @@ const uploadImage = async (req, res) => {
     }
 
     await user.save();
+    await recordActivity({
+      user: user._id,
+      type: imageType === "cover" ? "cover_changed" : "avatar_changed",
+      imageUrl: result.secure_url,
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent") || "",
+    });
 
     return res.status(201).json({
       success: true,

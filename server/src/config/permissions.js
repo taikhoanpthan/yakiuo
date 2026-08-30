@@ -1,5 +1,6 @@
 const ROLE_PERMISSIONS = {
   admin: [
+    "audit.read",
     "users.read",
     "users.create",
     "users.update",

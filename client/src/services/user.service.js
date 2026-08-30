@@ -48,3 +48,15 @@ export const updateMyProfile = async (data) => {
 
   return response.data;
 };
+export const getUserActivities = async (params = {}) => {
+  const response = await api.get("/users/activities", { params });
+  return response.data;
+};
+export const deleteUserActivity = async (id) => {
+  const response = await api.delete(`/users/activities/${id}`);
+  return response.data;
+};
+export const deleteAllUserActivities = async () => {
+  const response = await api.delete("/users/activities");
+  return response.data;
+};

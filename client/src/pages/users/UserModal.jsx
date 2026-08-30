@@ -153,8 +153,8 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null, canManageRole
             isEdit
               ? [
                   {
-                    min: 8,
-                    message: "Mật khẩu tối thiểu 8 ký tự",
+                    min: 6,
+                    message: "Mật khẩu tối thiểu 6 ký tự",
                   },
                 ]
               : [
@@ -163,8 +163,8 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null, canManageRole
                     message: "Vui lòng nhập mật khẩu",
                   },
                   {
-                    min: 8,
-                    message: "Mật khẩu tối thiểu 8 ký tự",
+                    min: 6,
+                    message: "Mật khẩu tối thiểu 6 ký tự",
                   },
                 ]
           }

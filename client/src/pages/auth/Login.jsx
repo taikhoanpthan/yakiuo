@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Button, Form, Input, Select, message } from "antd";
+import { Alert, Button, Checkbox, Form, Input, Select, message } from "antd";
 import {
   ArrowRightOutlined,
   CheckCircleFilled,
@@ -37,6 +37,18 @@ const Login = () => {
   const [loginUsers, setLoginUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [usersError, setUsersError] = useState("");
+  const [rememberPassword, setRememberPassword] = useState(false);
+  const [form] = Form.useForm();
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("rememberedLogin") || "null");
+      if (saved?.username && saved?.password) {
+        form.setFieldsValue({ username: saved.username, password: saved.password });
+        setRememberPassword(true);
+      }
+    } catch { localStorage.removeItem("rememberedLogin"); }
+  }, [form]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -67,6 +79,11 @@ const Login = () => {
       setLoading(true);
       setLoginError("");
       await login(username.trim(), password);
+      if (rememberPassword) {
+        localStorage.setItem("rememberedLogin", JSON.stringify({ username: username.trim(), password }));
+      } else {
+        localStorage.removeItem("rememberedLogin");
+      }
       message.success("Đăng nhập thành công. Chào mừng bạn trở lại!");
       navigate("/dashboard");
     } catch (error) {
@@ -103,7 +120,7 @@ const Login = () => {
 
           </div>
 
-          <Form layout="vertical" onFinish={handleSubmit} onValuesChange={() => loginError && setLoginError("")} requiredMark={false} size="large">
+          <Form form={form} layout="vertical" onFinish={handleSubmit} onValuesChange={() => loginError && setLoginError("")} requiredMark={false} size="large">
             {usersError && <Alert type="warning" showIcon message="Chưa tải được tài khoản" description={usersError} className="erp-auth-error" />}
             {loginError && <Alert type="error" showIcon closable message="Không thể đăng nhập" description={loginError} onClose={() => setLoginError("")} className="erp-auth-error" />}
 
@@ -125,6 +142,10 @@ const Login = () => {
             <Form.Item label="Mật khẩu" name="password" rules={[{ required: true, message: "Hãy nhập mật khẩu để đăng nhập." }]}>
               <Input.Password prefix={<LockOutlined />} placeholder="Nhập mật khẩu" autoComplete="current-password" visibilityToggle={{ visible: passwordVisible, onVisibleChange: setPasswordVisible }} iconRender={(visible) => visible ? <EyeOutlined /> : <EyeInvisibleOutlined />} />
             </Form.Item>
+
+            <Checkbox checked={rememberPassword} onChange={(event) => setRememberPassword(event.target.checked)}>
+              Lưu mật khẩu trên thiết bị này
+            </Checkbox>
 
             <Button type="primary" htmlType="submit" block loading={loading} className="erp-auth-submit">
               {loading ? "Đang xác thực..." : <>Đăng nhập <ArrowRightOutlined /></>}

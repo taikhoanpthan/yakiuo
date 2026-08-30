@@ -31,6 +31,7 @@ import {
 } from "../../services/user.service";
 import EmployeeDetail from "./EmployeeDetail";
 import { useAuth } from "../../store/AuthContext";
+import { onOnlineUsers } from "../../services/socket";
 
 const Users = () => {
   const { user: currentUser } = useAuth();
@@ -47,6 +48,9 @@ const Users = () => {
   const [editingUser, setEditingUser] = useState(null);
 
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [onlineUserIds, setOnlineUserIds] = useState([]);
+
+  useEffect(() => onOnlineUsers(({ userIds }) => setOnlineUserIds(userIds)), []);
 
   const fetchUsers = async () => {
     try {
@@ -126,14 +130,20 @@ const Users = () => {
       width: 260,
       render: (_, record) => (
         <div className="flex items-center gap-3">
-          <Avatar
-            size={44}
-            src={record.avatar || undefined}
-            className="shrink-0 cursor-pointer"
+          <button
+            type="button"
+            className="relative shrink-0 cursor-pointer"
             onClick={() => setSelectedEmployee(record)}
+            title={onlineUserIds.includes(String(record._id)) ? "Đang online" : "Đang ngoại tuyến"}
           >
-            {record.fullName?.charAt(0)?.toUpperCase()}
-          </Avatar>
+            <Avatar size={44} src={record.avatar || undefined}>
+              {record.fullName?.charAt(0)?.toUpperCase()}
+            </Avatar>
+            <span
+              className={`absolute -bottom-0.5 left-1/2 h-3 w-3 -translate-x-1/2 rounded-full border-2 border-white ${onlineUserIds.includes(String(record._id)) ? "bg-emerald-500" : "bg-slate-400"}`}
+              aria-label={onlineUserIds.includes(String(record._id)) ? "Đang online" : "Đang ngoại tuyến"}
+            />
+          </button>
 
           <div className="min-w-0">
             <div className="font-medium text-slate-800 truncate">

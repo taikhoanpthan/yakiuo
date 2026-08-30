@@ -12,6 +12,7 @@ const Notifications = lazy(() => import("../pages/notifications/Notifications"))
 const Profile = lazy(() => import("../pages/profile/Profile"));
 const Todos = lazy(() => import("../pages/todos/Todos"));
 const ChatPage = lazy(() => import("../pages/chat/ChatPage"));
+const UserActivityHistory = lazy(() => import("../pages/admin/UserActivityHistory"));
 
 const PageLoader = () => (
   <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">
@@ -26,6 +27,11 @@ const renderProtectedPage = (Page) => (
         <Page />
       </Suspense>
     </Layout>
+  </ProtectedRoute>
+);
+const renderAdminPage = (Page) => (
+  <ProtectedRoute roles={["admin"]}>
+    <Layout><Suspense fallback={<PageLoader />}><Page /></Suspense></Layout>
   </ProtectedRoute>
 );
 
@@ -56,6 +62,7 @@ const AppRouter = () => {
         path="/users"
         element={renderProtectedPage(Users)}
       />
+      <Route path="/admin/user-activity" element={renderAdminPage(UserActivityHistory)} />
 
       {/* FEEDBACK */}
       <Route

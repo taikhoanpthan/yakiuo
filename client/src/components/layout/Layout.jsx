@@ -191,15 +191,6 @@ const Layout = ({ children }) => {
         `${viewportHeight}px`,
       );
 
-      // iOS giữ layout viewport ở chiều cao cũ khi bàn phím mở. Khoảng lệch
-      // này giúp các phần tử fixed (khung soạn tin) nằm sát phía trên bàn phím.
-      document.documentElement.style.setProperty(
-        "--erp-keyboard-offset",
-        `${Math.max(
-          0,
-          window.innerHeight - viewportHeight - (viewport?.offsetTop || 0),
-        )}px`,
-      );
     };
 
     syncViewportHeight();
@@ -210,7 +201,6 @@ const Layout = ({ children }) => {
       viewport?.removeEventListener("resize", syncViewportHeight);
       window.removeEventListener("resize", syncViewportHeight);
       document.documentElement.style.removeProperty("--erp-viewport-height");
-      document.documentElement.style.removeProperty("--erp-keyboard-offset");
     };
   }, []);
 
@@ -629,25 +619,6 @@ const Layout = ({ children }) => {
     return () => {
       mediaQuery.removeEventListener("change", handleChange);
     };
-  }, []);
-
-  // Khi iOS mở bàn phím, visual viewport thay đổi sau sự kiện focus một nhịp.
-  // Đưa ô đang nhập vào vùng nhìn thấy để không tạo một khoảng trống lớn phía
-  // dưới form và tránh việc người dùng phải cuộn lại để tiếp tục nhập.
-  useEffect(() => {
-    const scrollFocusedFieldIntoView = (event) => {
-      if (!window.matchMedia("(max-width: 991px)").matches) return;
-
-      const field = event.target;
-      if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) return;
-
-      window.setTimeout(() => {
-        field.scrollIntoView({ block: "center", behavior: "smooth" });
-      }, 250);
-    };
-
-    document.addEventListener("focusin", scrollFocusedFieldIntoView);
-    return () => document.removeEventListener("focusin", scrollFocusedFieldIntoView);
   }, []);
 
   // ===================================================

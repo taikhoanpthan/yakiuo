@@ -56,6 +56,28 @@ const Login = () => {
     return () => { document.body.style.overflow = previousOverflow; };
   }, []);
 
+  // Safari iOS có thể giữ layout viewport cũ khi bàn phím mở. Trang login
+  // dùng một vùng cuộn riêng, nên cần lấy đúng chiều cao phần màn hình thấy được.
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const syncViewportHeight = () => {
+      document.documentElement.style.setProperty(
+        "--erp-login-viewport-height",
+        `${viewport?.height || window.innerHeight}px`,
+      );
+    };
+
+    syncViewportHeight();
+    viewport?.addEventListener("resize", syncViewportHeight);
+    window.addEventListener("resize", syncViewportHeight);
+
+    return () => {
+      viewport?.removeEventListener("resize", syncViewportHeight);
+      window.removeEventListener("resize", syncViewportHeight);
+      document.documentElement.style.removeProperty("--erp-login-viewport-height");
+    };
+  }, []);
+
   useEffect(() => {
     const loadLoginUsers = async () => {
       try {

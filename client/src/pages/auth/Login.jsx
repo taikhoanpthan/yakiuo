@@ -50,12 +50,6 @@ const Login = () => {
     } catch { localStorage.removeItem("rememberedLogin"); }
   }, [form]);
 
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previousOverflow; };
-  }, []);
-
   // Safari iOS có thể giữ layout viewport cũ khi bàn phím mở. Trang login
   // dùng một vùng cuộn riêng, nên cần lấy đúng chiều cao phần màn hình thấy được.
   useEffect(() => {

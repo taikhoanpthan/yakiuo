@@ -965,7 +965,15 @@ button:focus-visible,
     padding: 16px;
     align-items: center;
     overflow-y: auto;
+    overflow-anchor: none;
+    scroll-padding: 16px 0;
+    -webkit-overflow-scrolling: touch;
   }
+
+  .erp-auth-page:focus-within {
+    align-items: start;
+  }
+
   .erp-auth-panel { min-height: 0; grid-template-columns: 1fr; border-radius: 24px; }
   .erp-auth-form-section { padding: 40px 24px 28px; }
 }

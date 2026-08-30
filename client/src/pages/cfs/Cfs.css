@@ -27,8 +27,23 @@
     display: none !important;
   }
 
+  /* Cố định khung chi tiết, chỉ danh sách phản hồi được cuộn.
+     Nhờ vậy composer không bị reflow và nhảy vị trí khi bấm Trả lời. */
+  body:has(.cfs-detail-page) .cfs-detail-page {
+    height: calc(var(--erp-viewport-height, 100dvh) - 60px);
+    min-height: 0;
+    overflow: hidden;
+  }
+
   body:has(.cfs-detail-page) .cfs-detail-page .cfs-detail {
-    min-height: calc(var(--erp-viewport-height, 100dvh) - 60px);
+    height: 100%;
+    min-height: 0;
+  }
+
+  body:has(.cfs-detail-page) .cfs-detail-page .cfs-detail-scroll {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

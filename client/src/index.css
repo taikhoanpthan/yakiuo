@@ -1783,22 +1783,22 @@ button:focus-visible,
     left: max(12px, env(safe-area-inset-left));
     right: max(12px, env(safe-area-inset-right));
 
-    bottom: calc(5px + env(safe-area-inset-bottom));
+    bottom: 0;
 
     z-index: 9999;
 
     width: auto;
-    height: 64px;
+    height: calc(64px + env(safe-area-inset-bottom));
 
     display: flex;
     align-items: center;
     justify-content: space-around;
 
-    padding: 5px;
+    padding: 5px 5px max(5px, env(safe-area-inset-bottom));
 
     border: 1px solid #e2e8f0;
 
-    border-radius: 18px;
+    border-radius: 18px 18px 0 0;
 
     background: #ffffff;
 
@@ -2102,14 +2102,11 @@ button:focus-visible,
     left: 8px;
     right: 8px;
 
-    bottom:
-      calc(
-        5px + env(safe-area-inset-bottom)
-      );
+    bottom: 0;
 
-    height: 56px;
+    height: calc(56px + env(safe-area-inset-bottom));
 
-    border-radius: 20px;
+    border-radius: 20px 20px 0 0;
   }
 
   .erp-mobile-task-item {

@@ -142,25 +142,13 @@ button:focus-visible,
   }
 }
 
-/* iOS tránh tự zoom input */
-@media (max-width: 768px) {
-  input,
-  textarea,
-  select,
-  .ant-input,
-  .ant-input-affix-wrapper,
-  .ant-select-selector {
-    font-size: 16px !important;
-  }
-}
-
 /* =========================================================
    YAKIUO APP SHELL
 ========================================================= */
 
 .erp-shell {
   width: 100%;
-  height: var(--erp-viewport-height, 100dvh) !important;
+  height: 100dvh !important;
   min-height: 0 !important;
 
   background: var(--erp-bg) !important;
@@ -175,7 +163,7 @@ button:focus-visible,
   background: var(--erp-bg) !important;
 
   overflow: hidden;
-  height: var(--erp-viewport-height, 100dvh) !important;
+  height: 100dvh !important;
 }
 
 .erp-content-chat,
@@ -209,7 +197,7 @@ button:focus-visible,
   }
 
   .erp-feedback-modal .ant-modal-content {
-    max-height: calc(var(--erp-viewport-height, 100dvh) - 24px);
+    max-height: calc(100dvh - 24px);
     display: flex;
     flex-direction: column;
   }
@@ -846,9 +834,7 @@ button:focus-visible,
   position: fixed;
   inset: 0;
   display: grid;
-  height: var(--erp-login-viewport-height, 100dvh);
-  min-height: 0;
-  max-height: var(--erp-login-viewport-height, 100dvh);
+  min-height: 100dvh;
   place-items: center;
   overflow-x: hidden;
   overflow-y: auto;
@@ -965,13 +951,6 @@ button:focus-visible,
     padding: 16px;
     align-items: center;
     overflow-y: auto;
-    overflow-anchor: none;
-    scroll-padding: 16px 0;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .erp-auth-page:focus-within {
-    align-items: start;
   }
 
   .erp-auth-panel { min-height: 0; grid-template-columns: 1fr; border-radius: 24px; }
@@ -1752,24 +1731,6 @@ button:focus-visible,
     padding: 0 !important;
   }
 
-  /* Khi bàn phím mở, nhường phần header hệ thống cho khung soạn tin. */
-  body:has(.chat-composer-focused) .erp-header {
-    flex-basis: 0 !important;
-    height: 0 !important;
-    min-height: 0 !important;
-
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-
-    overflow: hidden;
-    opacity: 0;
-
-    transition:
-      height 0.2s ease,
-      flex-basis 0.2s ease,
-      opacity 0.16s ease;
-  }
-
   /* -------------------------------------------------------
      FOOTER
   ------------------------------------------------------- */
@@ -2204,51 +2165,5 @@ button:focus-visible,
   .erp-auth-page {
     place-items: start center;
     padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
-  }
-}
-
-/* =========================================================
-   CHAT MOBILE KEYBOARD FIX
-
-   visualViewport đã thu nhỏ toàn bộ app shell khi bàn phím
-   iOS mở. Giữ composer trong luồng flex để không nâng nó lên
-   thêm một lần rồi tạo khoảng trắng ở đáy.
-========================================================= */
-
-@media (max-width: 991px) {
-  .erp-page-chat,
-  .chat-page-root {
-    height: 100% !important;
-    max-height: 100% !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-  }
-
-  .chat-page-root {
-    overscroll-behavior: none;
-  }
-
-  /* Thanh tác vụ mobile nằm cố định ở đáy màn hình, nên chừa chỗ để
-     khung soạn tin không bị che. */
-  .chat-composer {
-    padding-bottom: calc(76px + env(safe-area-inset-bottom)) !important;
-  }
-
-  .chat-composer-focused .chat-composer {
-    padding-bottom: 4px !important;
-  }
-
-  body:has(.chat-composer-focused) {
-    overflow: hidden !important;
-    overscroll-behavior: none;
-  }
-
-  body:has(.chat-composer-focused) .erp-content,
-  body:has(.chat-composer-focused) .erp-content-chat {
-    padding-bottom: 0 !important;
-  }
-
-  body:has(.chat-composer-focused) .erp-mobile-taskbar {
-    display: none !important;
   }
 }

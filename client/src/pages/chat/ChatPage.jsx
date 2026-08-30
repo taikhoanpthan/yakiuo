@@ -248,7 +248,6 @@ export default function ChatPage() {
   const [groupName, setGroupName] = useState("");
   const [groupMemberIds, setGroupMemberIds] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [isComposerFocused, setIsComposerFocused] = useState(false);
 
   // ===================================================
   // LOADING
@@ -1593,7 +1592,6 @@ export default function ChatPage() {
         overflow-hidden
         bg-white
         pb-0
-        ${isComposerFocused ? "chat-composer-focused" : ""}
       `}
     >
       <div
@@ -2503,8 +2501,6 @@ export default function ChatPage() {
 
                     <Input.TextArea
                       value={input}
-                      onFocus={() => setIsComposerFocused(true)}
-                      onBlur={() => setIsComposerFocused(false)}
                       onChange={(event) =>
                         setInput(
                           event.target.value,

@@ -553,7 +553,7 @@ const Feedback = () => {
             borderRadius: 16,
 
             maxHeight:
-              "calc(var(--erp-viewport-height, 100dvh) - 16px)",
+              "calc(100dvh - 16px)",
 
             display: "flex",
 
@@ -730,7 +730,7 @@ const Feedback = () => {
             // Quan trọng:
             // modal không vượt quá viewport thật
             maxHeight:
-              "calc(var(--erp-viewport-height, 100dvh) - 16px)",
+              "calc(100dvh - 16px)",
 
             display: "flex",
 

@@ -10,72 +10,12 @@
 .cfs-loading, .cfs-empty { padding: 44px 18px; color: #888; text-align: center; font-size: 13px; }.cfs-pagination { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 13px; border-top: 1px solid #e8e8e8; }.cfs-pagination .ant-btn { border-color: #ddd; background: #fff; color: #444; border-radius: 999px; }.cfs-pagination span, .cfs-alias-note { color: #777; font-size: 12px; }
 .cfs-feed .cfs-pagination { display: none; }
 .cfs-detail-modal .ant-modal-content { height: min(860px, 100dvh); padding: 0; overflow: hidden; border: 1px solid #dedede; border-radius: 0; background: #fff; }.cfs-detail-modal .ant-modal-body { height: 100%; }.cfs-detail { display: grid; height: 100%; grid-template-rows: 48px minmax(0, 1fr) auto; background: #fff; color: #1d1d1f; }.cfs-detail-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 10px; border-bottom: 1px solid #e4e4e4; }.cfs-detail-header strong { font-size: 13px; }.cfs-detail-header .ant-btn { justify-self: start; color: #444; font-size: 12px; }.cfs-detail-scroll { overflow-y: auto; }.cfs-detail-post { border-bottom: 1px solid #e5e5e5; }.cfs-detail-sort { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #e4e4e4; color: #777; font-size: 12px; }.cfs-detail-sort strong { color: #222; }.cfs-detail-replies { min-height: 100%; margin: 0; padding: 14px 16px 18px; border: 0; }.cfs-detail-composer { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; padding: 10px 14px; border-top: 1px solid #e4e4e4; background: #fff; }.cfs-detail-composer .ant-input { border: 0; background: transparent; color: #222; box-shadow: none; font-size: 13px; resize: none; }.cfs-detail-composer .ant-input::placeholder { color: #888; }
-.cfs-detail-page { padding-bottom: 0 !important; }.cfs-detail-page .cfs-detail { min-height: calc(var(--erp-viewport-height, 100dvh) - 128px); height: auto; }.cfs-detail-page .cfs-detail-scroll { min-height: 0; overflow: visible; }.cfs-detail-page .cfs-detail-replies { min-height: 0; }.cfs-detail-page .cfs-detail-composer { z-index: 5; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+.cfs-detail-page { padding-bottom: 0 !important; }.cfs-detail-page .cfs-detail { min-height: calc(100dvh - 128px); height: auto; }.cfs-detail-page .cfs-detail-scroll { min-height: 0; overflow: visible; }.cfs-detail-page .cfs-detail-replies { min-height: 0; }.cfs-detail-page .cfs-detail-composer { z-index: 5; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
 @media (min-width: 1040px) { .cfs-page { max-width: 980px; }.cfs-layout { display: grid; grid-template-columns: minmax(0,720px) 230px; gap: 28px; }.cfs-aside { position: sticky; top: 18px; display: grid; gap: 12px; }.cfs-aside > div { padding: 16px; border: 1px solid #dedede; border-radius: 15px; background: #fff; }.cfs-aside h3 { margin: 5px 0; font-size: 14px; }.cfs-aside p, .cfs-rules span { margin: 0; color: #777; font-size: 12px; line-height: 1.6; }.cfs-rules { display: grid; gap: 8px; }.cfs-rules strong { font-size: 12px; } }
 @media (max-width: 600px) { .cfs-page { margin: 0 -3px; }.cfs-feed { margin: 0 -4px; border-right: 0; border-left: 0; border-radius: 0; }.cfs-post, .cfs-composer { padding-right: 14px; padding-left: 14px; }.cfs-reply-branch { margin-left: calc(var(--reply-depth) * 29px); }.cfs-actions { gap: 18px; } }
 .cfs-image-picker { color: #6f6f6f; cursor: pointer; font-size: 16px; }.cfs-image-picker:hover { color: #222; }.cfs-image-picker input { display: none; }.cfs-post-image { display: block; width: 100%; max-height: 460px; margin: 10px 0; border: 1px solid #e5e5e5; border-radius: 12px; object-fit: cover; }
 .cfs-detail-composer .cfs-image-picker { display: none; }
 .cfs-publish-preview { display: grid; gap: 12px; }.cfs-publish-preview img { width: 100%; max-height: 360px; border: 1px solid #e5e5e5; border-radius: 12px; object-fit: contain; }.cfs-publish-preview p { margin: 0; color: #333; line-height: 1.5; white-space: pre-wrap; }.cfs-publish-preview small { color: #8a6271; }
-
-/* Trên mobile, DetailPage có composer riêng ở đáy nên không dùng taskbar chung. */
-@media (max-width: 991px) {
-  body:has(.cfs-detail-page) .erp-content {
-    padding-bottom: 0 !important;
-  }
-
-  body:has(.cfs-detail-page) .erp-mobile-taskbar {
-    display: none !important;
-  }
-
-  /* Cố định khung chi tiết, chỉ danh sách phản hồi được cuộn.
-     Nhờ vậy composer không bị reflow và nhảy vị trí khi bấm Trả lời. */
-  body:has(.cfs-detail-page) .cfs-detail-page {
-    height: calc(var(--erp-viewport-height, 100dvh) - 60px);
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  body:has(.cfs-detail-page) .cfs-detail-page .cfs-detail {
-    height: 100%;
-    min-height: 0;
-  }
-
-  body:has(.cfs-detail-page) .cfs-detail-page .cfs-detail-scroll {
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* iOS sẽ tự cuộn container ngoài nếu textarea ở đáy một vùng cuộn lồng nhau.
-     Khi nhập phản hồi, giữ composer ở visual viewport và chỉ cuộn danh sách. */
-  body:has(.cfs-detail-page textarea:focus) .erp-content {
-    overflow: hidden !important;
-  }
-
-  body:has(.cfs-detail-page textarea:focus) .erp-header {
-    flex-basis: 0 !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    overflow: hidden;
-    opacity: 0;
-  }
-
-  body:has(.cfs-detail-page textarea:focus) .cfs-detail-page {
-    height: var(--erp-viewport-height, 100dvh);
-  }
-
-  body:has(.cfs-detail-page textarea:focus) .cfs-detail-composer {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 1002;
-    padding-bottom: max(10px, env(safe-area-inset-bottom));
-    box-shadow: 0 -8px 20px rgba(15, 23, 42, 0.08);
-  }
-}
 
 /* Luồng phản hồi: nền trắng, nhánh con thụt vào và nối mềm với bình luận cha. */
 .cfs-detail-replies {
@@ -180,7 +120,7 @@
 
 /* Popup xem trước: nội dung dài cuộn trong thân popup, không che footer. */
 .cfs-publish-preview {
-  max-height: min(420px, calc(var(--erp-viewport-height, 100dvh) - 220px));
+  max-height: min(420px, calc(100dvh - 220px));
   overflow-y: auto;
   padding-right: 6px;
   overscroll-behavior: contain;
@@ -202,7 +142,7 @@
   }
 
   .cfs-publish-modal .ant-modal-content {
-    max-height: calc(var(--erp-viewport-height, 100dvh) - 112px);
+    max-height: calc(100dvh - 112px);
   }
 
   body:has(.cfs-publish-modal) .erp-mobile-taskbar {

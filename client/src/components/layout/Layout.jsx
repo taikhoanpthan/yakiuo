@@ -177,33 +177,6 @@ const Layout = ({ children }) => {
     }
   }, []);
 
-  // Safari iOS không luôn cập nhật 100dvh đúng lúc bàn phím mở.
-  // Dùng visualViewport để khung chat luôn nằm trong phần màn hình đang thấy.
-  useEffect(() => {
-    const viewport = window.visualViewport;
-
-    const syncViewportHeight = () => {
-      const viewportHeight =
-        viewport?.height || window.innerHeight;
-
-      document.documentElement.style.setProperty(
-        "--erp-viewport-height",
-        `${viewportHeight}px`,
-      );
-
-    };
-
-    syncViewportHeight();
-    viewport?.addEventListener("resize", syncViewportHeight);
-    window.addEventListener("resize", syncViewportHeight);
-
-    return () => {
-      viewport?.removeEventListener("resize", syncViewportHeight);
-      window.removeEventListener("resize", syncViewportHeight);
-      document.documentElement.style.removeProperty("--erp-viewport-height");
-    };
-  }, []);
-
   // ===================================================
   // MENU
   // ===================================================
@@ -879,7 +852,7 @@ const Layout = ({ children }) => {
         className="erp-shell"
         style={{
           width: "100%",
-          height: "var(--erp-viewport-height, 100dvh)",
+          height: "100dvh",
           minHeight: 0,
           overflow: "hidden",
         }}
@@ -903,8 +876,8 @@ const Layout = ({ children }) => {
             }
           }}
           style={{
-            height: "var(--erp-viewport-height, 100dvh)",
-            maxHeight: "var(--erp-viewport-height, 100dvh)",
+            height: "100dvh",
+            maxHeight: "100dvh",
             overflow: "hidden",
           }}
         >
@@ -923,7 +896,7 @@ const Layout = ({ children }) => {
             flex: "1 1 auto",
             minWidth: 0,
             minHeight: 0,
-            height: "var(--erp-viewport-height, 100dvh)",
+            height: "100dvh",
             overflow: "hidden",
           }}
         >

@@ -52,6 +52,20 @@
     overflow: hidden !important;
   }
 
+  body:has(.cfs-detail-page textarea:focus) .erp-header {
+    flex-basis: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    overflow: hidden;
+    opacity: 0;
+  }
+
+  body:has(.cfs-detail-page textarea:focus) .cfs-detail-page {
+    height: var(--erp-viewport-height, 100dvh);
+  }
+
   body:has(.cfs-detail-page textarea:focus) .cfs-detail-composer {
     position: fixed;
     right: 0;

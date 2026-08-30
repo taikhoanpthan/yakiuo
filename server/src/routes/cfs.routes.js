@@ -7,6 +7,7 @@ router.use(authenticate);
 router.get("/identity", controller.getIdentity);
 router.post("/identity", controller.setIdentity);
 router.get("/", controller.getPosts);
+router.get("/:id", controller.getPost);
 router.post("/", controller.createPost);
 router.post("/:id/like", controller.toggleLike);
 router.post("/:id/replies", controller.reply);

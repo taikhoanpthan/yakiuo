@@ -19,10 +19,12 @@ const presentAuthor = (author, anonymous, alias, viewer) => {
 const presentPost = (post, viewer) => ({
   _id: post._id,
   content: post.content,
+  imageUrl: post.imageUrl || "",
   createdAt: post.createdAt,
   isAnonymous: post.isAnonymous,
   author: presentAuthor(post.author, post.isAnonymous, post.anonymousAlias, viewer),
   likes: post.likedBy?.length || 0,
+  likeUsers: (post.likedBy || []).filter(Boolean).map((user) => ({ _id: user._id || user, name: user.fullName || user.username || "Yakiuo member", avatar: user.avatar || "" })),
   liked: post.likedBy?.some((id) => sameId(id, viewer)) || false,
   isOwner: sameId(post.author, viewer),
   canManage: sameId(post.author, viewer) || isAdmin(viewer),
@@ -40,14 +42,28 @@ const presentPost = (post, viewer) => ({
   })),
 });
 
-const populatePost = (query) => query.populate("author", userFields).populate("replies.author", userFields);
+const populatePost = (query) => query.populate("author", userFields).populate("likedBy", userFields).populate("replies.author", userFields);
 
 exports.getPosts = async (req, res) => {
   try {
-    const posts = await populatePost(CfsPost.find().sort({ createdAt: -1 }).limit(100));
-    res.json({ success: true, data: { posts: posts.map((post) => presentPost(post, req.user)) } });
+    const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 10, 1), 100);
+    const total = await CfsPost.countDocuments();
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const page = Math.min(Math.max(Number.parseInt(req.query.page, 10) || 1, 1), totalPages);
+    const posts = await populatePost(CfsPost.find().sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit));
+    res.json({ success: true, data: { posts: posts.map((post) => presentPost(post, req.user)), pagination: { page, limit, total, totalPages } } });
   } catch (error) {
     res.status(500).json({ success: false, message: "Không thể tải bảng tin CFS" });
+  }
+};
+
+exports.getPost = async (req, res) => {
+  try {
+    const post = await populatePost(CfsPost.findById(req.params.id));
+    if (!post) return res.status(404).json({ success: false, message: "Không tìm thấy bài viết" });
+    return res.json({ success: true, data: { post: presentPost(post, req.user) } });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: "Không thể tải bài viết" });
   }
 };
 
@@ -73,10 +89,11 @@ exports.setIdentity = async (req, res) => {
 exports.createPost = async (req, res) => {
   try {
     const content = String(req.body.content || "").trim();
+    const imageUrl = String(req.body.imageUrl || "").trim();
     const isAnonymous = Boolean(req.body.isAnonymous);
-    if (!content) return res.status(400).json({ success: false, message: "Vui lòng nhập nội dung bài viết" });
+    if (!content && !imageUrl) return res.status(400).json({ success: false, message: "Vui lòng nhập nội dung hoặc chọn ảnh" });
     if (isAnonymous && !req.user.cfsAnonymousAlias) return res.status(400).json({ success: false, message: "Bạn cần tạo biệt danh ẩn danh trước" });
-    const post = await CfsPost.create({ content, isAnonymous, anonymousAlias: isAnonymous ? req.user.cfsAnonymousAlias : "", author: req.user._id });
+    const post = await CfsPost.create({ content, imageUrl, isAnonymous, anonymousAlias: isAnonymous ? req.user.cfsAnonymousAlias : "", author: req.user._id });
     await post.populate("author", userFields);
     res.status(201).json({ success: true, data: { post: presentPost(post, req.user) } });
     broadcastCfsChanged(req);
@@ -136,12 +153,13 @@ exports.deleteReply = async (req, res) => {
   try {
     const post = await CfsPost.findById(req.params.id);
     if (!post) return res.status(404).json({ success: false, message: "Không tìm thấy bài viết" });
-    if (!sameId(post.author, req.user) && !isAdmin(req.user)) {
-      return res.status(403).json({ success: false, message: "Chỉ chủ status hoặc admin có thể xóa bình luận" });
-    }
     const rootReplyId = String(req.params.replyId);
-    if (!post.replies.some((reply) => sameId(reply._id, rootReplyId))) {
+    const reply = post.replies.id(rootReplyId);
+    if (!reply) {
       return res.status(404).json({ success: false, message: "Không tìm thấy bình luận" });
+    }
+    if (!sameId(post.author, req.user) && !sameId(reply.author, req.user) && !isAdmin(req.user)) {
+      return res.status(403).json({ success: false, message: "Bạn không có quyền xóa bình luận này" });
     }
     const idsToRemove = new Set([rootReplyId]);
     let changed = true;

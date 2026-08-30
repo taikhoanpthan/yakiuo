@@ -789,8 +789,7 @@ const Notifications = () => {
           }}
           pagination={{
             pageSize: 10,
-            showSizeChanger: true,
-            pageSizeOptions: ["10", "20", "50"],
+            showSizeChanger: false,
             showTotal: (total) => `${total} thông báo`,
           }}
           locale={{

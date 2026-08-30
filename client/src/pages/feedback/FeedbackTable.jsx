@@ -27,7 +27,7 @@ const FeedbackTable = ({
 
       render: (_, __, index) => {
         return (
-          (pagination?.current - 1) * (pagination?.pageSize || 20) + index + 1
+          (pagination?.current - 1) * (pagination?.pageSize || 10) + index + 1
         );
       },
     },
@@ -291,13 +291,11 @@ const FeedbackTable = ({
         pagination={{
           current: pagination?.current || 1,
 
-          pageSize: pagination?.pageSize || 20,
+          pageSize: pagination?.pageSize || 10,
 
           total: pagination?.total || 0,
 
-          showSizeChanger: true,
-
-          pageSizeOptions: ["10", "20", "50", "100"],
+          showSizeChanger: false,
 
           showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`,
 

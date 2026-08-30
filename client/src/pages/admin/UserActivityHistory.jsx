@@ -105,7 +105,7 @@ const UserActivityHistory = () => {
         </div>
       </Card>
       <Card className="erp-section-card erp-table-card" styles={{ body: { padding: 0 } }}>
-        <Table rowKey="_id" columns={columns} dataSource={activities} loading={loading} scroll={{ x: 1050 }} pagination={{ pageSize: 15, showSizeChanger: false }} />
+        <Table rowKey="_id" columns={columns} dataSource={activities} loading={loading} scroll={{ x: 1050 }} pagination={{ pageSize: 10, showSizeChanger: false }} />
       </Card>
     </div>
   );

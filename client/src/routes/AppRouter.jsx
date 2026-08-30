@@ -71,6 +71,7 @@ const AppRouter = () => {
         element={renderProtectedPage(Feedback)}
       />
       <Route path="/cfs" element={renderProtectedPage(Cfs)} />
+      <Route path="/cfs/:postId" element={renderProtectedPage(Cfs)} />
 
       {/* NOTIFICATIONS */}
       <Route

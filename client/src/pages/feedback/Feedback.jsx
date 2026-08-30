@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import {
+  AutoComplete,
   Button,
   Card,
   DatePicker,
@@ -8,7 +9,6 @@ import {
   Form,
   Input,
   Modal,
-  Select,
   Space,
   Tag,
   message,
@@ -872,10 +872,15 @@ const Feedback = () => {
                 label="Bữa ăn"
                 name="meal"
               >
-                <Select
+                <AutoComplete
                   size="large"
-                  placeholder="Chọn bữa ăn"
-                  allowClear
+                  placeholder="Nhập món, ví dụ: Yakiuo x2"
+                  style={{ width: "100%" }}
+                  filterOption={(inputValue, option) =>
+                    option?.value
+                      ?.toUpperCase()
+                      .includes(inputValue.toUpperCase())
+                  }
                   options={[
                   {
                     label: "Alacarte",

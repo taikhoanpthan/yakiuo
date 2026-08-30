@@ -20,6 +20,7 @@ import {
   BellOutlined,
   CheckSquareOutlined,
   CommentOutlined,
+  CoffeeOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   InfoCircleOutlined,
@@ -232,6 +233,12 @@ const Layout = ({ children }) => {
         shortLabel: "Feedback",
         icon: <CommentOutlined />,
       },
+      {
+        key: "/cfs",
+        label: "Yakiuo CFS",
+        shortLabel: "CFS",
+        icon: <CoffeeOutlined />,
+      },
 
       {
         key: "/todos",
@@ -274,7 +281,7 @@ const Layout = ({ children }) => {
   const mobileMenuItems = useMemo(() => {
     // Các trang quản trị (như Nhân viên) nằm trong menu tài khoản trên header
     // để taskbar điện thoại luôn gọn và dễ bấm.
-    const keys = ["/dashboard", "/feedback", "/todos"];
+    const keys = ["/dashboard", "/feedback", "/cfs", "/todos"];
 
     if (["admin", "manager"].includes(user?.role)) {
       keys.push("/notifications");

@@ -39,6 +39,7 @@ const feedbackTagRoutes = require("./routes/feedbackTag.routes");
 const workScheduleRoutes = require("./routes/workSchedule.routes");
 const conversationRoutes = require("./routes/conversation.routes");
 const messageRoutes = require("./routes/message.routes");
+const cfsRoutes = require("./routes/cfs.routes");
 // =========================
 // SOCKET
 // =========================
@@ -181,6 +182,8 @@ app.use("/api/work-schedule", workScheduleRoutes);
 app.use("/api/conversations", conversationRoutes);
 
 app.use("/api/messages", messageRoutes);
+
+app.use("/api/cfs", cfsRoutes);
 // =========================
 // CLOUDINARY TEST
 // =========================

@@ -74,12 +74,7 @@ const UserActivityHistory = () => {
         return <Tag color={config.color} icon={config.icon}>{config.label}</Tag>;
       },
     },
-    {
-      title: "Chi tiết", key: "detail",
-      render: (_, record) => record.imageUrl ? (
-        <Image src={record.imageUrl} width={64} height={42} className="rounded object-cover" preview={{ mask: "Xem ảnh" }} />
-      ) : record.type === "login" ? <span className="text-slate-500">IP: {record.ipAddress || "Không rõ"}</span> : <span className="text-slate-500">Đã cập nhật bảo mật</span>,
-    },
+
     {
       title: "Thiết bị", dataIndex: "userAgent", width: 220,
       render: (value, record) => <div className="text-sm text-slate-600"><div>{getDevice(value)}</div>{record.ipAddress && <div className="mt-0.5 text-xs text-slate-400">IP: {record.ipAddress}</div>}</div>,

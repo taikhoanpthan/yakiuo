@@ -13,6 +13,7 @@ const Profile = lazy(() => import("../pages/profile/Profile"));
 const Todos = lazy(() => import("../pages/todos/Todos"));
 const ChatPage = lazy(() => import("../pages/chat/ChatPage"));
 const UserActivityHistory = lazy(() => import("../pages/admin/UserActivityHistory"));
+const Cfs = lazy(() => import("../pages/cfs/Cfs"));
 
 const PageLoader = () => (
   <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">
@@ -69,6 +70,7 @@ const AppRouter = () => {
         path="/feedback"
         element={renderProtectedPage(Feedback)}
       />
+      <Route path="/cfs" element={renderProtectedPage(Cfs)} />
 
       {/* NOTIFICATIONS */}
       <Route

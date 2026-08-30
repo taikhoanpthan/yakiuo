@@ -67,6 +67,15 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    // Biệt danh CFS được thiết lập một lần khi người dùng lần đầu vào CFS.
+    // Không public ở API user thông thường; chỉ dùng để tạo bài viết ẩn danh.
+    cfsAnonymousAlias: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 40,
+    },
+
     role: {
       type: String,
       enum: ["employee", "premium", "manager", "admin"],

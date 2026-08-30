@@ -315,6 +315,16 @@ export const onOnlineUsers = (callback) => {
 };
 
 // =====================================================
+// CFS REALTIME
+// =====================================================
+
+export const onCfsChanged = (callback) => {
+  const currentSocket = createSocket();
+  currentSocket.on("cfs:changed", callback);
+  return () => currentSocket.off("cfs:changed", callback);
+};
+
+// =====================================================
 // ONLINE COUNT
 // =====================================================
 
@@ -397,6 +407,7 @@ export default {
   leavePresence,
   disconnectSocket,
   onOnlineUsers,
+  onCfsChanged,
   onOnlineCount,
   onUserOnline,
   onUserOffline,

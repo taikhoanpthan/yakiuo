@@ -320,6 +320,19 @@ module.exports = (io) => {
 
     sendCurrentPresence(socket);
 
+    // Socket đã được middleware xác thực. Join presence ngay tại đây để
+    // reconnect không phụ thuộc vào việc client kịp emit `user:join`.
+    const authenticatedUserId = normalizeId(socket.data.authUserId);
+    if (authenticatedUserId) {
+      socket.userId = authenticatedUserId;
+      socket.join(`user:${authenticatedUserId}`);
+      const result = addOnlineSocket(authenticatedUserId, socket.id);
+      if (result.becameOnline) {
+        io.emit("user:online", { userId: authenticatedUserId });
+      }
+      broadcastOnlineState(io);
+    }
+
     // =================================================
     // USER JOIN
     // =================================================

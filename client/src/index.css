@@ -89,6 +89,18 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Ngăn Safari iOS tự phóng khi focus ô nhập. */
+@media (max-width: 768px) {
+  input,
+  textarea,
+  select,
+  .ant-input,
+  .ant-input-affix-wrapper,
+  .ant-select-selector {
+    font-size: 16px !important;
+  }
+}
+
 /* Keep the Commission GG gallery independently scrollable on touch devices. */
 .commission-gg-image-scroll {
   max-height: min(60dvh, 480px);

@@ -45,6 +45,22 @@
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
+
+  /* iOS sẽ tự cuộn container ngoài nếu textarea ở đáy một vùng cuộn lồng nhau.
+     Khi nhập phản hồi, giữ composer ở visual viewport và chỉ cuộn danh sách. */
+  body:has(.cfs-detail-page textarea:focus) .erp-content {
+    overflow: hidden !important;
+  }
+
+  body:has(.cfs-detail-page textarea:focus) .cfs-detail-composer {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1002;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    box-shadow: 0 -8px 20px rgba(15, 23, 42, 0.08);
+  }
 }
 
 /* Luồng phản hồi: nền trắng, nhánh con thụt vào và nối mềm với bình luận cha. */

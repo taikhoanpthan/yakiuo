@@ -1,19 +1,20 @@
-import { Avatar } from "antd";
 import { UserOutlined } from "@ant-design/icons";
 import { motion } from "framer-motion";
+import UserAvatar from "../common/UserAvatar";
 
 const MobileTaskbar = ({ items, pathname, onNavigate }) => (
   <nav className="erp-mobile-taskbar" aria-label="Điều hướng mobile">
     {items.map((item) => {
       const active = pathname === item.key || pathname.startsWith(`${item.key}/`);
       const icon = item.key === "/profile" ? (
-        <Avatar
+        <UserAvatar
           size={24}
-          src={item.user?.avatar || undefined}
+          user={item.user}
+          openDetail={false}
           icon={!item.user?.avatar && <UserOutlined />}
         >
           {!item.user?.avatar && (item.user?.fullName?.charAt(0) || "Y").toUpperCase()}
-        </Avatar>
+        </UserAvatar>
       ) : item.icon;
 
       return (

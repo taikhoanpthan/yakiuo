@@ -17,6 +17,43 @@
 .cfs-detail-composer .cfs-image-picker { display: none; }
 .cfs-publish-preview { display: grid; gap: 12px; }.cfs-publish-preview img { width: 100%; max-height: 360px; border: 1px solid #e5e5e5; border-radius: 12px; object-fit: contain; }.cfs-publish-preview p { margin: 0; color: #333; line-height: 1.5; white-space: pre-wrap; }.cfs-publish-preview small { color: #8a6271; }
 
+.cfs-create-modal .ant-modal-content { overflow: hidden; border-radius: 16px; background: #fff; }
+.cfs-create-modal .ant-modal-header { margin-bottom: 12px; border-bottom: 1px solid #ececec; padding-bottom: 14px; text-align: center; }
+.cfs-create-modal .ant-modal-title { font-size: 18px; font-weight: 800; }
+.cfs-create-form { display: grid; gap: 12px; }
+.cfs-create-editor { overflow: hidden; min-height: 220px; border-radius: 12px; background: #fff; }
+.cfs-create-editor.has-background { min-height: 0; }
+.cfs-create-editor .ant-input { padding: 14px; background: transparent; color: #202020; font-size: 22px; font-weight: 700; line-height: 1.35; resize: none; }
+.cfs-create-editor.has-background .ant-input, .cfs-create-editor.has-background .ant-input::placeholder { color: #fff; }
+.cfs-create-editor img { display: block; width: 100%; max-height: 280px; object-fit: contain; }
+.cfs-background-picker { display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 2px; }
+.cfs-background-picker button { width: 30px; height: 30px; flex: 0 0 auto; border: 2px solid transparent; border-radius: 8px; background: #fff; color: #555; box-shadow: inset 0 0 0 1px #cfcfcf; cursor: pointer; font-weight: 800; }
+.cfs-background-picker button.is-selected { border-color: #1d1d1f; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1d1d1f; }
+.cfs-background-picker .cfs-more-backgrounds { display: grid; place-items: center; background: #f3f4f6; color: #1f2937; font-size: 20px; line-height: 1; box-shadow: inset 0 0 0 1px #d1d5db; }
+.cfs-create-footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 0; }
+.cfs-create-footer .cfs-anon-control { flex: 0 0 auto; margin-right: 0; white-space: nowrap; }
+.cfs-create-footer .cfs-anon-control small, .cfs-create-footer .cfs-anon-control .cfs-image-picker { display: none; }
+.cfs-create-footer .cfs-image-picker { display: inline-flex; width: 32px; height: 32px; flex: 0 0 32px; align-items: center; justify-content: center; margin-right: auto; border: 1px solid #bfdbfe; border-radius: 8px; background: #eff6ff; color: #2563eb !important; font-size: 16px; }
+.cfs-create-footer > .cfs-image-picker::before { content: "🖼"; font-size: 16px; line-height: 1; }
+.cfs-create-footer > .cfs-image-picker .anticon { display: none !important; }
+.cfs-create-footer .cfs-image-picker span { display: none; }
+.cfs-create-footer .ant-btn { border-radius: 9px; font-weight: 700; }
+@media (max-width: 480px) { .cfs-create-footer { gap: 7px; } .cfs-create-footer .ant-btn { padding-inline: 12px; } .cfs-create-footer .cfs-image-picker span { display: none; } }
+.cfs-post-text { margin: 6px 0 10px; white-space: pre-wrap; }
+.cfs-post-text-background { min-height: 180px; display: grid; place-items: center; padding: 24px; border-radius: 12px; color: #fff; text-align: center; font-size: 21px; font-weight: 800; line-height: 1.35; }
+.cfs-post-background-marker { display: none; }
+.cfs-post:has([data-post-background]) .cfs-post-body > p { display: grid; min-height: 180px; place-items: center; margin: 8px 0 10px; padding: 24px; border-radius: 12px; color: #fff; text-align: center; font-size: 21px; font-weight: 800; line-height: 1.35; }
+.cfs-post:has([data-post-background="berry"]) .cfs-post-body > p { background: linear-gradient(135deg, #e0006e, #4b2bc9); }
+.cfs-post:has([data-post-background="ocean"]) .cfs-post-body > p { background: linear-gradient(135deg, #0f766e, #2563eb); }
+.cfs-post:has([data-post-background="sunset"]) .cfs-post-body > p { background: linear-gradient(135deg, #f97316, #db2777); }
+.cfs-post:has([data-post-background="night"]) .cfs-post-body > p { background: linear-gradient(135deg, #111827, #4c1d95); }
+.cfs-post:has([data-post-background="lgbt"]) .cfs-post-body > p { background: linear-gradient(135deg, #e40303 0%, #ff8c00 20%, #ffed00 40%, #008026 60%, #24408e 80%, #732982 100%); }
+
+/* Composer ngoài feed chỉ là điểm mở modal; không hiển thị các control phụ. */
+.cfs-composer { align-items: center; padding: 12px 16px; cursor: text; }
+.cfs-composer .ant-input { min-height: 38px; padding: 8px 12px; border: 1px solid #dbe4f4; border-radius: 999px; background: #f8fafc; }
+.cfs-composer-footer { display: none; }
+
 /* Luồng phản hồi: nền trắng, nhánh con thụt vào và nối mềm với bình luận cha. */
 .cfs-detail-replies {
   display: block;

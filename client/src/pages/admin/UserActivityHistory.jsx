@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Avatar, Button, Card, Image, Popconfirm, Select, Table, Tag, message } from "antd";
+import { Button, Card, Image, Popconfirm, Select, Table, Tag, message } from "antd";
+import UserAvatar from "../../components/common/UserAvatar";
 import { DeleteOutlined, LockOutlined, LoginOutlined, PictureOutlined, ReloadOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { deleteAllUserActivities, deleteUserActivity, getUserActivities } from "../../services/user.service";
@@ -62,7 +63,7 @@ const UserActivityHistory = () => {
       title: "Người dùng", key: "user", width: 260,
       render: (_, record) => record.user ? (
         <div className="flex items-center gap-3">
-          <Avatar src={record.user.avatar || undefined}>{record.user.fullName?.charAt(0)?.toUpperCase()}</Avatar>
+          <UserAvatar user={record.user}>{record.user.fullName?.charAt(0)?.toUpperCase()}</UserAvatar>
           <div><div className="font-medium text-slate-800">{record.user.fullName}</div><div className="text-xs text-slate-500">@{record.user.username}</div></div>
         </div>
       ) : <span className="text-slate-400">Tài khoản đã bị xóa</span>,

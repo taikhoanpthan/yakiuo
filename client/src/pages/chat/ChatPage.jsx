@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
-  Avatar,
   Button,
   Empty,
   Input,
@@ -33,6 +32,7 @@ import { connectSocket, getSocket } from "../../services/socket";
 import api from "../../services/api";
 import { useAuth } from "../../store/AuthContext";
 import HamsterLoader from "../../components/common/HamsterLoader";
+import UserAvatar from "../../components/common/UserAvatar";
 
 // =====================================================
 // HELPERS
@@ -1670,12 +1670,12 @@ export default function ChatPage() {
               </div>
 
               <div className="flex items-center gap-1">
-                <Avatar
+                <UserAvatar
                   size={34}
-                  src={currentUser?.avatar}
+                  user={currentUser}
                 >
                   {getInitial(currentUser)}
-                </Avatar>
+                </UserAvatar>
 
                 {currentUser?.role === "admin" && (
                   <Tooltip title="Tạo nhóm chat">
@@ -1777,12 +1777,12 @@ export default function ChatPage() {
                       "
                     >
                       <div className="relative">
-                        <Avatar
+                        <UserAvatar
                           size={52}
-                          src={user.avatar}
+                          user={user}
                         >
                           {getInitial(user)}
-                        </Avatar>
+                        </UserAvatar>
 
                         <span
                           className="
@@ -1905,12 +1905,12 @@ export default function ChatPage() {
                       {/* AVATAR */}
 
                       <div className="relative shrink-0">
-                        <Avatar
+                        <UserAvatar
                           size={56}
-                          src={user.avatar}
+                          user={user}
                         >
                           {getInitial(user)}
-                        </Avatar>
+                        </UserAvatar>
 
                         {online && (
                           <span
@@ -2048,12 +2048,12 @@ export default function ChatPage() {
                   {/* AVATAR */}
 
                   <div className="relative shrink-0">
-                    <Avatar
+                    <UserAvatar
                       size={38}
-                      src={otherUser?.avatar}
+                      user={otherUser}
                     >
                       {getInitial(otherUser)}
-                    </Avatar>
+                    </UserAvatar>
 
                     {isUserOnline(
                       getUserId(otherUser),
@@ -2203,12 +2203,12 @@ export default function ChatPage() {
                         text-center
                       "
                     >
-                      <Avatar
+                      <UserAvatar
                         size={80}
-                        src={otherUser?.avatar}
+                        user={otherUser}
                       >
                         {getInitial(otherUser)}
-                      </Avatar>
+                      </UserAvatar>
 
                       <p className="m-0 text-base font-semibold text-gray-900">
                         {getConversationName(selectedConversation)}
@@ -2307,20 +2307,15 @@ export default function ChatPage() {
                               {!isMe && (
                                 <div className="w-6 shrink-0">
                                   {!sameSender && (
-                                    <Avatar
+                                    <UserAvatar
                                       size={24}
-                                      src={
-                                        item
-                                          .senderId
-                                          ?.avatar ||
-                                        otherUser?.avatar
-                                      }
+                                      user={item.senderId || otherUser}
                                     >
                                       {getInitial(
                                         item.senderId ||
                                           otherUser,
                                       )}
-                                    </Avatar>
+                                    </UserAvatar>
                                   )}
                                 </div>
                               )}

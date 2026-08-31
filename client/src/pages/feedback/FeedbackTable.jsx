@@ -3,6 +3,7 @@ import { Button, Popconfirm, Space, Table, Tag, Tooltip } from "antd";
 import { DeleteOutlined, EditOutlined, EyeOutlined } from "@ant-design/icons";
 
 import dayjs from "dayjs";
+import UserAvatar from "../../components/common/UserAvatar";
 
 const FeedbackTable = ({
   feedbacks = [],
@@ -129,25 +130,16 @@ const FeedbackTable = ({
         return (
           <div className="flex items-center gap-3">
             {/* Avatar */}
-            {user.avatar ? (
-              <img
-                src={user.avatar}
-                alt={name}
-                className={`w-9 h-9 rounded-full object-cover shrink-0 border border-slate-200 ${
-                  onUserClick && user._id ? "cursor-pointer" : ""
-                }`}
-                onClick={() => onUserClick?.(user)}
-              />
-            ) : (
-              <div
-                className={`w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center font-semibold text-sm shrink-0 ${
-                  onUserClick && user._id ? "cursor-pointer" : ""
-                }`}
-                onClick={() => onUserClick?.(user)}
-              >
-                {name.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <UserAvatar
+              size={36}
+              user={user}
+              alt={name}
+              className={`shrink-0 border border-slate-200 ${onUserClick && user._id ? "cursor-pointer" : ""}`}
+              onClick={() => onUserClick?.(user)}
+              style={!user.avatar ? { background: "linear-gradient(135deg, #3b82f6, #4f46e5)", color: "#fff", fontWeight: 600 } : undefined}
+            >
+              {name.charAt(0).toUpperCase()}
+            </UserAvatar>
 
             {/* Tên + role */}
             <div className="min-w-0">

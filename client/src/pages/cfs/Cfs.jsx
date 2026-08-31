@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Avatar, Button, Input, Modal, Popconfirm, Select, Switch, message } from "antd";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button, Input, Modal, Popconfirm, Select, Switch, message } from "antd";
 import { CloseOutlined, DeleteOutlined, HeartFilled, HeartOutlined, MessageOutlined, MoreOutlined, PictureOutlined, ReloadOutlined, SendOutlined, UserOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useAuth } from "../../store/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { createCfsPost, createCfsReply, deleteCfsPost, deleteCfsReply, getCfsIdentity, getCfsPost, getCfsPosts, setCfsIdentity, toggleCfsLike, toggleCfsReplyLike, uploadCfsImage } from "../../services/cfs.service";
 import { onCfsChanged, onOnlineUsers } from "../../services/socket";
+import UserAvatar from "../../components/common/UserAvatar";
 import "./Cfs.css";
 
 const timeAgo = (value) => { const minutes = Math.floor(Math.max(0, Date.now() - new Date(value).getTime()) / 60000); if (minutes < 1) return "vừa xong"; if (minutes < 60) return `${minutes}p`; if (minutes < 1440) return `${Math.floor(minutes / 60)}h`; return dayjs(value).format("DD/MM/YYYY"); };
@@ -18,6 +19,22 @@ const anonymousAvatarStyles = [
   ["#0891b2", "#67e8f9", "#164e63"],
 ];
 const anonymousAvatarCache = new Map();
+const postBackgrounds = [
+  { id: "", label: "Không nền", value: "" },
+  { id: "berry", label: "Hồng tím", value: "linear-gradient(135deg, #e0006e, #4b2bc9)" },
+  { id: "ocean", label: "Đại dương", value: "linear-gradient(135deg, #0f766e, #2563eb)" },
+  { id: "sunset", label: "Hoàng hôn", value: "linear-gradient(135deg, #f97316, #db2777)" },
+  { id: "night", label: "Đêm", value: "linear-gradient(135deg, #111827, #4c1d95)" },
+];
+const extraPostBackgrounds = [
+  { id: "lgbt", label: "Cầu vồng LGBT", value: "linear-gradient(135deg, #e40303 0%, #ff8c00 20%, #ffed00 40%, #008026 60%, #24408e 80%, #732982 100%)" },
+  { id: "sky", label: "Bầu trời", value: "linear-gradient(135deg, #06b6d4, #3b82f6)" },
+  { id: "forest", label: "Rừng xanh", value: "linear-gradient(135deg, #15803d, #84cc16)" },
+  { id: "rose", label: "Hoa hồng", value: "linear-gradient(135deg, #fb7185, #a855f7)" },
+  { id: "gold", label: "Nắng vàng", value: "linear-gradient(135deg, #facc15, #f97316)" },
+  { id: "slate", label: "Than chì", value: "linear-gradient(135deg, #334155, #020617)" },
+];
+const getPostBackground = (id) => [...postBackgrounds, ...extraPostBackgrounds].find((background) => background.id === id)?.value || "";
 const anonymousAvatarSeed = (value = "Ẩn danh") => [...String(value)].reduce((hash, character) => ((hash * 31) + character.charCodeAt(0)) >>> 0, 0);
 const getAnonymousAvatar = (author) => {
   const cacheKey = author?.name || "Ẩn danh";
@@ -32,11 +49,34 @@ const getAnonymousAvatar = (author) => {
   anonymousAvatarCache.set(cacheKey, avatar);
   return avatar;
 };
-const CfsAvatar = ({ author, size = 40, online = false }) => <span className="cfs-avatar-wrap"><Avatar size={size} src={author?.anonymous ? getAnonymousAvatar(author) : author?.avatar || undefined} className={author?.anonymous ? "cfs-avatar cfs-avatar-anonymous" : "cfs-avatar"}>{author?.anonymous ? "?" : <UserOutlined />}</Avatar>{online && <i className="cfs-online-dot" />}</span>;
+const CfsAvatar = ({ author, size = 40, online = false }) => <span className="cfs-avatar-wrap"><UserAvatar size={size} user={author} src={author?.anonymous ? getAnonymousAvatar(author) : undefined} className={author?.anonymous ? "cfs-avatar cfs-avatar-anonymous" : "cfs-avatar"}>{author?.anonymous ? "?" : <UserOutlined />}</UserAvatar>{online && <i className="cfs-online-dot" />}</span>;
 const Author = ({ author, createdAt, admin, isPostAuthor = false }) => <div className="cfs-author"><span>{author?.name}</span>{author?.anonymous && <em>ẩn danh</em>}<time>· {timeAgo(createdAt)}</time>{isPostAuthor && <b>Tác giả</b>}{admin && author?.identity && <small>Admin: {author.identity.fullName} · @{author.identity.username}</small>}</div>;
 const PostHeader = ({ author, createdAt, admin }) => <div className="cfs-post-header"><Author author={author} createdAt={createdAt} admin={admin} /><button type="button" className="cfs-more-action" aria-label="Tùy chọn bài viết"><MoreOutlined /></button></div>;
 const groupReplies = (replies) => replies.reduce((groups, reply) => { const key = String(reply.parentReplyId || "root"); (groups[key] ||= []).push(reply); return groups; }, {});
 const AnonymousToggle = ({ enabled, alias, onChange }) => { const [uploading, setUploading] = useState(false); const uploadImage = async (event) => { const file = event.target.files?.[0]; if (!file) return; try { setUploading(true); const response = await uploadCfsImage(file); const url = response.data?.data?.url || ""; if (!url) throw new Error("Không nhận được URL ảnh"); window.dispatchEvent(new CustomEvent("cfs:image-selected", { detail: url })); message.success("Đã thêm ảnh vào bài viết"); } catch { message.error("Không thể tải ảnh lên"); } finally { setUploading(false); event.target.value = ""; } }; return <div className="cfs-anon-control"><span>Đăng ẩn danh</span><Switch size="small" checked={enabled} onChange={onChange} /><label className="cfs-image-picker" title="Thêm ảnh"><PictureOutlined /><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={uploadImage} disabled={uploading} /></label>{enabled && alias && <small>Biệt danh: {alias}</small>}</div>; };
+
+const CreatePostForm = ({ displayName, initialAnonymous, alias, requestAnonymous, onSubmit }) => {
+  const [content, setContent] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [background, setBackground] = useState("");
+  const [showMoreBackgrounds, setShowMoreBackgrounds] = useState(false);
+  const [anonymous, setAnonymous] = useState(initialAnonymous);
+  const [submitting, setSubmitting] = useState(false);
+  const uploadImage = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const response = await uploadCfsImage(file);
+      setImageUrl(response.data?.data?.url || "");
+    } catch { message.error("Không thể tải ảnh lên"); }
+  };
+  const submit = async () => {
+    if (!content.trim() && !imageUrl) return message.warning("Viết điều bạn muốn chia sẻ hoặc chọn ảnh");
+    try { setSubmitting(true); await onSubmit({ content, imageUrl, background, isAnonymous: anonymous }); Modal.destroyAll(); } finally { setSubmitting(false); }
+  };
+  const backgrounds = showMoreBackgrounds ? [...postBackgrounds, ...extraPostBackgrounds] : postBackgrounds;
+  return <div className="cfs-create-form"><div className={`cfs-create-editor ${background ? "has-background" : ""}`} style={background ? { background: getPostBackground(background) } : undefined}><Input.TextArea value={content} onChange={(event) => setContent(event.target.value)} placeholder={`${displayName} đang nghĩ gì?`} autoSize={{ minRows: 7, maxRows: 10 }} maxLength={2000} autoFocus />{imageUrl && <img src={imageUrl} alt="Ảnh đính kèm" />}</div><div className="cfs-background-picker">{backgrounds.map((item) => <button key={item.id || "plain"} type="button" title={item.label} className={background === item.id ? "is-selected" : ""} style={item.value ? { background: item.value } : undefined} onClick={() => setBackground(item.id)}>{item.id ? "" : "A"}</button>)}<button type="button" className="cfs-more-backgrounds" title="Thêm màu nền" onClick={() => setShowMoreBackgrounds((value) => !value)}>{showMoreBackgrounds ? "−" : "+"}</button></div><div className="cfs-create-footer"><AnonymousToggle enabled={anonymous} alias={alias} onChange={(value) => { setAnonymous(value); requestAnonymous(value, "post"); }} /><label className="cfs-image-picker"><PictureOutlined /><span>Thêm ảnh</span><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={uploadImage} /></label><Button onClick={() => Modal.destroyAll()}>Hủy</Button><Button type="primary" icon={<SendOutlined />} loading={submitting} onClick={submit}>Đăng</Button></div></div>;
+};
 
 const Replies = ({ replies, admin, onlineUsers, onReply, onLike, onDelete, sortMode }) => {
   const groups = useMemo(() => groupReplies(replies), [replies]);
@@ -53,7 +93,27 @@ const Replies = ({ replies, admin, onlineUsers, onReply, onLike, onDelete, sortM
   return childrenOf("root").flatMap((reply) => [renderReply(reply), ...flattenChildren(reply)]);
 };
 
-const PostActions = ({ post, onLike, onOpenReplies, showDelete, onDelete }) => <>{post.imageUrl && <img className="cfs-post-image" src={post.imageUrl} alt="Ảnh bài viết" />}<div className="cfs-actions"><button type="button" aria-label="Thích bài viết" className={post.liked ? "is-liked" : ""} onClick={() => onLike(post._id)}>{post.liked ? <HeartFilled /> : <HeartOutlined />}{post.likes > 0 && <span>{post.likes}</span>}</button>{post.likeUsers?.length > 0 && <span className="cfs-like-avatars" title={post.likeUsers.map((user) => user.name).join(", ")}>{post.likeUsers.slice(0, 2).map((user) => <Avatar key={String(user._id)} size={18} src={user.avatar || undefined}>{user.name.slice(0, 1)}</Avatar>)}{post.likeUsers.length > 2 && <b>+{post.likeUsers.length - 2}</b>}</span>}<button type="button" aria-label="Xem bình luận" onClick={onOpenReplies}><MessageOutlined />{post.replies?.length > 0 && <span>{post.replies.length}</span>}</button>{showDelete && <Popconfirm title="Xóa bài viết này?" description="Toàn bộ phản hồi cũng sẽ bị xóa." okText="Xóa" cancelText="Hủy" onConfirm={() => onDelete(post._id)}><button type="button" className="cfs-delete-action" aria-label="Xóa bài viết"><DeleteOutlined /></button></Popconfirm>}</div></>;
+const PostActions = ({ post, onLike, onOpenReplies, showDelete, onDelete }) => {
+  const markerRef = useRef(null);
+
+  useEffect(() => {
+    const content = markerRef.current?.closest(".cfs-post-body")?.querySelector(":scope > p");
+    if (!content || !post.background) return;
+    Object.assign(content.style, { background: getPostBackground(post.background), color: "#fff", minHeight: "180px", display: "grid", placeItems: "center", padding: "24px", borderRadius: "12px", textAlign: "center", fontSize: "21px", fontWeight: "800", lineHeight: "1.35" });
+  }, [post.background]);
+
+  return <>
+  {post.background && <i ref={markerRef} className="cfs-post-background-marker" data-post-background={post.background} aria-hidden="true" />}
+  {post.imageUrl && <img className="cfs-post-image" src={post.imageUrl} alt="Ảnh bài viết" />}
+  <div className="cfs-actions">
+    <button type="button" aria-label="Thích bài viết" className={post.liked ? "is-liked" : ""} onClick={() => onLike(post._id)}>{post.liked ? <HeartFilled /> : <HeartOutlined />}{post.likes > 0 && <span>{post.likes}</span>}</button>
+    {post.likeUsers?.length > 0 && <span className="cfs-like-avatars" title={post.likeUsers.map((user) => user.name).join(", ")}>{post.likeUsers.slice(0, 2).map((user) => <UserAvatar key={String(user._id)} size={18} user={user}>{user.name.slice(0, 1)}</UserAvatar>)}{post.likeUsers.length > 2 && <b>+{post.likeUsers.length - 2}</b>}</span>}
+    <button type="button" aria-label="Xem bình luận" onClick={onOpenReplies}><MessageOutlined />{post.replies?.length > 0 && <span>{post.replies.length}</span>}</button>
+    {showDelete && <Popconfirm title="Xóa bài viết này?" description="Toàn bộ phản hồi cũng sẽ bị xóa." okText="Xóa" cancelText="Hủy" onConfirm={() => onDelete(post._id)}><button type="button" className="cfs-delete-action" aria-label="Xóa bài viết"><DeleteOutlined /></button></Popconfirm>}
+  </div>
+</>;
+};
+const PostText = ({ post }) => post.background ? <div className="cfs-post-text cfs-post-text-background" style={{ background: getPostBackground(post.background) }}>{post.content}</div> : <p>{post.content}</p>;
 
 const DetailPage = ({ post, onClose, admin, onlineUsers, viewer, onLike, onDeletePost, onDeleteReply, onLikeReply, replyingTo, setReplyingTo, replyContent, setReplyContent, replyAnonymous, setReplyAnonymous, alias, requestAnonymous, onSendReply, replySubmitting, replySort, setReplySort }) => post && <div className="cfs-page cfs-detail-page">
   {post && <div className={`cfs-detail ${post.replies?.length ? "" : "is-empty"}`}><header className="cfs-detail-header"><Button type="text" icon={<CloseOutlined />} onClick={onClose}>Đóng</Button><strong>Bài viết</strong><span /></header><div className="cfs-detail-scroll"><article className="cfs-post cfs-detail-post"><div className="cfs-post-grid"><CfsAvatar author={post.author} online={onlineUsers.has(String(post.author?.userId))} /><div className="cfs-post-body"><PostHeader author={post.author} createdAt={post.createdAt} admin={admin} /><p>{post.content}</p><PostActions post={post} onLike={onLike} onOpenReplies={() => {}} showDelete={post.canManage} onDelete={onDeletePost} /></div></div></article><div className="cfs-detail-sort"><Select size="small" variant="borderless" value={replySort} onChange={setReplySort} options={[{ value: "top", label: "↕ Hàng đầu" }, { value: "newest", label: "Mới nhất" }]} /><span>{post.replies?.length || 0} phản hồi</span></div><section className="cfs-replies cfs-detail-replies"><Replies replies={post.replies || []} sortMode={replySort} admin={admin} onlineUsers={onlineUsers} onReply={(reply) => setReplyingTo({ postId: post._id, parentReplyId: reply._id, name: reply.author.name })} onDelete={(replyId) => onDeleteReply(post._id, replyId)} onLike={(reply) => onLikeReply(post._id, reply)} /></section></div><footer className="cfs-detail-composer"><CfsAvatar author={{ avatar: viewer?.avatar }} size={32} /><div><Input.TextArea value={replyContent} onChange={(event) => setReplyContent(event.target.value)} placeholder={replyingTo ? `Trả lời ${replyingTo.name}...` : `Trả lời ${post.author.name}...`} autoSize={{ minRows: 1, maxRows: 3 }} maxLength={1000} /><div className="cfs-reply-footer"><AnonymousToggle enabled={replyAnonymous} alias={alias} onChange={(value) => requestAnonymous(value, "reply")} /><Button type="primary" size="small" loading={replySubmitting} disabled={!replyContent.trim() || replySubmitting} onClick={onSendReply}>Gửi</Button></div></div></footer></div>}
@@ -62,18 +122,37 @@ const DetailModal = DetailPage;
 
 const Cfs = () => {
   const { user } = useAuth();
+  const Avatar = (props) => <UserAvatar user={user} {...props} />;
   const { postId } = useParams();
   const navigate = useNavigate();
-  const [posts, setPosts] = useState([]); const [loading, setLoading] = useState(true); const [content, setContent] = useState(""); const [imageUrl, setImageUrl] = useState(""); const [anonymous, setAnonymous] = useState(false); const [alias, setAlias] = useState(""); const [aliasDraft, setAliasDraft] = useState(""); const [aliasModalOpen, setAliasModalOpen] = useState(false); const [aliasTarget, setAliasTarget] = useState(null); const [savingAlias, setSavingAlias] = useState(false); const [submitting, setSubmitting] = useState(false); const [detailPost, setDetailPost] = useState(null); const [replyingTo, setReplyingTo] = useState(null); const [replyContent, setReplyContent] = useState(""); const [replyAnonymous, setReplyAnonymous] = useState(false); const [replySubmitting, setReplySubmitting] = useState(false); const [replySort, setReplySort] = useState("top"); const [onlineUsers, setOnlineUsers] = useState(() => new Set()); const [page, setPage] = useState(1); const [pagination, setPagination] = useState({ totalPages: 1 }); const [, setClock] = useState(Date.now());
+  const [posts, setPosts] = useState([]); const [loading, setLoading] = useState(true); const [content, setContent] = useState(""); const [imageUrl, setImageUrl] = useState(""); const [background, setBackground] = useState(""); const [composerOpen, setComposerOpen] = useState(false); const [anonymous, setAnonymous] = useState(false); const [alias, setAlias] = useState(""); const [aliasDraft, setAliasDraft] = useState(""); const [aliasModalOpen, setAliasModalOpen] = useState(false); const [aliasTarget, setAliasTarget] = useState(null); const [savingAlias, setSavingAlias] = useState(false); const [submitting, setSubmitting] = useState(false); const [detailPost, setDetailPost] = useState(null); const [replyingTo, setReplyingTo] = useState(null); const [replyContent, setReplyContent] = useState(""); const [replyAnonymous, setReplyAnonymous] = useState(false); const [replySubmitting, setReplySubmitting] = useState(false); const [replySort, setReplySort] = useState("top"); const [onlineUsers, setOnlineUsers] = useState(() => new Set()); const [page, setPage] = useState(1); const [pagination, setPagination] = useState({ totalPages: 1 }); const [, setClock] = useState(Date.now());
   const displayName = useMemo(() => user?.fullName || user?.username || "Bạn", [user]);
-  const loadPosts = useCallback(async (requestedPage = page, showLoading = true) => { try { if (showLoading) setLoading(true); const response = await getCfsPosts({ page: requestedPage, limit: 100 }); setPosts(response.data?.data?.posts || []); setPagination(response.data?.data?.pagination || { totalPages: 1 }); } catch { message.error("Không thể tải bảng tin CFS"); } finally { if (showLoading) setLoading(false); } }, [page]);
+  const loadPosts = useCallback(async (requestedPage = page, showLoading = true) => { try { if (showLoading) setLoading(true); const response = await getCfsPosts({ page: requestedPage, limit: 100 }); const receivedPosts = response.data?.data?.posts || []; setPosts((current) => receivedPosts.map((post) => ({ ...post, background: post.background || current.find((item) => item._id === post._id)?.background || "" }))); setPagination(response.data?.data?.pagination || { totalPages: 1 }); } catch { message.error("Không thể tải bảng tin CFS"); } finally { if (showLoading) setLoading(false); } }, [page]);
   useEffect(() => { loadPosts(page); }, [page, loadPosts]); useEffect(() => onOnlineUsers(({ userIds }) => setOnlineUsers(new Set(userIds))), []); useEffect(() => onCfsChanged(() => { loadPosts(page, false); if (postId) getCfsPost(postId).then((response) => setDetailPost(response.data?.data?.post || null)).catch(() => {}); }), [loadPosts, page, postId]); useEffect(() => { const timer = window.setInterval(() => setClock(Date.now()), 60000); return () => window.clearInterval(timer); }, []); useEffect(() => { getCfsIdentity().then((response) => setAlias(response.data?.data?.alias || "")).catch(() => message.error("Không thể kiểm tra biệt danh CFS")); }, []);
   useEffect(() => { const receiveImage = (event) => { if (event.detail) setImageUrl(event.detail); }; window.addEventListener("cfs:image-selected", receiveImage); return () => window.removeEventListener("cfs:image-selected", receiveImage); }, []);
   useEffect(() => { if (!postId) return setDetailPost(null); getCfsPost(postId).then((response) => setDetailPost(response.data?.data?.post || null)).catch(() => { message.error("Không thể tải bài viết"); navigate("/cfs", { replace: true }); }); }, [postId, navigate]);
   const requestAnonymous = (value, target) => { if (!value) return target === "post" ? setAnonymous(false) : setReplyAnonymous(false); if (alias) return target === "post" ? setAnonymous(true) : setReplyAnonymous(true); setAliasTarget(target); setAliasModalOpen(true); };
+  useEffect(() => {
+    const openComposer = (event) => {
+      if (!event.target.closest(".cfs-composer")) return;
+      event.preventDefault();
+      event.stopPropagation();
+      Modal.confirm({
+        title: "Tạo bài viết",
+        icon: null,
+        className: "cfs-create-modal",
+        width: 560,
+        closable: true,
+        maskClosable: true,
+        footer: null,
+        content: <CreatePostForm displayName={displayName} initialAnonymous={anonymous} alias={alias} requestAnonymous={requestAnonymous} onSubmit={async (draft) => { try { const response = await createCfsPost(draft); const post = response.data?.data?.post; if (post) { const nextPost = { ...post, background: post.background || draft.background }; setPosts((current) => [nextPost, ...current.filter((item) => item._id !== nextPost._id)]); } else { await loadPosts(page, false); } message.success("Đã đăng bài"); } catch (error) { message.error(error.response?.data?.message || "Không thể đăng bài"); throw error; } }} />,
+      });
+    };
+    document.addEventListener("click", openComposer, true);
+    return () => document.removeEventListener("click", openComposer, true);
+  }, [alias, anonymous, displayName, loadPosts, page]);
   const saveAlias = async () => { if (!aliasDraft.trim()) return message.warning("Hãy chọn một biệt danh"); try { setSavingAlias(true); const response = await setCfsIdentity(aliasDraft); setAlias(response.data?.data?.alias || aliasDraft.trim()); if (aliasTarget === "post") setAnonymous(true); else setReplyAnonymous(true); setAliasModalOpen(false); setAliasDraft(""); } catch (error) { message.error(error.response?.data?.message || "Không thể tạo biệt danh"); } finally { setSavingAlias(false); } };
-  const confirmPublish = async () => { try { setSubmitting(true); const response = await createCfsPost({ content, imageUrl, isAnonymous: anonymous }); const post = response.data?.data?.post; setContent(""); setImageUrl(""); setAnonymous(false); if (post) setPosts((current) => [post, ...current.filter((item) => item._id !== post._id)]); message.success("Đã đăng bài"); } catch (error) { message.error(error.response?.data?.message || "Không thể đăng bài"); } finally { setSubmitting(false); } };
-  const publish = () => { if (submitting) return; if (!content.trim() && !imageUrl) return message.warning("Viết điều bạn muốn chia sẻ hoặc chọn ảnh"); setSubmitting(true); Modal.confirm({ className: "cfs-publish-modal", title: "Xem trước bài viết", content: <div className="cfs-publish-preview">{imageUrl && <img src={imageUrl} alt="Ảnh xem trước" />}<p>{content || "Bài viết chỉ có ảnh"}</p>{anonymous && <small>Đăng bằng biệt danh: {alias}</small>}</div>, okText: "Đăng bài", cancelText: "Chỉnh sửa", onOk: confirmPublish, onCancel: () => setSubmitting(false) }); };
+  const publish = async () => { if (submitting) return; if (!content.trim() && !imageUrl) return message.warning("Viết điều bạn muốn chia sẻ hoặc chọn ảnh"); try { setSubmitting(true); const response = await createCfsPost({ content, imageUrl, background, isAnonymous: anonymous }); const post = response.data?.data?.post; setContent(""); setImageUrl(""); setBackground(""); setAnonymous(false); setComposerOpen(false); if (post) setPosts((current) => [post, ...current.filter((item) => item._id !== post._id)]); message.success("Đã đăng bài"); } catch (error) { message.error(error.response?.data?.message || "Không thể đăng bài"); } finally { setSubmitting(false); } };
   const like = async (id) => { const previous = posts; const previousDetail = detailPost; const toggle = (post) => post._id === id ? { ...post, liked: !post.liked, likes: post.likes + (post.liked ? -1 : 1) } : post; setPosts((current) => current.map(toggle)); setDetailPost((current) => current ? toggle(current) : current); try { await toggleCfsLike(id); } catch { setPosts(previous); setDetailPost(previousDetail); message.error("Không thể cập nhật lượt thích"); } };
   const removePost = async (targetPostId) => { try { await deleteCfsPost(targetPostId); if (postId === targetPostId) navigate("/cfs"); await loadPosts(page); message.success("Đã xóa bài viết"); } catch (error) { message.error(error.response?.data?.message || "Không thể xóa bài viết"); } };
   const removeReply = async (targetPostId, replyId) => { try { await deleteCfsReply(targetPostId, replyId); if (postId === targetPostId) { const response = await getCfsPost(targetPostId); setDetailPost(response.data?.data?.post || null); } await loadPosts(page); } catch (error) { message.error(error.response?.data?.message || "Không thể xóa phản hồi"); } };

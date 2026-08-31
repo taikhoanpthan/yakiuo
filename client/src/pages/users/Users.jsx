@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  Avatar,
   Button,
   Card,
   Input,
@@ -32,6 +31,7 @@ import {
 import EmployeeDetail from "./EmployeeDetail";
 import { useAuth } from "../../store/AuthContext";
 import { onOnlineUsers } from "../../services/socket";
+import UserAvatar from "../../components/common/UserAvatar";
 
 const Users = () => {
   const { user: currentUser } = useAuth();
@@ -136,9 +136,9 @@ const Users = () => {
             onClick={() => setSelectedEmployee(record)}
             title={onlineUserIds.includes(String(record._id)) ? "Đang online" : "Đang ngoại tuyến"}
           >
-            <Avatar size={44} src={record.avatar || undefined}>
+            <UserAvatar size={44} user={record}>
               {record.fullName?.charAt(0)?.toUpperCase()}
-            </Avatar>
+            </UserAvatar>
             <span
               className={`absolute -bottom-0.5 left-1/2 h-3 w-3 -translate-x-1/2 rounded-full border-2 border-white ${onlineUserIds.includes(String(record._id)) ? "bg-emerald-500" : "bg-slate-400"}`}
               aria-label={onlineUserIds.includes(String(record._id)) ? "Đang online" : "Đang ngoại tuyến"}

@@ -1,6 +1,6 @@
 const CfsPost = require("../models/CfsPost");
 
-const userFields = "fullName username avatar role";
+const userFields = "fullName username avatar avatarPosition avatarZoom coverImage coverPosition coverZoom role";
 const isAdmin = (user) => user?.role === "admin";
 const sameId = (left, right) => String(left?._id || left) === String(right?._id || right);
 const broadcastCfsChanged = (req) => req.app.get("io")?.emit("cfs:changed");
@@ -9,7 +9,14 @@ const presentAuthor = (author, anonymous, alias, viewer) => {
   if (anonymous && !isAdmin(viewer)) return { name: alias || "Ẩn danh", anonymous: true };
   return {
     name: anonymous ? (alias || "Ẩn danh") : (author?.fullName || author?.username || "Yakiuo member"),
+    fullName: anonymous ? undefined : author?.fullName,
+    username: anonymous ? undefined : author?.username,
     avatar: anonymous ? "" : author?.avatar || "",
+    avatarPosition: anonymous ? undefined : author?.avatarPosition,
+    avatarZoom: anonymous ? undefined : author?.avatarZoom,
+    coverImage: anonymous ? "" : author?.coverImage || "",
+    coverPosition: anonymous ? undefined : author?.coverPosition,
+    coverZoom: anonymous ? undefined : author?.coverZoom,
     userId: anonymous ? undefined : author?._id,
     anonymous: Boolean(anonymous),
     identity: anonymous && isAdmin(viewer) ? author : undefined,
@@ -20,11 +27,12 @@ const presentPost = (post, viewer) => ({
   _id: post._id,
   content: post.content,
   imageUrl: post.imageUrl || "",
+  background: post.background || "",
   createdAt: post.createdAt,
   isAnonymous: post.isAnonymous,
   author: presentAuthor(post.author, post.isAnonymous, post.anonymousAlias, viewer),
   likes: post.likedBy?.length || 0,
-  likeUsers: (post.likedBy || []).filter(Boolean).map((user) => ({ _id: user._id || user, name: user.fullName || user.username || "Yakiuo member", avatar: user.avatar || "" })),
+  likeUsers: (post.likedBy || []).filter(Boolean).map((user) => ({ _id: user._id || user, name: user.fullName || user.username || "Yakiuo member", avatar: user.avatar || "", avatarPosition: user.avatarPosition, avatarZoom: user.avatarZoom, coverImage: user.coverImage || "", coverPosition: user.coverPosition, coverZoom: user.coverZoom })),
   liked: post.likedBy?.some((id) => sameId(id, viewer)) || false,
   isOwner: sameId(post.author, viewer),
   canManage: sameId(post.author, viewer) || isAdmin(viewer),
@@ -90,10 +98,11 @@ exports.createPost = async (req, res) => {
   try {
     const content = String(req.body.content || "").trim();
     const imageUrl = String(req.body.imageUrl || "").trim();
+    const background = String(req.body.background || "").trim();
     const isAnonymous = Boolean(req.body.isAnonymous);
     if (!content && !imageUrl) return res.status(400).json({ success: false, message: "Vui lòng nhập nội dung hoặc chọn ảnh" });
     if (isAnonymous && !req.user.cfsAnonymousAlias) return res.status(400).json({ success: false, message: "Bạn cần tạo biệt danh ẩn danh trước" });
-    const post = await CfsPost.create({ content, imageUrl, isAnonymous, anonymousAlias: isAnonymous ? req.user.cfsAnonymousAlias : "", author: req.user._id });
+    const post = await CfsPost.create({ content, imageUrl, background, isAnonymous, anonymousAlias: isAnonymous ? req.user.cfsAnonymousAlias : "", author: req.user._id });
     await post.populate("author", userFields);
     res.status(201).json({ success: true, data: { post: presentPost(post, req.user) } });
     broadcastCfsChanged(req);

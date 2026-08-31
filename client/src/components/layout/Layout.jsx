@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  Avatar,
   Badge,
   Button,
   Dropdown,
@@ -47,6 +46,8 @@ import { onOnlineUsers, setSocketUser } from "../../services/socket";
 import MobileTaskbar from "./MobileTaskbar";
 import DesktopSidebar from "./DesktopSidebar";
 import HamsterLoader from "../common/HamsterLoader";
+import UserAvatar from "../common/UserAvatar";
+import EmployeeDetail from "../../pages/users/EmployeeDetail";
 
 const { Content, Header, Sider } = AntLayout;
 
@@ -110,6 +111,16 @@ const Layout = ({ children }) => {
 
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+
+  useEffect(() => {
+    const openUserDetail = (event) => {
+      if (event.detail?._id) setSelectedEmployee(event.detail);
+    };
+
+    window.addEventListener("user:open-detail", openUserDetail);
+    return () => window.removeEventListener("user:open-detail", openUserDetail);
+  }, []);
 
   // ===================================================
   // REALTIME ONLINE COUNT
@@ -844,6 +855,10 @@ const Layout = ({ children }) => {
   // RENDER
   // ===================================================
 
+  if (selectedEmployee) {
+    return <EmployeeDetail user={selectedEmployee} onBack={() => setSelectedEmployee(null)} />;
+  }
+
   return (
     <>
       {notificationContextHolder}
@@ -1071,14 +1086,15 @@ const Layout = ({ children }) => {
                 }}
               >
                 <button type="button" className="erp-user-menu">
-                  <Avatar
+                  <UserAvatar
                     className="erp-avatar"
-                    src={user?.avatar || undefined}
+                    user={user}
+                    openDetail={false}
                     icon={!user?.avatar && <UserOutlined />}
                   >
                     {!user?.avatar &&
                       (user?.fullName?.charAt(0) || "Y").toUpperCase()}
-                  </Avatar>
+                  </UserAvatar>
 
                   <span className="erp-user-copy">
                     <strong>{user?.fullName || "Người dùng"}</strong>

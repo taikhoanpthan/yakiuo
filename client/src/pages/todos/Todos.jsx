@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  Avatar,
   Button,
   Card,
   Empty,
@@ -36,6 +35,7 @@ import {
 import TodoModal from "./TodoModal";
 import EmployeeDetail from "../users/EmployeeDetail";
 import HamsterLoader from "../../components/common/HamsterLoader";
+import UserAvatar from "../../components/common/UserAvatar";
 
 const priorityConfig = {
   high: {
@@ -378,9 +378,9 @@ const Todos = () => {
                       {/* NGƯỜI GIAO */}
 
                       <div className="mb-2 flex items-center gap-2">
-                        <Avatar
+                        <UserAvatar
                           size={30}
-                          src={todo.createdBy?.avatar}
+                          user={todo.createdBy}
                           icon={<UserOutlined />}
                           className={todo.createdBy?._id ? "cursor-pointer" : ""}
                           onClick={() => {
@@ -539,9 +539,9 @@ const Todos = () => {
             {/* NGƯỜI GIAO */}
 
             <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-4">
-              <Avatar
+              <UserAvatar
                 size={44}
-                src={selectedTodo.createdBy?.avatar}
+                user={selectedTodo.createdBy}
                 icon={<UserOutlined />}
                 className={selectedTodo.createdBy?._id ? "cursor-pointer" : ""}
                 onClick={() => {

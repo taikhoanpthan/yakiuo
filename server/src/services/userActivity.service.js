@@ -18,7 +18,7 @@ const getActivities = async ({ page = 1, limit = 30, userId, type }) => {
 
   const [activities, total] = await Promise.all([
     UserActivity.find(filter)
-      .populate("user", "fullName username avatar coverImage role")
+      .populate("user", "fullName username avatar avatarPosition avatarZoom coverImage role")
       .sort({ createdAt: -1 })
       .skip((currentPage - 1) * currentLimit)
       .limit(currentLimit)

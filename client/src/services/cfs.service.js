@@ -12,3 +12,7 @@ export const createCfsReply = (id, data) => api.post(`/cfs/${id}/replies`, data)
 export const deleteCfsPost = (id) => api.delete(`/cfs/${id}`);
 export const deleteCfsReply = (postId, replyId) => api.delete(`/cfs/${postId}/replies/${replyId}`);
 export const toggleCfsReplyLike = (postId, replyId) => api.post(`/cfs/${postId}/replies/${replyId}/like`);
+export const getCfsActivity = () => api.get("/cfs/activity");
+export const markCfsActivityRead = () => api.post("/cfs/activity/read");
+export const markCfsActivityItemRead = (id) => api.post(`/cfs/activity/${id}/read`);
+export const deleteCfsActivityItem = (id) => api.delete(`/cfs/activity/${id}`);

@@ -1,9 +1,15 @@
 const CfsPost = require("../models/CfsPost");
+const CfsNotification = require("../models/CfsNotification");
+const { createCfsNotification } = require("../services/cfsNotification.service");
 
 const userFields = "fullName username avatar avatarPosition avatarZoom coverImage coverPosition coverZoom role";
 const isAdmin = (user) => user?.role === "admin";
 const sameId = (left, right) => String(left?._id || left) === String(right?._id || right);
-const broadcastCfsChanged = (req) => req.app.get("io")?.emit("cfs:changed");
+const broadcastCfsChanged = (req, data = {}) => req.app.get("io")?.emit("cfs:changed", { ...data, changedAt: Date.now() });
+const broadcastCfsNotification = (req, notification) => {
+  if (!notification?.recipient) return;
+  req.app.get("io")?.to(`user:${notification.recipient}`).emit("cfs:notification", { unreadIncrement: 1, notificationId: String(notification._id) });
+};
 
 const presentAuthor = (author, anonymous, alias, viewer) => {
   if (anonymous && !isAdmin(viewer)) return { name: alias || "Ẩn danh", anonymous: true };
@@ -51,6 +57,61 @@ const presentPost = (post, viewer) => ({
 });
 
 const populatePost = (query) => query.populate("author", userFields).populate("likedBy", userFields).populate("replies.author", userFields);
+
+const notificationActorName = (notification) => notification.isAnonymous
+  ? "Một thành viên ẩn danh"
+  : (notification.actor?.fullName || notification.actor?.username || "Một thành viên");
+
+const presentNotification = (notification) => {
+  const actor = notificationActorName(notification);
+  const action = notification.type === "post_like"
+    ? "đã thích bài viết của bạn"
+    : notification.type === "reply_like"
+      ? "đã thích bình luận của bạn"
+      : notification.type === "post_reply"
+        ? "đã bình luận về bài viết của bạn"
+        : "đã trả lời bình luận của bạn";
+  const postPreview = String(notification.post?.content || "").trim() || (notification.post?.imageUrl ? "Ảnh bạn đã đăng" : "Bài viết CFS");
+  return { _id: notification._id, postId: notification.post?._id || notification.post, type: notification.type, actor, content: `${actor} ${action}`, postPreview, createdAt: notification.createdAt, read: Boolean(notification.readAt) };
+};
+
+exports.getActivity = async (req, res) => {
+  try {
+    const notifications = await CfsNotification.find({ recipient: req.user._id })
+      .sort({ createdAt: -1 }).limit(30).populate("actor", userFields).populate("post", "content imageUrl").lean();
+    res.json({ success: true, data: { notifications: notifications.map(presentNotification), unreadCount: notifications.filter((item) => !item.readAt).length } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Không thể tải hoạt động CFS" });
+  }
+};
+
+exports.markActivityRead = async (req, res) => {
+  try {
+    await CfsNotification.updateMany({ recipient: req.user._id, readAt: null }, { $set: { readAt: new Date() } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Không thể cập nhật thông báo" });
+  }
+};
+
+exports.markActivityItemRead = async (req, res) => {
+  try {
+    await CfsNotification.updateOne({ _id: req.params.notificationId, recipient: req.user._id, readAt: null }, { $set: { readAt: new Date() } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(400).json({ success: false, message: "Không thể cập nhật thông báo" });
+  }
+};
+
+exports.deleteActivityItem = async (req, res) => {
+  try {
+    const notification = await CfsNotification.findOneAndDelete({ _id: req.params.notificationId, recipient: req.user._id });
+    if (!notification) return res.status(404).json({ success: false, message: "Không tìm thấy thông báo" });
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: "Không thể xóa thông báo" });
+  }
+};
 
 exports.getPosts = async (req, res) => {
   try {
@@ -105,7 +166,7 @@ exports.createPost = async (req, res) => {
     const post = await CfsPost.create({ content, imageUrl, background, isAnonymous, anonymousAlias: isAnonymous ? req.user.cfsAnonymousAlias : "", author: req.user._id });
     await post.populate("author", userFields);
     res.status(201).json({ success: true, data: { post: presentPost(post, req.user) } });
-    broadcastCfsChanged(req);
+    broadcastCfsChanged(req, { postId: String(post._id), action: "created" });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message || "Không thể đăng bài" });
   }
@@ -118,8 +179,12 @@ exports.toggleLike = async (req, res) => {
     const index = post.likedBy.findIndex((id) => sameId(id, req.user));
     if (index >= 0) post.likedBy.splice(index, 1); else post.likedBy.push(req.user._id);
     await post.save();
+    if (index < 0) {
+      const notification = await createCfsNotification({ recipient: post.author, actor: req.user._id, post: post._id, type: "post_like" });
+      broadcastCfsNotification(req, notification);
+    }
     res.json({ success: true, data: { liked: index < 0, likes: post.likedBy.length } });
-    broadcastCfsChanged(req);
+    broadcastCfsChanged(req, { postId: String(post._id), action: "updated" });
   } catch (error) { res.status(400).json({ success: false, message: "Không thể cập nhật lượt thích" }); }
 };
 
@@ -136,10 +201,17 @@ exports.reply = async (req, res) => {
       return res.status(400).json({ success: false, message: "Không tìm thấy bình luận cần trả lời" });
     }
     post.replies.push({ content, isAnonymous, anonymousAlias: isAnonymous ? req.user.cfsAnonymousAlias : "", author: req.user._id, parentReplyId });
+    const newReply = post.replies[post.replies.length - 1];
     await post.save();
+    const notifications = [{ recipient: post.author, type: parentReplyId ? "reply" : "post_reply" }];
+    if (parentReplyId) notifications.push({ recipient: post.replies.id(parentReplyId)?.author, type: "reply" });
+    const recipients = new Map();
+    notifications.filter(({ recipient }) => recipient).forEach(({ recipient, type }) => recipients.set(String(recipient), { recipient, type }));
+    const createdNotifications = await Promise.all([...recipients.values()].map(({ recipient, type }) => createCfsNotification({ recipient, actor: req.user._id, post: post._id, replyId: newReply._id, type, isAnonymous })));
+    createdNotifications.forEach((notification) => broadcastCfsNotification(req, notification));
     const hydrated = await populatePost(CfsPost.findById(post._id));
     res.status(201).json({ success: true, data: { post: presentPost(hydrated, req.user) } });
-    broadcastCfsChanged(req);
+    broadcastCfsChanged(req, { postId: String(post._id), action: "updated" });
   } catch (error) { res.status(400).json({ success: false, message: error.message || "Không thể gửi phản hồi" }); }
 };
 
@@ -151,7 +223,7 @@ exports.deletePost = async (req, res) => {
       return res.status(403).json({ success: false, message: "Bạn không có quyền xóa bài viết này" });
     }
     await post.deleteOne();
-    broadcastCfsChanged(req);
+    broadcastCfsChanged(req, { postId: String(post._id), action: "deleted" });
     return res.json({ success: true, message: "Đã xóa bài viết" });
   } catch (error) {
     return res.status(400).json({ success: false, message: "Không thể xóa bài viết" });
@@ -183,7 +255,7 @@ exports.deleteReply = async (req, res) => {
     }
     post.replies = post.replies.filter((reply) => !idsToRemove.has(String(reply._id)));
     await post.save();
-    broadcastCfsChanged(req);
+    broadcastCfsChanged(req, { postId: String(post._id), action: "updated" });
     return res.json({ success: true, message: "Đã xóa bình luận" });
   } catch (error) {
     return res.status(400).json({ success: false, message: "Không thể xóa bình luận" });
@@ -200,7 +272,11 @@ exports.toggleReplyLike = async (req, res) => {
     const index = reply.likedBy.findIndex((id) => sameId(id, req.user));
     if (index >= 0) reply.likedBy.splice(index, 1); else reply.likedBy.push(req.user._id);
     await post.save();
-    broadcastCfsChanged(req);
+    if (index < 0) {
+      const notification = await createCfsNotification({ recipient: reply.author, actor: req.user._id, post: post._id, replyId: reply._id, type: "reply_like" });
+      broadcastCfsNotification(req, notification);
+    }
+    broadcastCfsChanged(req, { postId: String(post._id), action: "updated" });
     return res.json({ success: true, data: { liked: index < 0, likes: reply.likedBy.length } });
   } catch (error) {
     return res.status(400).json({ success: false, message: "Không thể cập nhật lượt thích" });

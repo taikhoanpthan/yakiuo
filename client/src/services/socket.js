@@ -324,6 +324,12 @@ export const onCfsChanged = (callback) => {
   return () => currentSocket.off("cfs:changed", callback);
 };
 
+export const onCfsNotification = (callback) => {
+  const currentSocket = createSocket();
+  currentSocket.on("cfs:notification", callback);
+  return () => currentSocket.off("cfs:notification", callback);
+};
+
 // =====================================================
 // ONLINE COUNT
 // =====================================================
@@ -408,6 +414,7 @@ export default {
   disconnectSocket,
   onOnlineUsers,
   onCfsChanged,
+  onCfsNotification,
   onOnlineCount,
   onUserOnline,
   onUserOffline,

@@ -4,8 +4,23 @@ import api from "../../services/api";
 export default function Maintenance() {
   const [active, setActive] = useState(true);
   useEffect(() => {
-    const check = async () => { try { const response = await api.get("/system/status"); setActive(Boolean(response.data?.data?.maintenanceMode)); } catch {} };
-    check(); const timer = window.setInterval(check, 15000); return () => window.clearInterval(timer);
+    const check = async () => {
+      if (document.hidden) return;
+
+      try {
+        const response = await api.get("/system/status");
+        setActive(Boolean(response.data?.data?.maintenanceMode));
+      } catch {}
+    };
+
+    check();
+    const timer = window.setInterval(check, 30000);
+    document.addEventListener("visibilitychange", check);
+
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", check);
+    };
   }, []);
   if (!active) window.location.replace("/login");
   return <main className="maintenance-page">

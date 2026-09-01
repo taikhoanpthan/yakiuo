@@ -48,6 +48,7 @@
   --erp-muted: #64748b;
   --erp-accent: #7c3aed;
   --erp-success: #16a34a;
+  --erp-mobile-taskbar-height: 60px;
 }
 
 *,
@@ -1696,7 +1697,7 @@ button:focus-visible,
   .erp-content {
     padding-bottom:
       calc(
-        76px + env(safe-area-inset-bottom)
+        var(--erp-mobile-taskbar-height) + 12px + env(safe-area-inset-bottom)
       ) !important;
 
     overscroll-behavior-y: contain;
@@ -1769,13 +1770,13 @@ button:focus-visible,
     z-index: 9999;
 
     width: auto;
-    height: calc(64px + env(safe-area-inset-bottom));
+    height: calc(var(--erp-mobile-taskbar-height) + env(safe-area-inset-bottom));
 
     display: flex;
     align-items: center;
     justify-content: space-around;
 
-    padding: 5px 5px max(5px, env(safe-area-inset-bottom));
+    padding: 4px 6px max(4px, env(safe-area-inset-bottom));
 
     border: 1px solid #e2e8f0;
 
@@ -1795,7 +1796,7 @@ button:focus-visible,
     width: auto;
     min-width: 0;
     flex: 1 1 0;
-    height: 52px;
+    height: 50px;
 
     display: flex;
     flex-direction: column;
@@ -1856,9 +1857,12 @@ button:focus-visible,
 
   .erp-mobile-task-active {
     position: absolute;
-    inset: 1px 2px;
+    top: 2px;
+    left: calc(50% - 25px);
+    width: 50px;
+    height: 32px;
     z-index: 0;
-    border-radius: 13px;
+    border-radius: 11px;
     background: #eff6ff;
   }
 
@@ -2079,13 +2083,17 @@ button:focus-visible,
 ========================================================= */
 
 @media (max-width: 420px) {
+  :root {
+    --erp-mobile-taskbar-height: 54px;
+  }
+
   .erp-mobile-taskbar {
     left: 0;
     right: 0;
 
     bottom: 0;
 
-    height: calc(56px + env(safe-area-inset-bottom));
+    height: calc(var(--erp-mobile-taskbar-height) + env(safe-area-inset-bottom));
 
     border-radius: 0;
   }
@@ -2149,7 +2157,7 @@ button:focus-visible,
   }
 
   .erp-content {
-    padding-bottom: 88px;
+    padding-bottom: calc(var(--erp-mobile-taskbar-height) + 12px + env(safe-area-inset-bottom));
   }
 }
 .login-page {

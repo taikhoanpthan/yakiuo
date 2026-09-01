@@ -369,6 +369,8 @@ export const AuthProvider = ({ children }) => {
     if (!user?._id || user.role === "admin") return undefined;
     let cancelled = false;
     const checkMaintenance = async () => {
+      if (document.hidden) return;
+
       try {
         const response = await getSystemStatus();
         if (!cancelled && response.data?.data?.maintenanceMode) {
@@ -380,8 +382,14 @@ export const AuthProvider = ({ children }) => {
       } catch { /* Sự cố mạng không được xem là bảo trì. */ }
     };
     checkMaintenance();
-    const timer = window.setInterval(checkMaintenance, 3000);
-    return () => { cancelled = true; window.clearInterval(timer); };
+    const timer = window.setInterval(checkMaintenance, 60000);
+    document.addEventListener("visibilitychange", checkMaintenance);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", checkMaintenance);
+    };
   }, [user?._id, user?.role]);
 
   // ===================================================

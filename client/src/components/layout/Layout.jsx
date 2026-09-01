@@ -1132,7 +1132,7 @@ const Layout = ({ children }) => {
               WebkitOverflowScrolling: "touch",
               paddingBottom:
                 isMobile && !isChatPage
-                  ? "calc(76px + env(safe-area-inset-bottom))"
+                  ? "calc(var(--erp-mobile-taskbar-height) + 12px + env(safe-area-inset-bottom))"
                   : 0,
             }}
           >

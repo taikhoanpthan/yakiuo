@@ -232,6 +232,14 @@
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
+/* The bottom navigation is fixed on phones.  Reserve its footprint below a
+   post's reply composer so the send controls can always scroll fully into view. */
+@media (max-width: 991px) {
+  .cfs-detail-page {
+    padding-bottom: calc(var(--erp-mobile-taskbar-height) + 12px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .cfs-post,
   .cfs-detail-replies .cfs-reply-branch {

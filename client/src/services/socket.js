@@ -129,6 +129,11 @@ const createSocket = () => {
     socket.disconnect();
     window.location.assign("/login");
   });
+  socket.on("maintenance:enabled", () => {
+    currentUserId = null;
+    localStorage.removeItem("accessToken"); localStorage.removeItem("refreshToken");
+    socket.disconnect(); window.location.assign("/maintenance");
+  });
 
   return socket;
 };
@@ -330,6 +335,12 @@ export const onCfsNotification = (callback) => {
   return () => currentSocket.off("cfs:notification", callback);
 };
 
+export const onSystemNotificationChanged = (callback) => {
+  const currentSocket = createSocket();
+  currentSocket.on("notification:changed", callback);
+  return () => currentSocket.off("notification:changed", callback);
+};
+
 // =====================================================
 // ONLINE COUNT
 // =====================================================
@@ -415,6 +426,7 @@ export default {
   onOnlineUsers,
   onCfsChanged,
   onCfsNotification,
+  onSystemNotificationChanged,
   onOnlineCount,
   onUserOnline,
   onUserOffline,

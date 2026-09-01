@@ -10,6 +10,8 @@ const userActivitySchema = new mongoose.Schema(
       index: true,
     },
     imageUrl: { type: String, default: "" },
+    oldImageUrl: { type: String, default: "" },
+    newImageUrl: { type: String, default: "" },
     ipAddress: { type: String, default: "" },
     userAgent: { type: String, default: "" },
   },

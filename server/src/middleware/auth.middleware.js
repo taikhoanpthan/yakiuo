@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const SystemSetting = require("../models/SystemSetting");
 
 const authenticate = async (
   req,
@@ -54,6 +55,11 @@ const authenticate = async (
     }
 
     req.user = user;
+
+    if (user.role !== "admin") {
+      const settings = await SystemSetting.findOne({ key: "system" }).select("maintenanceMode").lean();
+      if (settings?.maintenanceMode) return res.status(503).json({ success: false, code: "MAINTENANCE", message: "Hệ thống đang bảo trì" });
+    }
 
     next();
   } catch (error) {

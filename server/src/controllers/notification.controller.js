@@ -118,6 +118,7 @@ const createNotification = async (
         },
         req.user._id
       );
+    req.app.get("io")?.emit("notification:changed", { action: "created", notificationId: String(notification._id), changedAt: Date.now() });
 
     return res.status(201).json({
       success: true,
@@ -170,6 +171,7 @@ const updateNotification = async (
         req.params.id,
         req.body
       );
+    req.app.get("io")?.emit("notification:changed", { action: "updated", notificationId: String(notification._id), changedAt: Date.now() });
 
     return res.status(200).json({
       success: true,
@@ -220,6 +222,7 @@ const deleteNotification = async (
     await notificationService.deleteNotification(
       req.params.id
     );
+    req.app.get("io")?.emit("notification:changed", { action: "deleted", notificationId: String(req.params.id), changedAt: Date.now() });
 
     return res.status(200).json({
       success: true,

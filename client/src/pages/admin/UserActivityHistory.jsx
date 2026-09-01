@@ -15,9 +15,12 @@ const activityConfig = {
 const getDevice = (userAgent = "") => {
   if (!userAgent) return "Không rõ thiết bị";
   const browser = /Edg\//.test(userAgent) ? "Microsoft Edge" : /Chrome\//.test(userAgent) ? "Google Chrome" : /Firefox\//.test(userAgent) ? "Firefox" : /Safari\//.test(userAgent) ? "Safari" : "Trình duyệt khác";
-  const device = /iPhone/.test(userAgent) ? "iPhone" : /iPad/.test(userAgent) ? "iPad" : /Android/.test(userAgent) ? "Điện thoại Android" : /Windows/.test(userAgent) ? "Máy tính Windows" : /Mac OS/.test(userAgent) ? "Máy tính Mac" : "Thiết bị khác";
+  const ios = userAgent.match(/OS ([\d_]+)/)?.[1]?.replaceAll("_", ".");
+  const android = userAgent.match(/Android ([\d.]+)/)?.[1];
+  const device = /iPhone/.test(userAgent) ? `iPhone${ios ? ` · iOS ${ios}` : ""}` : /iPad/.test(userAgent) ? `iPad${ios ? ` · iPadOS ${ios}` : ""}` : /Android/.test(userAgent) ? `Android${android ? ` ${android}` : ""}` : /Windows/.test(userAgent) ? "Máy tính Windows" : /Mac OS/.test(userAgent) ? "Máy tính Mac" : "Thiết bị khác";
   return `${device} · ${browser}`;
 };
+const getIpLabel = (ip = "") => ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(ip) ? "Máy cục bộ (localhost)" : ip;
 
 const UserActivityHistory = () => {
   const [activities, setActivities] = useState([]);
@@ -77,8 +80,12 @@ const UserActivityHistory = () => {
     },
 
     {
+      title: "Ảnh thay đổi", key: "images", width: 240,
+      render: (_, record) => ["avatar_changed", "cover_changed"].includes(record.type) ? <div className="flex items-center gap-2"><div><small className="block text-slate-400">Cũ</small>{record.oldImageUrl ? <Image width={44} height={44} className="rounded object-cover" src={record.oldImageUrl} /> : <div className="grid h-11 w-11 place-items-center rounded bg-slate-100 text-xs text-slate-400">Trống</div>}</div><span className="text-slate-400">→</span><div><small className="block text-slate-400">Mới</small><Image width={44} height={44} className="rounded object-cover" src={record.newImageUrl || record.imageUrl} /></div></div> : <span className="text-slate-400">—</span>,
+    },
+    {
       title: "Thiết bị", dataIndex: "userAgent", width: 220,
-      render: (value, record) => <div className="text-sm text-slate-600"><div>{getDevice(value)}</div>{record.ipAddress && <div className="mt-0.5 text-xs text-slate-400">IP: {record.ipAddress}</div>}</div>,
+      render: (value, record) => <div className="text-sm text-slate-600"><div>{getDevice(value)}</div>{record.ipAddress && <div className="mt-0.5 text-xs text-slate-400">IP: {getIpLabel(record.ipAddress)}</div>}</div>,
     },
     { title: "Thời gian", dataIndex: "createdAt", width: 180, render: (value) => dayjs(value).format("DD/MM/YYYY HH:mm:ss") },
     {
@@ -106,7 +113,7 @@ const UserActivityHistory = () => {
         </div>
       </Card>
       <Card className="erp-section-card erp-table-card" styles={{ body: { padding: 0 } }}>
-        <Table rowKey="_id" columns={columns} dataSource={activities} loading={loading} scroll={{ x: 1050 }} pagination={{ pageSize: 10, showSizeChanger: false }} />
+        <Table rowKey="_id" columns={columns} dataSource={activities} loading={loading} scroll={{ x: 1290 }} pagination={{ pageSize: 10, showSizeChanger: false }} />
       </Card>
     </div>
   );

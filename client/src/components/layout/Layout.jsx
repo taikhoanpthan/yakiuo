@@ -42,7 +42,7 @@ import { useAuth } from "../../store/AuthContext";
 
 import { getNotifications } from "../../services/notificationService";
 
-import { onOnlineUsers, setSocketUser } from "../../services/socket";
+import { onOnlineUsers, onSystemNotificationChanged, setSocketUser } from "../../services/socket";
 import MobileTaskbar from "./MobileTaskbar";
 import DesktopSidebar from "./DesktopSidebar";
 import HamsterLoader from "../common/HamsterLoader";
@@ -580,6 +580,7 @@ const Layout = ({ children }) => {
       document.removeEventListener("visibilitychange", refreshNotifications);
     };
   }, [user?._id, loadNotifications]);
+  useEffect(() => onSystemNotificationChanged(({ action } = {}) => loadNotifications(action === "created")), [loadNotifications]);
 
   // ===================================================
   // RESPONSIVE

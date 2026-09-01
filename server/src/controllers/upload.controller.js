@@ -44,6 +44,7 @@ const uploadImage = async (req, res) => {
       });
     }
 
+    const oldImageUrl = imageType === "cover" ? user.coverImage : user.avatar;
     if (imageType === "cover") {
       user.coverImage = result.secure_url;
     } else {
@@ -55,6 +56,8 @@ const uploadImage = async (req, res) => {
       user: user._id,
       type: imageType === "cover" ? "cover_changed" : "avatar_changed",
       imageUrl: result.secure_url,
+      oldImageUrl,
+      newImageUrl: result.secure_url,
       ipAddress: req.ip,
       userAgent: req.get("user-agent") || "",
     });

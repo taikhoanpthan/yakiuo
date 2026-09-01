@@ -14,6 +14,7 @@ const Todos = lazy(() => import("../pages/todos/Todos"));
 const ChatPage = lazy(() => import("../pages/chat/ChatPage"));
 const UserActivityHistory = lazy(() => import("../pages/admin/UserActivityHistory"));
 const Cfs = lazy(() => import("../pages/cfs/Cfs"));
+const Maintenance = lazy(() => import("../pages/maintenance/Maintenance"));
 
 const PageLoader = () => (
   <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">
@@ -48,6 +49,7 @@ const AppRouter = () => {
           </Suspense>
         }
       />
+      <Route path="/maintenance" element={<Suspense fallback={<PageLoader />}><Maintenance /></Suspense>} />
 
       {/* DEFAULT */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

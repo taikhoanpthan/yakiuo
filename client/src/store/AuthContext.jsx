@@ -18,6 +18,7 @@ import {
   leavePresence,
   disconnectSocket,
 } from "../services/socket";
+import { getSystemStatus } from "../services/system.service";
 
 // =====================================================
 // AUTH CONTEXT
@@ -361,6 +362,27 @@ export const AuthProvider = ({ children }) => {
       cancelled = true;
     };
   }, []);
+
+  // Dự phòng cho socket: người dùng thường sẽ tự vào trang bảo trì ngay cả
+  // khi vừa mất kết nối đúng lúc admin bật chế độ này.
+  useEffect(() => {
+    if (!user?._id || user.role === "admin") return undefined;
+    let cancelled = false;
+    const checkMaintenance = async () => {
+      try {
+        const response = await getSystemStatus();
+        if (!cancelled && response.data?.data?.maintenanceMode) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          disconnectSocket();
+          window.location.assign("/maintenance");
+        }
+      } catch { /* Sự cố mạng không được xem là bảo trì. */ }
+    };
+    checkMaintenance();
+    const timer = window.setInterval(checkMaintenance, 3000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [user?._id, user?.role]);
 
   // ===================================================
   // PRESENCE

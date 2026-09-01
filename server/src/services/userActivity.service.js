@@ -1,8 +1,8 @@
 const UserActivity = require("../models/UserActivity");
 
-const recordActivity = async ({ user, type, imageUrl = "", ipAddress = "", userAgent = "" }) => {
+const recordActivity = async ({ user, type, imageUrl = "", oldImageUrl = "", newImageUrl = "", ipAddress = "", userAgent = "" }) => {
   try {
-    await UserActivity.create({ user, type, imageUrl, ipAddress, userAgent });
+    await UserActivity.create({ user, type, imageUrl, oldImageUrl, newImageUrl: newImageUrl || imageUrl, ipAddress, userAgent });
   } catch (error) {
     // Không để việc ghi audit làm hỏng thao tác chính của người dùng.
     console.error("Record user activity failed:", error);

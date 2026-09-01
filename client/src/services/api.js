@@ -88,6 +88,10 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     const status = error?.response?.status;
+    if (status === 503 && error?.response?.data?.code === "MAINTENANCE") {
+      localStorage.removeItem("accessToken"); localStorage.removeItem("refreshToken"); window.location.href = "/maintenance";
+      return Promise.reject(error);
+    }
 
     // Không phải 401
     if (status !== 401) {

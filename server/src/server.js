@@ -31,6 +31,7 @@ const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
 const feedbackRoutes = require("./routes/feedback.routes");
 const notificationRoutes = require("./routes/notification.routes");
+const systemRoutes = require("./routes/system.routes");
 const uploadRoutes = require("./routes/upload.routes");
 const todoRoutes = require("./routes/todo.routes");
 const commissionRoutes = require("./routes/commission.routes");
@@ -53,6 +54,7 @@ const setupChatSocket = require("./sockets/chat.socket");
 // =========================
 
 const app = express();
+app.set("trust proxy", 1);
 
 // Tạo HTTP server từ Express
 // Socket.IO sẽ chạy trên server này
@@ -166,6 +168,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/feedback", feedbackRoutes);
 
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/system", systemRoutes);
 
 app.use("/api/upload", uploadRoutes);
 

@@ -10,6 +10,7 @@ import {
   Popconfirm,
   Select,
   Space,
+  Switch,
   Table,
   Tag,
   Tooltip,
@@ -45,6 +46,8 @@ import {
 } from "../../services/workSchedule.service";
 import { createFeedbackTag, deleteFeedbackTag, getFeedbackTags } from "../../services/feedbackTag.service";
 import { useAuth } from "../../store/AuthContext";
+import { getSystemStatus, setMaintenanceMode } from "../../services/system.service";
+import { onSystemNotificationChanged } from "../../services/socket";
 const Notifications = () => {
   const { user } = useAuth();
   const [form] = Form.useForm();
@@ -64,6 +67,8 @@ const Notifications = () => {
   const [feedbackTags, setFeedbackTags] = useState([]);
   const [newFeedbackTag, setNewFeedbackTag] = useState("");
   const [tagSaving, setTagSaving] = useState(false);
+  const [maintenanceMode, setMaintenanceModeState] = useState(false);
+  const [maintenanceSaving, setMaintenanceSaving] = useState(false);
   // =========================
   // LOAD DATA
   // =========================
@@ -122,12 +127,16 @@ const Notifications = () => {
       setFeedbackTags([]);
     }
   }, [user?.role]);
+  const loadMaintenance = useCallback(async () => { if (user?.role !== "admin") return; try { const response = await getSystemStatus(); setMaintenanceModeState(Boolean(response.data?.data?.maintenanceMode)); } catch {} }, [user?.role]);
 
   useEffect(() => {
     void loadNotifications();
     void loadWorkSchedule();
     void loadFeedbackTags();
-  }, [loadNotifications, loadWorkSchedule, loadFeedbackTags]);
+    void loadMaintenance();
+  }, [loadNotifications, loadWorkSchedule, loadFeedbackTags, loadMaintenance]);
+  useEffect(() => onSystemNotificationChanged(loadNotifications), [loadNotifications]);
+  const changeMaintenance = async (checked) => { try { setMaintenanceSaving(true); await setMaintenanceMode(checked); setMaintenanceModeState(checked); message.success(checked ? "Đã bật chế độ bảo trì" : "Đã tắt chế độ bảo trì"); } catch (error) { message.error(error.response?.data?.message || "Không thể cập nhật chế độ bảo trì"); } finally { setMaintenanceSaving(false); } };
 
   const handleCreateFeedbackTag = async () => {
     const label = newFeedbackTag.trim();
@@ -613,6 +622,7 @@ const Notifications = () => {
           </Button>
         </Space>
       </div>
+      {user?.role === "admin" && <Card className="erp-section-card"><div className="flex items-center justify-between gap-4"><div><b>Chế độ bảo trì</b><p className="m-0 mt-1 text-sm text-slate-500">Bật lên để đăng xuất toàn bộ người dùng và hiển thị trang bảo trì. Admin vẫn có thể truy cập để tắt.</p></div><Switch checked={maintenanceMode} loading={maintenanceSaving} onChange={changeMaintenance} checkedChildren="Bật" unCheckedChildren="Tắt" /></div></Card>}
       {/* ================= WORK SCHEDULE ================= */}
 
       <Card

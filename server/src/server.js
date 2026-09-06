@@ -41,6 +41,7 @@ const workScheduleRoutes = require("./routes/workSchedule.routes");
 const conversationRoutes = require("./routes/conversation.routes");
 const messageRoutes = require("./routes/message.routes");
 const cfsRoutes = require("./routes/cfs.routes");
+const { auditMutations } = require("./middleware/audit.middleware");
 // =========================
 // SOCKET
 // =========================
@@ -156,6 +157,9 @@ setupChatSocket(io);
 app.use(express.json({ limit: "10mb" }));
 
 app.use(express.urlencoded({ extended: true }));
+
+// Ghi lại mọi thao tác thêm, sửa, xóa thành công của tài khoản đã đăng nhập.
+app.use(auditMutations);
 
 // =========================
 // API ROUTES

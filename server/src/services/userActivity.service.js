@@ -1,8 +1,10 @@
 const UserActivity = require("../models/UserActivity");
 
-const recordActivity = async ({ user, type, imageUrl = "", oldImageUrl = "", newImageUrl = "", ipAddress = "", userAgent = "" }) => {
+const ACTIVITY_TYPES = ["login", "password_changed", "avatar_changed", "cover_changed", "created", "updated", "deleted"];
+
+const recordActivity = async ({ user, type, imageUrl = "", oldImageUrl = "", newImageUrl = "", ipAddress = "", userAgent = "", resource = "", target = "" }) => {
   try {
-    await UserActivity.create({ user, type, imageUrl, oldImageUrl, newImageUrl: newImageUrl || imageUrl, ipAddress, userAgent });
+    await UserActivity.create({ user, type, imageUrl, oldImageUrl, newImageUrl: newImageUrl || imageUrl, ipAddress, userAgent, resource, target });
   } catch (error) {
     // Không để việc ghi audit làm hỏng thao tác chính của người dùng.
     console.error("Record user activity failed:", error);
@@ -14,7 +16,7 @@ const getActivities = async ({ page = 1, limit = 30, userId, type }) => {
   const currentLimit = Math.min(Math.max(Number(limit) || 30, 1), 100);
   const filter = {};
   if (userId) filter.user = userId;
-  if (["login", "password_changed", "avatar_changed", "cover_changed"].includes(type)) filter.type = type;
+  if (ACTIVITY_TYPES.includes(type)) filter.type = type;
 
   const [activities, total] = await Promise.all([
     UserActivity.find(filter)

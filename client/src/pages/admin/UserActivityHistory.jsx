@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, Card, Image, Popconfirm, Select, Table, Tag, message } from "antd";
 import UserAvatar from "../../components/common/UserAvatar";
-import { DeleteOutlined, LockOutlined, LoginOutlined, PictureOutlined, ReloadOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, LockOutlined, LoginOutlined, PictureOutlined, PlusOutlined, ReloadOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { deleteAllUserActivities, deleteUserActivity, getUserActivities } from "../../services/user.service";
 
@@ -10,6 +10,9 @@ const activityConfig = {
   password_changed: { label: "Đổi mật khẩu", color: "gold", icon: <LockOutlined /> },
   avatar_changed: { label: "Đổi avatar", color: "purple", icon: <PictureOutlined /> },
   cover_changed: { label: "Đổi ảnh bìa", color: "cyan", icon: <PictureOutlined /> },
+  created: { label: "Thêm", color: "green", icon: <PlusOutlined /> },
+  updated: { label: "Chỉnh sửa", color: "orange", icon: <EditOutlined /> },
+  deleted: { label: "Xóa", color: "red", icon: <DeleteOutlined /> },
 };
 
 const getDevice = (userAgent = "") => {
@@ -73,10 +76,17 @@ const UserActivityHistory = () => {
     },
     {
       title: "Hoạt động", dataIndex: "type", width: 170,
-      render: (value) => {
+      render: (value, record) => {
         const config = activityConfig[value] || { label: value, color: "default" };
-        return <Tag color={config.color} icon={config.icon}>{config.label}</Tag>;
+        const label = ["created", "updated", "deleted"].includes(value) && record.resource
+          ? `${config.label} ${record.resource}`
+          : config.label;
+        return <Tag color={config.color} icon={config.icon}>{label}</Tag>;
       },
+    },
+    {
+      title: "Dữ liệu tác động", key: "target", width: 240,
+      render: (_, record) => <div className="text-sm text-slate-700"><div className="font-medium">{record.resource || "—"}</div>{record.target && record.target !== record.resource && <div className="mt-0.5 break-all text-xs text-slate-400">{record.target}</div>}</div>,
     },
 
     {
@@ -101,7 +111,7 @@ const UserActivityHistory = () => {
   return (
     <div>
       <div className="erp-page-header">
-        <div><div className="erp-page-eyebrow">Quản trị hệ thống</div><h1 className="erp-page-title">Lịch sử người dùng</h1><p className="erp-page-description">Theo dõi đăng nhập, thiết bị và các thay đổi bảo mật, avatar, ảnh bìa.</p></div>
+        <div><div className="erp-page-eyebrow">Quản trị hệ thống</div><h1 className="erp-page-title">Lịch sử người dùng</h1><p className="erp-page-description">Theo dõi tài khoản nào đã thêm, sửa, xóa dữ liệu, cùng các hoạt động đăng nhập và bảo mật.</p></div>
         <Popconfirm title="Xóa toàn bộ lịch sử?" description="Thao tác này không thể hoàn tác." okText="Xóa toàn bộ" cancelText="Hủy" okButtonProps={{ danger: true }} onConfirm={handleDeleteAll}>
           <Button danger icon={<DeleteOutlined />}>Xóa toàn bộ</Button>
         </Popconfirm>
@@ -113,7 +123,7 @@ const UserActivityHistory = () => {
         </div>
       </Card>
       <Card className="erp-section-card erp-table-card" styles={{ body: { padding: 0 } }}>
-        <Table rowKey="_id" columns={columns} dataSource={activities} loading={loading} scroll={{ x: 1290 }} pagination={{ pageSize: 10, showSizeChanger: false }} />
+        <Table rowKey="_id" columns={columns} dataSource={activities} loading={loading} scroll={{ x: 1530 }} pagination={{ pageSize: 10, showSizeChanger: false }} />
       </Card>
     </div>
   );

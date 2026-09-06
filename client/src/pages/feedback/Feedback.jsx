@@ -326,11 +326,22 @@ const Feedback = () => {
         );
       }
 
-      setFormModalOpen(false);
+      if (editingFeedback) {
+        setFormModalOpen(false);
 
-      setEditingFeedback(null);
+        setEditingFeedback(null);
 
-      form.resetFields();
+        form.resetFields();
+      } else {
+        // Giữ form mở để có thể nhập feedback cho bàn tiếp theo.
+        form.resetFields();
+
+        form.setFieldsValue({
+          dateTime: dayjs(),
+        });
+
+        setShowPresetTags(false);
+      }
 
       await loadFeedbacks();
     } catch (error) {
@@ -811,8 +822,10 @@ const Feedback = () => {
           },
         }}
         destroyOnHidden
-        maskClosable={!saving}
-        keyboard={!saving}
+        // Chỉ nút Hủy mới được phép bỏ dữ liệu đang nhập.
+        closable={false}
+        maskClosable={false}
+        keyboard={false}
       >
         <Form
           form={form}

@@ -18,6 +18,10 @@ const TodoModal = ({ open, editingTodo, loading, onClose, onSubmit }) => {
       okText={editingTodo ? "Lưu thay đổi" : "Giao công việc"}
       cancelText="Hủy"
       confirmLoading={loading}
+      // Tránh đóng nhầm khi chạm ra ngoài; chỉ nút Hủy mới bỏ dữ liệu.
+      closable={false}
+      maskClosable={false}
+      keyboard={false}
       onCancel={() => {
         form.resetFields();
         onClose();

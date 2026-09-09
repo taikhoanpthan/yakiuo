@@ -21,6 +21,7 @@ router.delete("/stories/:storyId", controller.deleteStory);
 router.get("/", controller.getPosts);
 router.get("/:id", controller.getPost);
 router.post("/", controller.createPost);
+router.put("/:id", controller.updatePost);
 router.post("/:id/like", controller.toggleLike);
 router.post("/:id/pin", controller.togglePin);
 router.post("/:id/replies", controller.reply);

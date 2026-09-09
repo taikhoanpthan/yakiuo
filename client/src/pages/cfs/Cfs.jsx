@@ -14,6 +14,7 @@ import {
   BellOutlined,
   CloseOutlined,
   DeleteOutlined,
+  EditOutlined,
   HeartFilled,
   HeartOutlined,
   MessageOutlined,
@@ -55,6 +56,7 @@ import {
   toggleCfsPin,
   toggleCfsReplyLike,
   uploadCfsImage,
+  updateCfsPost,
 } from "../../services/cfs.service";
 import { onCfsChanged, onCfsNotification, onOnlineUsers } from "../../services/socket";
 import UserAvatar from "../../components/common/UserAvatar";
@@ -192,7 +194,7 @@ const Author = ({ author, createdAt, admin, isPostAuthor = false }) => (
     )}
   </div>
 );
-const PostHeader = ({ author, createdAt, admin, post, onTogglePin, onDelete }) => {
+const PostHeader = ({ author, createdAt, admin, post, onTogglePin, onDelete, onEdit }) => {
   const menuItems = [];
   if (post.canPin) menuItems.push({
     key: "pin",
@@ -200,6 +202,7 @@ const PostHeader = ({ author, createdAt, admin, post, onTogglePin, onDelete }) =
     label: post.isPinned ? "Bỏ ghim bài viết" : "Ghim bài viết",
     onClick: onTogglePin,
   });
+  if (post.isOwner && onEdit) menuItems.push({ key: "edit", icon: <EditOutlined />, label: "Chỉnh sửa bài viết", onClick: () => onEdit(post) });
   if (post.canManage) menuItems.push({
     key: "delete",
     icon: <DeleteOutlined />,
@@ -654,7 +657,7 @@ const StoryCreator = ({ open, onClose, onCreated }) => {
     }
   };
   const addSpotifyLink = async () => {
-    if (!spotifyUrl.trim()) return message.warning("Dán link Spotify hoặc YouTube trước");
+    if (!spotifyUrl.trim()) return message.warning("Dán link Spotify, YouTube hoặc TikTok trước");
     try {
       setResolvingSpotify(true);
       const response = await resolveCfsMusicLink(spotifyUrl.trim());
@@ -701,14 +704,14 @@ const StoryCreator = ({ open, onClose, onCreated }) => {
           <label className="cfs-story-image-button"><PictureOutlined /> {uploading ? "Đang tải..." : "Chọn ảnh"}<input type="file" accept="image/*" onChange={selectImage} disabled={uploading} /></label>
           <span className="cfs-story-colors">{storyBackgrounds.map((color) => <button type="button" aria-label="Chọn nền Story" className={background === color && !imageUrl ? "is-selected" : ""} key={color} style={{ background: color }} onClick={() => setBackground(color)} />)}</span>
         </div>
-        <button type="button" className={selectedMusic ? "cfs-story-music-summary has-music" : "cfs-story-music-summary"} onClick={() => setMusicPickerOpen(true)}>{selectedMusic?.artworkUrl ? <img src={selectedMusic.artworkUrl} alt="" /> : <SoundOutlined />}<span>{selectedMusic ? <><small>Nhạc trong Story</small><b>{selectedMusic.title} · {selectedMusic.artist}</b></> : <><b>Thêm nhạc</b><small>Audius, Spotify hoặc YouTube</small></>}</span><em>{selectedMusic ? "Đổi" : "+"}</em></button>
+        <button type="button" className={selectedMusic ? "cfs-story-music-summary has-music" : "cfs-story-music-summary"} onClick={() => setMusicPickerOpen(true)}>{selectedMusic?.artworkUrl ? <img src={selectedMusic.artworkUrl} alt="" /> : <SoundOutlined />}<span>{selectedMusic ? <><small>Nhạc trong Story</small><b>{selectedMusic.title} · {selectedMusic.artist}</b></> : <><b>Thêm nhạc</b><small>Audius, Spotify, YouTube hoặc TikTok</small></>}</span><em>{selectedMusic ? "Đổi" : "+"}</em></button>
       </div>
     </Modal>
     <Modal open={musicPickerOpen} footer={null} onCancel={() => setMusicPickerOpen(false)} title="Chọn nhạc" className="cfs-music-picker-modal" destroyOnHidden>
       <div className="cfs-story-music-picker">
-        <div className="cfs-music-source-tabs"><button type="button" className={musicSource === "audius" ? "is-active" : ""} onClick={() => setMusicSource("audius")}>Tìm Audius</button><button type="button" className={musicSource === "spotify" ? "is-active" : ""} onClick={() => setMusicSource("spotify")}>Spotify</button><button type="button" className={musicSource === "youtube" ? "is-active" : ""} onClick={() => setMusicSource("youtube")}>YouTube</button></div>
+        <div className="cfs-music-source-tabs"><button type="button" className={musicSource === "audius" ? "is-active" : ""} onClick={() => setMusicSource("audius")}>Audius</button><button type="button" className={musicSource === "spotify" ? "is-active" : ""} onClick={() => setMusicSource("spotify")}>Spotify</button><button type="button" className={musicSource === "youtube" ? "is-active" : ""} onClick={() => setMusicSource("youtube")}>YouTube</button><button type="button" className={musicSource === "tiktok" ? "is-active" : ""} onClick={() => setMusicSource("tiktok")}>TikTok</button></div>
         {musicSource === "audius" && <Input.Search value={musicQuery} onChange={(event) => setMusicQuery(event.target.value)} onSearch={searchMusic} enterButton={<SearchOutlined />} loading={musicLoading} placeholder="Tên bài hát hoặc ca sĩ" maxLength={100} />}
-        {(musicSource === "spotify" || musicSource === "youtube") && <Input.Search value={spotifyUrl} onChange={(event) => setSpotifyUrl(event.target.value)} onSearch={addSpotifyLink} enterButton="Thêm" loading={resolvingSpotify} placeholder={musicSource === "youtube" ? "Dán link video YouTube" : "Dán link bài hát Spotify"} />}
+        {(musicSource === "spotify" || musicSource === "youtube" || musicSource === "tiktok") && <Input.Search value={spotifyUrl} onChange={(event) => setSpotifyUrl(event.target.value)} onSearch={addSpotifyLink} enterButton="Thêm" loading={resolvingSpotify} placeholder={musicSource === "youtube" ? "Dán link video YouTube" : musicSource === "tiktok" ? "Dán link video TikTok" : "Dán link bài hát Spotify"} />}
         {selectedMusic && <div className="cfs-story-selected-music"><span><SoundOutlined /> <b>{selectedMusic.title}</b><small>{selectedMusic.artist}</small></span><Button type="link" danger size="small" onClick={() => setSelectedMusic(null)}>Bỏ nhạc</Button></div>}
         {selectedMusic?.provider === "audius" && <div className="cfs-story-clip-picker"><b>Đoạn nhạc trong Story <small>(25 giây)</small></b><audio controls preload="metadata" src={`${API_BASE_URL}/cfs/audius/tracks/${encodeURIComponent(selectedMusic.trackId)}/stream`} /><Slider min={0} max={Math.max(0, (selectedMusic.duration || 0) - 25)} value={Math.min(selectedMusic.startAt || 0, Math.max(0, (selectedMusic.duration || 0) - 25))} onChange={(startAt) => setSelectedMusic((current) => ({ ...current, startAt }))} tooltip={{ formatter: (value) => `Bắt đầu ${formatAudioTime(value)}` }} /><small>Bắt đầu từ {formatAudioTime(selectedMusic.startAt || 0)} — kéo tới đoạn điệp khúc bạn muốn.</small></div>}
         {musicSource === "audius" && musicResults.length > 0 && <div className="cfs-story-music-results">{musicResults.map((track) => <button type="button" key={track.trackId} className={selectedMusic?.trackId === track.trackId ? "is-selected" : ""} onClick={() => setSelectedMusic({ ...track, provider: "audius", startAt: 0 })}>{track.artworkUrl ? <img src={track.artworkUrl} alt="" /> : <SoundOutlined />}<span><b>{track.title}</b><small>{track.artist}</small></span></button>)}</div>}
@@ -724,19 +727,14 @@ const StoryViewer = ({ story, stories, onClose, onNavigate, onDelete, externalAu
   const audioRef = externalAudioRef || localAudioRef;
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [spotifyEmbedOpen, setSpotifyEmbedOpen] = useState(false);
+  const [storyMenuOpen, setStoryMenuOpen] = useState(false);
   const [storyProgress, setStoryProgress] = useState(0);
   const storyGroup = useMemo(() => stories.filter((item) => getStoryAuthorKey(item) === getStoryAuthorKey(story)), [stories, story]);
   const index = storyGroup.findIndex((item) => item._id === story?._id);
   const allStoriesIndex = stories.findIndex((item) => item._id === story?._id);
   const previousStory = index > 0 ? storyGroup[index - 1] : allStoriesIndex > 0 ? stories[allStoriesIndex - 1] : null;
   const nextStory = index >= 0 && index < storyGroup.length - 1 ? storyGroup[index + 1] : allStoriesIndex >= 0 && allStoriesIndex < stories.length - 1 ? stories[allStoriesIndex + 1] : null;
-  const storyMenuItems = story?.canManage ? [{
-    key: "delete",
-    icon: <DeleteOutlined />,
-    danger: true,
-    label: "Xóa Story",
-    onClick: () => Modal.confirm({ title: "Xóa Story này?", content: "Story sẽ không thể khôi phục.", okText: "Xóa", cancelText: "Hủy", okButtonProps: { danger: true }, onOk: () => onDelete(story._id) }),
-  }] : [];
+  useEffect(() => setStoryMenuOpen(false), [story?._id]);
   useEffect(() => {
     setMusicPlaying(false);
     const audio = audioRef.current;
@@ -777,7 +775,7 @@ const StoryViewer = ({ story, stories, onClose, onNavigate, onDelete, externalAu
     return () => cancelAnimationFrame(animationFrame);
   }, [story?._id, nextStory, onClose, onNavigate]);
   const toggleMusic = async () => {
-    if (story?.music?.provider === "spotify" || story?.music?.provider === "youtube") {
+    if (["spotify", "youtube", "tiktok"].includes(story?.music?.provider)) {
       setSpotifyEmbedOpen((open) => !open);
       return;
     }
@@ -809,11 +807,11 @@ const StoryViewer = ({ story, stories, onClose, onNavigate, onDelete, externalAu
         <div className="cfs-story-full-author">
           <UserAvatar size={40} user={story.author}>{story.author.name?.slice(0, 1)}</UserAvatar>
           <span><b>{story.author.name}</b><small>{timeAgo(story.createdAt)}</small>{story.music?.trackId && <button type="button" className="cfs-story-inline-music" onClick={toggleMusic} title={musicPlaying ? "Tạm dừng nhạc" : "Phát nhạc"}><SoundOutlined /><em>{story.music.title} · {story.music.artist}</em>{musicPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}</button>}</span>
-          {storyMenuItems.length > 0 && <Dropdown menu={{ items: storyMenuItems }} trigger={["click"]} placement="bottomRight"><button type="button" className="cfs-story-more" aria-label="Tùy chọn Story"><MoreOutlined /></button></Dropdown>}
+          {story.canManage && <span className="cfs-story-menu-wrap"><button type="button" className="cfs-story-more" aria-label="Tùy chọn Story" onClick={() => setStoryMenuOpen((open) => !open)}><MoreOutlined /></button>{storyMenuOpen && <button type="button" className="cfs-story-delete-menu" onClick={() => { if (window.confirm("Xóa Story này?")) onDelete(story._id); }}><DeleteOutlined /> Xóa Story</button>}</span>}
         </div>
         {story.content && <p>{story.content}</p>}
-        {!story.content && story.music?.trackId && <button type="button" className="cfs-story-music-card" onClick={toggleMusic}>{story.music.artworkUrl ? <img src={story.music.artworkUrl} alt="" /> : <span className="cfs-story-music-card-icon"><SoundOutlined /></span>}<span><small>{story.music.provider === "spotify" ? "Spotify" : "Audius"}</small><b>{story.music.title}</b><em>{story.music.artist}</em></span>{story.music.provider === "spotify" ? <PlayCircleOutlined /> : musicPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}</button>}
-        {(story.music?.provider === "spotify" || story.music?.provider === "youtube") && spotifyEmbedOpen && <iframe className="cfs-story-spotify-embed" title={`${story.music.provider}: ${story.music.title}`} src={story.music.embedUrl} width="100%" height={story.music.provider === "youtube" ? "180" : "80"} frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" />}
+        {!story.content && !story.imageUrl && story.music?.trackId && <button type="button" className="cfs-story-music-card" onClick={toggleMusic}>{story.music.artworkUrl ? <img src={story.music.artworkUrl} alt="" /> : <span className="cfs-story-music-card-icon"><SoundOutlined /></span>}<span><small>{story.music.provider === "spotify" ? "Spotify" : story.music.provider === "youtube" ? "YouTube" : story.music.provider === "tiktok" ? "TikTok" : "Audius"}</small><b>{story.music.title}</b><em>{story.music.artist}</em></span>{["spotify", "youtube", "tiktok"].includes(story.music.provider) ? <PlayCircleOutlined /> : musicPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}</button>}
+        {["spotify", "youtube", "tiktok"].includes(story.music?.provider) && spotifyEmbedOpen && <iframe className="cfs-story-spotify-embed" title={`${story.music.provider}: ${story.music.title}`} src={story.music.embedUrl} width="100%" height={story.music.provider === "spotify" ? "80" : story.music.provider === "youtube" ? "180" : "500"} frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" />}
         {!externalAudioRef && story.music?.provider === "audius" && story.music.trackId && <audio ref={localAudioRef} className="cfs-story-audio" preload="auto" onPlay={() => setMusicPlaying(true)} onPause={() => setMusicPlaying(false)} src={`${API_BASE_URL}/cfs/audius/tracks/${encodeURIComponent(story.music.trackId)}/stream`} />}
       </div>
       </motion.div>
@@ -1142,6 +1140,8 @@ const Cfs = () => {
   const [submitting, setSubmitting] = useState(false);
   const [detailPost, setDetailPost] = useState(null);
   const [likesPost, setLikesPost] = useState(null);
+  const [editingPost, setEditingPost] = useState(null);
+  const [editingPostSaving, setEditingPostSaving] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyContent, setReplyContent] = useState("");
   const [replyAnonymous, setReplyAnonymous] = useState(false);
@@ -1428,6 +1428,25 @@ const Cfs = () => {
       message.error(error.response?.data?.message || "Không thể xóa bài viết");
     }
   };
+  const savePostEdit = async () => {
+    if (!editingPost) return;
+    if (!editingPost.content?.trim() && !editingPost.imageUrl) return message.warning("Bài viết cần có nội dung hoặc ảnh");
+    try {
+      setEditingPostSaving(true);
+      const response = await updateCfsPost(editingPost._id, { content: editingPost.content, imageUrl: editingPost.imageUrl, background: editingPost.background });
+      const updatedPost = response.data?.data?.post;
+      if (updatedPost) {
+        setPosts((current) => current.map((post) => post._id === updatedPost._id ? updatedPost : post));
+        setDetailPost((current) => current?._id === updatedPost._id ? updatedPost : current);
+      }
+      setEditingPost(null);
+      message.success("Đã chỉnh sửa bài viết");
+    } catch (error) {
+      message.error(error.response?.data?.message || "Không thể chỉnh sửa bài viết");
+    } finally {
+      setEditingPostSaving(false);
+    }
+  };
   const removeReply = async (targetPostId, replyId) => {
     try {
       await deleteCfsReply(targetPostId, replyId);
@@ -1598,9 +1617,10 @@ const Cfs = () => {
                       author={post.author}
                       createdAt={post.createdAt}
                       admin={user?.role === "admin"}
-                      post={post}
-                      onTogglePin={() => togglePin(post._id)}
-                      onDelete={removePost}
+                    post={post}
+                    onTogglePin={() => togglePin(post._id)}
+                    onDelete={removePost}
+                    onEdit={setEditingPost}
                     />
                     <p>{post.content}</p>
                     <PostActions
@@ -1637,6 +1657,9 @@ const Cfs = () => {
         </main>
       </div>
       <CfsActivityBell onOpenPost={setDetailPostId} elevated />
+      <Modal open={Boolean(editingPost)} title="Chỉnh sửa bài viết" okText="Lưu thay đổi" cancelText="Hủy" onCancel={() => setEditingPost(null)} onOk={savePostEdit} confirmLoading={editingPostSaving} destroyOnHidden>
+        <Input.TextArea value={editingPost?.content || ""} onChange={(event) => setEditingPost((current) => ({ ...current, content: event.target.value }))} placeholder="Bạn muốn chia sẻ điều gì?" maxLength={2000} autoSize={{ minRows: 4, maxRows: 8 }} />
+      </Modal>
       <StoryCreator
         open={storyCreatorOpen}
         onClose={() => setStoryCreatorOpen(false)}

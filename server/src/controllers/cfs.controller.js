@@ -236,7 +236,23 @@ exports.resolveExternalMusic = async (req, res) => {
       return res.json({ success: true, data: { music: { provider: "spotify", trackId: trackMatch[1], title: String(payload.title || "Bài hát Spotify").slice(0, 200), artist: "Spotify", artworkUrl: String(payload.thumbnail_url || "").slice(0, 1000), embedUrl: `https://open.spotify.com/embed/track/${trackMatch[1]}`, duration: 0, startAt: 0 } } });
     }
     const isYoutube = ["youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"].includes(parsedUrl.hostname);
-    if (!isYoutube) return res.status(400).json({ success: false, message: "Chỉ hỗ trợ link Spotify hoặc YouTube" });
+    const isTikTok = ["tiktok.com", "www.tiktok.com", "m.tiktok.com", "vm.tiktok.com", "vt.tiktok.com"].includes(parsedUrl.hostname);
+    if (!isYoutube && !isTikTok) return res.status(400).json({ success: false, message: "Chỉ hỗ trợ link Spotify, YouTube hoặc TikTok" });
+    if (isTikTok) {
+      let tiktokUrl = parsedUrl;
+      if (["vm.tiktok.com", "vt.tiktok.com"].includes(tiktokUrl.hostname)) {
+        const resolved = await fetch(sourceUrl, { redirect: "follow" });
+        tiktokUrl = new URL(resolved.url);
+      }
+      const videoId = tiktokUrl.pathname.match(/\/video\/(\d+)/)?.[1];
+      if (!videoId) return res.status(400).json({ success: false, message: "Hãy dán link một video TikTok hợp lệ" });
+      const oembedUrl = new URL("https://www.tiktok.com/oembed");
+      oembedUrl.searchParams.set("url", tiktokUrl.toString());
+      const response = await fetch(oembedUrl, { headers: { Accept: "application/json" } });
+      if (!response.ok) throw new Error("TikTok không trả về video");
+      const payload = await response.json();
+      return res.json({ success: true, data: { music: { provider: "tiktok", trackId: videoId, title: String(payload.title || "Video TikTok").slice(0, 200), artist: String(payload.author_name || "TikTok").slice(0, 160), artworkUrl: String(payload.thumbnail_url || "").slice(0, 1000), embedUrl: `https://www.tiktok.com/embed/v2/${videoId}`, duration: 0, startAt: 0 } } });
+    }
     const videoId = parsedUrl.hostname === "youtu.be"
       ? parsedUrl.pathname.split("/").filter(Boolean)[0]
       : parsedUrl.searchParams.get("v") || parsedUrl.pathname.match(/^\/(?:shorts|embed)\/([A-Za-z0-9_-]{11})/)?.[1];
@@ -259,7 +275,7 @@ exports.createStory = async (req, res) => {
     const imageUrl = String(req.body.imageUrl || "").trim();
     const background = String(req.body.background || "#334155").trim();
     const rawMusic = req.body.music && typeof req.body.music === "object" ? req.body.music : null;
-    const externalProvider = ["spotify", "youtube"].includes(rawMusic?.provider) ? rawMusic.provider : "";
+    const externalProvider = ["spotify", "youtube", "tiktok"].includes(rawMusic?.provider) ? rawMusic.provider : "";
     const music = rawMusic?.trackId ? {
       provider: externalProvider || "audius",
       trackId: String(rawMusic.trackId).trim().slice(0, 120),
@@ -268,7 +284,7 @@ exports.createStory = async (req, res) => {
       artworkUrl: String(rawMusic.artworkUrl || "").trim().slice(0, 1000),
       duration: Math.max(0, Math.min(Number(rawMusic.duration) || 0, 7200)),
       startAt: Math.max(0, Math.min(Number(rawMusic.startAt) || 0, 7200)),
-      embedUrl: externalProvider === "spotify" ? `https://open.spotify.com/embed/track/${String(rawMusic.trackId).trim().slice(0, 120)}` : externalProvider === "youtube" ? `https://www.youtube-nocookie.com/embed/${String(rawMusic.trackId).trim().slice(0, 120)}?autoplay=1&rel=0` : "",
+      embedUrl: externalProvider === "spotify" ? `https://open.spotify.com/embed/track/${String(rawMusic.trackId).trim().slice(0, 120)}` : externalProvider === "youtube" ? `https://www.youtube-nocookie.com/embed/${String(rawMusic.trackId).trim().slice(0, 120)}?autoplay=1&rel=0` : externalProvider === "tiktok" ? `https://www.tiktok.com/embed/v2/${String(rawMusic.trackId).trim().slice(0, 120)}` : "",
     } : undefined;
     if (!content && !imageUrl && !music) return res.status(400).json({ success: false, message: "Vui lòng nhập nội dung, chọn ảnh hoặc thêm nhạc" });
     if (music && !/^[A-Za-z0-9_-]{1,120}$/.test(music.trackId)) return res.status(400).json({ success: false, message: "Bài hát không hợp lệ" });
@@ -335,6 +351,27 @@ exports.createPost = async (req, res) => {
     broadcastCfsChanged(req, { postId: String(post._id), action: "created" });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message || "Không thể đăng bài" });
+  }
+};
+
+exports.updatePost = async (req, res) => {
+  try {
+    const post = await CfsPost.findById(req.params.id);
+    if (!post) return res.status(404).json({ success: false, message: "Không tìm thấy bài viết" });
+    if (!sameId(post.author, req.user)) return res.status(403).json({ success: false, message: "Chỉ người đăng mới có quyền chỉnh sửa bài viết" });
+    const content = String(req.body.content || "").trim();
+    const imageUrl = String(req.body.imageUrl || "").trim();
+    const background = String(req.body.background || "").trim();
+    if (!content && !imageUrl) return res.status(400).json({ success: false, message: "Bài viết cần có nội dung hoặc ảnh" });
+    post.content = content;
+    post.imageUrl = imageUrl;
+    post.background = background;
+    await post.save();
+    const hydrated = await populatePost(CfsPost.findById(post._id));
+    res.json({ success: true, data: { post: presentPost(hydrated, req.user) } });
+    broadcastCfsChanged(req, { postId: String(post._id), action: "updated" });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message || "Không thể chỉnh sửa bài viết" });
   }
 };
 

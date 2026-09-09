@@ -12,6 +12,7 @@ export const deleteCfsStory = (id) => api.delete(`/cfs/stories/${id}`);
 export const getCfsIdentity = () => api.get("/cfs/identity");
 export const setCfsIdentity = (alias) => api.post("/cfs/identity", { alias });
 export const createCfsPost = (data) => api.post("/cfs", data);
+export const updateCfsPost = (id, data) => api.put(`/cfs/${id}`, data);
 export const toggleCfsLike = (id) => api.post(`/cfs/${id}/like`);
 export const toggleCfsPin = (id) => api.post(`/cfs/${id}/pin`);
 export const createCfsReply = (id, data) => api.post(`/cfs/${id}/replies`, data);

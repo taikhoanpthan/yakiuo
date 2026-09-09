@@ -7,6 +7,7 @@ import {
 
 import {
   DeleteOutlined,
+  CheckCircleFilled,
   DollarOutlined,
   EditOutlined,
 } from "@ant-design/icons";
@@ -23,6 +24,7 @@ const CommissionHistory = ({
   onEdit,
   onDelete,
   onLoadMore,
+  onToggleBillCollected,
 }) => {
   const formatMoney = (value) => {
     return `${Number(value || 0).toLocaleString(
@@ -95,7 +97,11 @@ const CommissionHistory = ({
           {commissions.map((item) => (
             <div
               key={item._id}
-              className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 transition hover:border-slate-200"
+              className={`rounded-2xl border p-4 transition ${item.billCollected ? "border-emerald-200 bg-emerald-50/50" : "border-slate-100 bg-slate-50/50 hover:border-slate-200"}`}
+              role="button"
+              tabIndex={0}
+              onClick={() => onToggleBillCollected?.(item)}
+              onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") onToggleBillCollected?.(item); }}
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 {/* =========================
@@ -117,6 +123,7 @@ const CommissionHistory = ({
                     <span className="font-semibold text-slate-800">
                       {getTypeLabel(item)}
                     </span>
+                    {item.billCollected && <Tag color="green" icon={<CheckCircleFilled />}>Đã lấy bill</Tag>}
                   </div>
 
                   {/* META */}
@@ -178,9 +185,7 @@ const CommissionHistory = ({
                       icon={
                         <EditOutlined />
                       }
-                      onClick={() =>
-                        onEdit?.(item)
-                      }
+                      onClick={(event) => { event.stopPropagation(); onEdit?.(item); }}
                     />
 
                     <Button
@@ -190,9 +195,7 @@ const CommissionHistory = ({
                       icon={
                         <DeleteOutlined />
                       }
-                      onClick={() =>
-                        onDelete?.(item)
-                      }
+                      onClick={(event) => { event.stopPropagation(); onDelete?.(item); }}
                     />
                   </div>
                 </div>

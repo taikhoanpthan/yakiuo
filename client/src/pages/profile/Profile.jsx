@@ -41,6 +41,7 @@ import {
 
 import Commission from "../commission/Commission";
 import CommissionGG from "../commission/CommissionGG";
+import TrashBin from "./TrashBin";
 import HamsterLoader from "../../components/common/HamsterLoader";
 
 const toSliderNumber = (value, fallback, min, max) => {
@@ -137,8 +138,8 @@ const Profile = () => {
         throw new Error("Chỉ được upload file hình ảnh");
       }
 
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error("Ảnh không được vượt quá 5MB");
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error("Ảnh không được vượt quá 10MB");
       }
 
       setUploading(true);
@@ -197,8 +198,8 @@ const Profile = () => {
         throw new Error("Chỉ được upload file hình ảnh");
       }
 
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error("Ảnh không được vượt quá 5MB");
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error("Ảnh không được vượt quá 10MB");
       }
 
       setUploadingCover(true);
@@ -877,6 +878,7 @@ const Profile = () => {
               </Card>
 
               <CommissionGG />
+              <TrashBin />
             </div>
           </div>
         </div>

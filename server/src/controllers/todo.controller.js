@@ -2,12 +2,16 @@ const todoService = require("../services/todo.service");
 
 const getTodos = async (req, res) => {
   try {
-    const todos = await todoService.getTodos();
+    const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 5, 1), 50);
+    const completed = req.query.completed === "true" ? true : req.query.completed === "false" ? false : undefined;
+    const { todos, total } = await todoService.getTodos({ page, limit, priority: req.query.priority, completed });
 
     return res.status(200).json({
       success: true,
       data: {
         todos,
+        pagination: { page, limit, total, hasMore: page * limit < total },
       },
     });
   } catch (error) {

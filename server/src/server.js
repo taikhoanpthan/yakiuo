@@ -41,6 +41,8 @@ const workScheduleRoutes = require("./routes/workSchedule.routes");
 const conversationRoutes = require("./routes/conversation.routes");
 const messageRoutes = require("./routes/message.routes");
 const cfsRoutes = require("./routes/cfs.routes");
+const trashRoutes = require("./routes/trash.routes");
+const { startTrashCleanup } = require("./services/trashCleanup.service");
 const { auditMutations } = require("./middleware/audit.middleware");
 // =========================
 // SOCKET
@@ -191,6 +193,7 @@ app.use("/api/conversations", conversationRoutes);
 app.use("/api/messages", messageRoutes);
 
 app.use("/api/cfs", cfsRoutes);
+app.use("/api/trash", trashRoutes);
 // =========================
 // CLOUDINARY TEST
 // =========================
@@ -287,6 +290,7 @@ const startServer = async () => {
     // =========================
 
     await connectDB();
+    startTrashCleanup();
 
     // =========================
     // HTTP + SOCKET SERVER

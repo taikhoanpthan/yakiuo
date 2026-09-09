@@ -41,7 +41,7 @@ const CommissionGG = () => {
   const handleUpload = async ({ file, onSuccess, onError }) => {
     try {
       if (!file.type?.startsWith("image/")) throw new Error("Chỉ được chọn ảnh");
-      if (file.size > 5 * 1024 * 1024) throw new Error("Mỗi ảnh tối đa 5MB");
+      if (file.size > 10 * 1024 * 1024) throw new Error("Mỗi ảnh tối đa 10MB");
 
       setUploading(true);
       const response = await uploadCommissionGGImages(monthKey, [file]);
@@ -110,15 +110,15 @@ const CommissionGG = () => {
             <Button type="primary" icon={<CloudUploadOutlined />} loading={uploading}>Thêm ảnh</Button>
           </Upload>
           <Popconfirm
-            title={`Xóa toàn bộ ${images.length} ảnh?`}
-            description={`Ảnh Commission GG tháng ${month.format("MM/YYYY")} sẽ bị xóa vĩnh viễn.`}
-            okText="Xóa tất cả"
+            title={`Chuyển toàn bộ ${images.length} ảnh vào thùng rác?`}
+            description={`Ảnh Commission GG tháng ${month.format("MM/YYYY")} có thể khôi phục trong 15 ngày.`}
+            okText="Chuyển vào thùng rác"
             cancelText="Hủy"
             okButtonProps={{ danger: true }}
             disabled={!images.length}
             onConfirm={handleDeleteAll}
           >
-            <Button danger icon={<DeleteOutlined />} disabled={!images.length} loading={deleting}>Xóa tất cả</Button>
+            <Button danger icon={<DeleteOutlined />} disabled={!images.length} loading={deleting}>Chuyển vào thùng rác</Button>
           </Popconfirm>
         </div>
       </div>

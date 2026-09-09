@@ -62,6 +62,9 @@ const shiftConfig = {
 const Todos = () => {
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [todoPage, setTodoPage] = useState(1);
+  const [hasMoreTodos, setHasMoreTodos] = useState(false);
 
   const [status, setStatus] = useState("pending");
   const [priority, setPriority] = useState(undefined);
@@ -80,19 +83,26 @@ const Todos = () => {
   // GET TODOS
   // =====================================================
 
-  const fetchTodos = async () => {
+  const fetchTodos = async ({ page = 1, append = false } = {}) => {
     try {
-      setLoading(true);
+      if (append) setLoadingMore(true); else setLoading(true);
 
       const params = {};
 
       if (priority) {
         params.priority = priority;
       }
+      if (status === "pending") params.completed = false;
+      if (status === "completed") params.completed = true;
+      params.page = page;
+      params.limit = 5;
 
       const response = await getTodos(params);
 
-      setTodos(response.data?.todos || []);
+      const nextTodos = response.data?.todos || [];
+      setTodos((current) => append ? [...current, ...nextTodos] : nextTodos);
+      setTodoPage(response.data?.pagination?.page || page);
+      setHasMoreTodos(Boolean(response.data?.pagination?.hasMore));
     } catch (error) {
       console.error("Get todos failed:", error);
 
@@ -100,13 +110,17 @@ const Todos = () => {
         error.response?.data?.message || "Không thể tải danh sách công việc",
       );
     } finally {
-      setLoading(false);
+      if (append) setLoadingMore(false); else setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchTodos();
   }, [status, priority]);
+  const loadMoreTodos = () => {
+    if (!hasMoreTodos || loadingMore) return;
+    fetchTodos({ page: todoPage + 1, append: true });
+  };
 
   // =====================================================
   // SEARCH
@@ -492,6 +506,11 @@ const Todos = () => {
                 </div>
               );
             })}
+            {hasMoreTodos && !search.trim() && (
+              <div className="flex justify-center pt-3">
+                <Button loading={loadingMore} onClick={loadMoreTodos}>Xem thêm 5 công việc</Button>
+              </div>
+            )}
           </div>
         )}
       </Card>

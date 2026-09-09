@@ -32,6 +32,7 @@ import {
   deleteCommission,
   deleteMyCommissionsByMonth,
   getMyCommissions,
+  toggleCommissionBillCollected,
   updateCommission,
 } from "../../services/commission.service";
 import CommissionHistory from "./CommissionHistory";
@@ -312,6 +313,16 @@ const Commission = () => {
       message.error(
         error?.response?.data?.message || "Không thể xóa commission",
       );
+    }
+  };
+  const handleToggleBillCollected = async (item) => {
+    try {
+      const response = await toggleCommissionBillCollected(item._id);
+      const billCollected = response?.data?.billCollected;
+      setCommissions((current) => current.map((commission) => commission._id === item._id ? { ...commission, billCollected } : commission));
+      message.success(billCollected ? "Đã đánh dấu lấy bill" : "Đã bỏ đánh dấu lấy bill");
+    } catch (error) {
+      message.error(error?.response?.data?.message || "Không thể cập nhật trạng thái bill");
     }
   };
   // =========================
@@ -821,6 +832,7 @@ const Commission = () => {
           onLoadMore={handleLoadMoreCommissions}
           onEdit={handleEdit}
           onDelete={(item) => handleDelete(item._id)}
+          onToggleBillCollected={handleToggleBillCollected}
         />
       </div>
     </div>

@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
+  Dropdown,
   Input,
   Modal,
   Popconfirm,
   Select,
+  Slider,
   Switch,
   message,
 } from "antd";
@@ -17,8 +19,15 @@ import {
   MessageOutlined,
   MoreOutlined,
   PictureOutlined,
+  PauseCircleOutlined,
+  PlayCircleOutlined,
+  PlusOutlined,
+  PushpinFilled,
+  PushpinOutlined,
   ReloadOutlined,
   SendOutlined,
+  SearchOutlined,
+  SoundOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -26,22 +35,29 @@ import { useAuth } from "../../store/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   createCfsPost,
+  createCfsStory,
+  deleteCfsStory,
   createCfsReply,
   deleteCfsActivityItem,
   deleteCfsPost,
   deleteCfsReply,
   getCfsActivity,
   getCfsIdentity,
+  getAudiusTracks,
   getCfsPost,
+  getCfsStories,
   getCfsPosts,
   markCfsActivityItemRead,
+  resolveCfsMusicLink,
   setCfsIdentity,
   toggleCfsLike,
+  toggleCfsPin,
   toggleCfsReplyLike,
   uploadCfsImage,
 } from "../../services/cfs.service";
 import { onCfsChanged, onCfsNotification, onOnlineUsers } from "../../services/socket";
 import UserAvatar from "../../components/common/UserAvatar";
+import { API_BASE_URL } from "../../services/api";
 import "./Cfs.css";
 
 const timeAgo = (value) => {
@@ -122,6 +138,10 @@ const getPostBackground = (id) =>
   [...postBackgrounds, ...extraPostBackgrounds].find(
     (background) => background.id === id,
   )?.value || "";
+const optimizedCfsImage = (url, width) => {
+  if (!/^https?:\/\/res\.cloudinary\.com\/.*\/image\/upload\//i.test(url || "")) return url;
+  return url.replace("/image/upload/", `/image/upload/f_auto,q_auto,w_${width},c_limit/`);
+};
 const anonymousAvatarSeed = (value = "Ẩn danh") =>
   [...String(value)].reduce(
     (hash, character) => (hash * 31 + character.charCodeAt(0)) >>> 0,
@@ -171,18 +191,30 @@ const Author = ({ author, createdAt, admin, isPostAuthor = false }) => (
     )}
   </div>
 );
-const PostHeader = ({ author, createdAt, admin }) => (
-  <div className="cfs-post-header">
-    <Author author={author} createdAt={createdAt} admin={admin} />
-    <button
-      type="button"
-      className="cfs-more-action"
-      aria-label="Tùy chọn bài viết"
-    >
-      <MoreOutlined />
-    </button>
-  </div>
-);
+const PostHeader = ({ author, createdAt, admin, post, onTogglePin, onDelete }) => {
+  const menuItems = [];
+  if (post.canPin) menuItems.push({
+    key: "pin",
+    icon: post.isPinned ? <PushpinFilled /> : <PushpinOutlined />,
+    label: post.isPinned ? "Bỏ ghim bài viết" : "Ghim bài viết",
+    onClick: onTogglePin,
+  });
+  if (post.canManage) menuItems.push({
+    key: "delete",
+    icon: <DeleteOutlined />,
+    danger: true,
+    label: "Xóa bài viết",
+    onClick: () => Modal.confirm({ title: "Xóa bài viết này?", content: "Toàn bộ phản hồi cũng sẽ bị xóa.", okText: "Xóa", okButtonProps: { danger: true }, cancelText: "Hủy", onOk: () => onDelete(post._id) }),
+  });
+  const moreButton = <button type="button" className="cfs-more-action" aria-label="Tùy chọn bài viết"><MoreOutlined /></button>;
+  return (
+    <div className="cfs-post-header">
+      <Author author={author} createdAt={createdAt} admin={admin} />
+      {post.isPinned && <span className="cfs-pinned-label"><PushpinFilled /> Đã ghim</span>}
+      {menuItems.length ? <Dropdown menu={{ items: menuItems }} trigger={["click"]} placement="bottomRight">{moreButton}</Dropdown> : moreButton}
+    </div>
+  );
+};
 const groupReplies = (replies) =>
   replies.reduce((groups, reply) => {
     const key = String(reply.parentReplyId || "root");
@@ -431,7 +463,7 @@ const Replies = ({
   ]);
 };
 
-const PostActions = ({ post, onLike, onOpenReplies, showDelete, onDelete }) => {
+const PostActions = ({ post, onLike, onOpenReplies, onShowLikes }) => {
   const markerRef = useRef(null);
 
   useEffect(() => {
@@ -467,8 +499,10 @@ const PostActions = ({ post, onLike, onOpenReplies, showDelete, onDelete }) => {
       {post.imageUrl && (
         <img
           className="cfs-post-image"
-          src={post.imageUrl}
+          src={optimizedCfsImage(post.imageUrl, 1200)}
           alt="Ảnh bài viết"
+          loading="lazy"
+          decoding="async"
         />
       )}
       <div className="cfs-actions">
@@ -479,20 +513,28 @@ const PostActions = ({ post, onLike, onOpenReplies, showDelete, onDelete }) => {
           onClick={() => onLike(post._id)}
         >
           {post.liked ? <HeartFilled /> : <HeartOutlined />}
-          {post.likes > 0 && <span>{post.likes}</span>}
         </button>
-        {post.likeUsers?.length > 0 && (
-          <span
-            className="cfs-like-avatars"
-            title={post.likeUsers.map((user) => user.name).join(", ")}
+        {post.likes > 0 && (
+          <button
+            type="button"
+            className="cfs-like-summary"
+            aria-label={`Xem ${post.likes} người đã thích`}
+            onClick={() => onShowLikes(post)}
           >
-            {post.likeUsers.slice(0, 2).map((user) => (
-              <UserAvatar key={String(user._id)} size={18} user={user}>
-                {user.name.slice(0, 1)}
-              </UserAvatar>
-            ))}
-            {post.likeUsers.length > 2 && <b>+{post.likeUsers.length - 2}</b>}
-          </span>
+            {post.likeUsers?.length > 0 && (
+              <span
+                className="cfs-like-avatars"
+                title={post.likeUsers.map((user) => user.name).join(", ")}
+              >
+                {post.likeUsers.slice(0, 2).map((user) => (
+                  <UserAvatar key={String(user._id)} size={18} user={user} openDetail={false}>
+                    {user.name.slice(0, 1)}
+                  </UserAvatar>
+                ))}
+                {post.likeUsers.length > 2 && <b>+{post.likeUsers.length - 2}</b>}
+              </span>
+            )}
+          </button>
         )}
         <button
           type="button"
@@ -502,23 +544,6 @@ const PostActions = ({ post, onLike, onOpenReplies, showDelete, onDelete }) => {
           <MessageOutlined />
           {post.replies?.length > 0 && <span>{post.replies.length}</span>}
         </button>
-        {showDelete && (
-          <Popconfirm
-            title="Xóa bài viết này?"
-            description="Toàn bộ phản hồi cũng sẽ bị xóa."
-            okText="Xóa"
-            cancelText="Hủy"
-            onConfirm={() => onDelete(post._id)}
-          >
-            <button
-              type="button"
-              className="cfs-delete-action"
-              aria-label="Xóa bài viết"
-            >
-              <DeleteOutlined />
-            </button>
-          </Popconfirm>
-        )}
       </div>
     </>
   );
@@ -534,6 +559,253 @@ const PostText = ({ post }) =>
   ) : (
     <p>{post.content}</p>
   );
+
+const CfsLikesModal = ({ post, onClose }) => (
+  <Modal
+    open={Boolean(post)}
+    title="Những người đã thích"
+    footer={null}
+    onCancel={onClose}
+    width={380}
+  >
+    <div className="cfs-likes-list">
+      {(post?.likeUsers || []).map((user) => (
+        <div className="cfs-likes-user" key={String(user._id)}>
+          <UserAvatar size={36} user={user}>
+            {user.name?.slice(0, 1)}
+          </UserAvatar>
+          <span>{user.name}</span>
+        </div>
+      ))}
+    </div>
+  </Modal>
+);
+
+const storyBackgrounds = ["#334155", "#7c3aed", "#be185d", "#0369a1", "#047857", "#b45309"];
+const STORY_VIEW_DURATION = 25_000;
+const formatAudioTime = (seconds = 0) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+const getStoryAuthorKey = (story) => String(story?.author?._id || story?.author?.name || "");
+
+const StoryTray = ({ stories, user, onCreate, onOpen }) => (
+  <section className="cfs-stories" aria-label="Story">
+    <button type="button" className="cfs-story-card cfs-create-story" onClick={onCreate}>
+      <UserAvatar size={48} user={user} openDetail={false}>{(user?.fullName || user?.username || "Bạn").slice(0, 1)}</UserAvatar>
+      <span className="cfs-story-plus"><PlusOutlined /></span>
+      <b>Tạo tin</b>
+    </button>
+    {stories.map((story) => (
+      <button
+        type="button"
+        className="cfs-story-card"
+        key={story._id}
+        onClick={() => onOpen(story)}
+        style={story.imageUrl ? undefined : { background: story.background }}
+      >
+        {story.imageUrl && <img className="cfs-story-card-image" src={optimizedCfsImage(story.imageUrl, 320)} alt="" loading="lazy" decoding="async" />}
+        <UserAvatar size={38} user={story.author} className="cfs-story-avatar" openDetail={false}>
+          {story.author.name?.slice(0, 1)}
+        </UserAvatar>
+        {story.content && <span className="cfs-story-card-content">{story.content}</span>}
+        <b>{story.author.name}</b>
+      </button>
+    ))}
+  </section>
+);
+
+const StoryCreator = ({ open, onClose, onCreated }) => {
+  const [content, setContent] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [background, setBackground] = useState(storyBackgrounds[0]);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [musicQuery, setMusicQuery] = useState("");
+  const [musicResults, setMusicResults] = useState([]);
+  const [musicLoading, setMusicLoading] = useState(false);
+  const [selectedMusic, setSelectedMusic] = useState(null);
+  const [spotifyUrl, setSpotifyUrl] = useState("");
+  const [resolvingSpotify, setResolvingSpotify] = useState(false);
+  const [musicPickerOpen, setMusicPickerOpen] = useState(false);
+  const [musicSource, setMusicSource] = useState("audius");
+  const selectImage = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploading(true);
+      const response = await uploadCfsImage(file);
+      setImageUrl(response.data?.data?.url || "");
+    } catch {
+      message.error("Không thể tải ảnh lên");
+    } finally {
+      setUploading(false);
+      event.target.value = "";
+    }
+  };
+  const searchMusic = async () => {
+    if (musicQuery.trim().length < 2) return message.warning("Nhập ít nhất 2 ký tự để tìm nhạc");
+    try {
+      setMusicLoading(true);
+      const response = await getAudiusTracks(musicQuery.trim());
+      setMusicResults(response.data?.data?.tracks || []);
+    } catch (error) {
+      message.error(error.response?.data?.message || "Không thể tìm nhạc Audius");
+    } finally {
+      setMusicLoading(false);
+    }
+  };
+  const addSpotifyLink = async () => {
+    if (!spotifyUrl.trim()) return message.warning("Dán link Spotify hoặc YouTube trước");
+    try {
+      setResolvingSpotify(true);
+      const response = await resolveCfsMusicLink(spotifyUrl.trim());
+      setSelectedMusic(response.data?.data?.music || null);
+      setSpotifyUrl("");
+      message.success("Đã thêm nhạc vào Story");
+    } catch (error) {
+      message.error(error.response?.data?.message || "Không thể đọc link nhạc");
+    } finally {
+      setResolvingSpotify(false);
+    }
+  };
+  const submit = async () => {
+    if (!content.trim() && !imageUrl && !selectedMusic) return message.warning("Hãy thêm ảnh, nội dung hoặc nhạc cho Story");
+    try {
+      setSaving(true);
+      const response = await createCfsStory({ content, imageUrl, background, music: selectedMusic });
+      onCreated(response.data?.data?.story);
+      setContent("");
+      setImageUrl("");
+      setMusicQuery("");
+      setMusicResults([]);
+      setSelectedMusic(null);
+      setSpotifyUrl("");
+      setMusicPickerOpen(false);
+      onClose();
+      message.success("Story sẽ hiển thị trong 24 giờ");
+    } catch (error) {
+      message.error(error.response?.data?.message || "Không thể đăng Story");
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <>
+    <Modal open={open} title="Tạo Story" onCancel={onClose} onOk={submit} okText="Đăng Story" confirmLoading={saving} destroyOnHidden className="cfs-story-creator-modal" styles={{ body: { maxHeight: "min(58dvh, 510px)", overflowY: "auto" } }}>
+      <div className="cfs-story-creator">
+        <div className="cfs-story-preview" style={imageUrl ? { backgroundImage: `linear-gradient(rgba(0,0,0,.18), rgba(0,0,0,.54)), url(${optimizedCfsImage(imageUrl, 720)})` } : { background }}>
+          <span>{content || "Story của bạn"}</span>
+          {selectedMusic && <small className="cfs-story-preview-music"><SoundOutlined /> {selectedMusic.title} · {selectedMusic.artist}</small>}
+        </div>
+        <Input.TextArea value={content} onChange={(event) => setContent(event.target.value)} placeholder="Bạn muốn chia sẻ điều gì?" maxLength={300} autoSize={{ minRows: 2, maxRows: 4 }} />
+        <div className="cfs-story-tools">
+          <label className="cfs-story-image-button"><PictureOutlined /> {uploading ? "Đang tải..." : "Chọn ảnh"}<input type="file" accept="image/*" onChange={selectImage} disabled={uploading} /></label>
+          <span className="cfs-story-colors">{storyBackgrounds.map((color) => <button type="button" aria-label="Chọn nền Story" className={background === color && !imageUrl ? "is-selected" : ""} key={color} style={{ background: color }} onClick={() => setBackground(color)} />)}</span>
+        </div>
+        <button type="button" className={selectedMusic ? "cfs-story-music-summary has-music" : "cfs-story-music-summary"} onClick={() => setMusicPickerOpen(true)}>{selectedMusic?.artworkUrl ? <img src={selectedMusic.artworkUrl} alt="" /> : <SoundOutlined />}<span>{selectedMusic ? <><small>Nhạc trong Story</small><b>{selectedMusic.title} · {selectedMusic.artist}</b></> : <><b>Thêm nhạc</b><small>Audius, Spotify hoặc YouTube</small></>}</span><em>{selectedMusic ? "Đổi" : "+"}</em></button>
+      </div>
+    </Modal>
+    <Modal open={musicPickerOpen} footer={null} onCancel={() => setMusicPickerOpen(false)} title="Chọn nhạc" className="cfs-music-picker-modal" destroyOnHidden>
+      <div className="cfs-story-music-picker">
+        <div className="cfs-music-source-tabs"><button type="button" className={musicSource === "audius" ? "is-active" : ""} onClick={() => setMusicSource("audius")}>Tìm Audius</button><button type="button" className={musicSource === "spotify" ? "is-active" : ""} onClick={() => setMusicSource("spotify")}>Spotify</button><button type="button" className={musicSource === "youtube" ? "is-active" : ""} onClick={() => setMusicSource("youtube")}>YouTube</button></div>
+        {musicSource === "audius" && <Input.Search value={musicQuery} onChange={(event) => setMusicQuery(event.target.value)} onSearch={searchMusic} enterButton={<SearchOutlined />} loading={musicLoading} placeholder="Tên bài hát hoặc ca sĩ" maxLength={100} />}
+        {(musicSource === "spotify" || musicSource === "youtube") && <Input.Search value={spotifyUrl} onChange={(event) => setSpotifyUrl(event.target.value)} onSearch={addSpotifyLink} enterButton="Thêm" loading={resolvingSpotify} placeholder={musicSource === "youtube" ? "Dán link video YouTube" : "Dán link bài hát Spotify"} />}
+        {selectedMusic && <div className="cfs-story-selected-music"><span><SoundOutlined /> <b>{selectedMusic.title}</b><small>{selectedMusic.artist}</small></span><Button type="link" danger size="small" onClick={() => setSelectedMusic(null)}>Bỏ nhạc</Button></div>}
+        {selectedMusic?.provider === "audius" && <div className="cfs-story-clip-picker"><b>Đoạn nhạc trong Story <small>(25 giây)</small></b><audio controls preload="metadata" src={`${API_BASE_URL}/cfs/audius/tracks/${encodeURIComponent(selectedMusic.trackId)}/stream`} /><Slider min={0} max={Math.max(0, (selectedMusic.duration || 0) - 25)} value={Math.min(selectedMusic.startAt || 0, Math.max(0, (selectedMusic.duration || 0) - 25))} onChange={(startAt) => setSelectedMusic((current) => ({ ...current, startAt }))} tooltip={{ formatter: (value) => `Bắt đầu ${formatAudioTime(value)}` }} /><small>Bắt đầu từ {formatAudioTime(selectedMusic.startAt || 0)} — kéo tới đoạn điệp khúc bạn muốn.</small></div>}
+        {musicSource === "audius" && musicResults.length > 0 && <div className="cfs-story-music-results">{musicResults.map((track) => <button type="button" key={track.trackId} className={selectedMusic?.trackId === track.trackId ? "is-selected" : ""} onClick={() => setSelectedMusic({ ...track, provider: "audius", startAt: 0 })}>{track.artworkUrl ? <img src={track.artworkUrl} alt="" /> : <SoundOutlined />}<span><b>{track.title}</b><small>{track.artist}</small></span></button>)}</div>}
+        {selectedMusic && <Button type="primary" block onClick={() => setMusicPickerOpen(false)}>Xong</Button>}
+      </div>
+    </Modal>
+    </>
+  );
+};
+
+const StoryViewer = ({ story, stories, onClose, onNavigate, onDelete, externalAudioRef }) => {
+  const localAudioRef = useRef(null);
+  const audioRef = externalAudioRef || localAudioRef;
+  const [musicPlaying, setMusicPlaying] = useState(false);
+  const [spotifyEmbedOpen, setSpotifyEmbedOpen] = useState(false);
+  const [storyProgress, setStoryProgress] = useState(0);
+  const storyGroup = useMemo(() => stories.filter((item) => getStoryAuthorKey(item) === getStoryAuthorKey(story)), [stories, story]);
+  const index = storyGroup.findIndex((item) => item._id === story?._id);
+  const previousStory = index > 0 ? storyGroup[index - 1] : null;
+  const nextStory = index >= 0 && index < storyGroup.length - 1 ? storyGroup[index + 1] : null;
+  const storyMenuItems = story?.canManage ? [{
+    key: "delete",
+    icon: <DeleteOutlined />,
+    danger: true,
+    label: "Xóa Story",
+    onClick: () => Modal.confirm({ title: "Xóa Story này?", content: "Story sẽ không thể khôi phục.", okText: "Xóa", cancelText: "Hủy", okButtonProps: { danger: true }, onOk: () => onDelete(story._id) }),
+  }] : [];
+  useEffect(() => {
+    setMusicPlaying(false);
+    const audio = audioRef.current;
+    if (!audio || story?.music?.provider !== "audius" || !story.music.trackId) return undefined;
+    const streamUrl = `${API_BASE_URL}/cfs/audius/tracks/${encodeURIComponent(story.music.trackId)}/stream`;
+    const startAt = () => {
+      audio.currentTime = Math.min(story.music.startAt || 0, Math.max(0, (audio.duration || 1) - 1));
+      audio.play().then(() => setMusicPlaying(true)).catch(() => setMusicPlaying(false));
+    };
+    if (!audio.src || !audio.src.endsWith(`/cfs/audius/tracks/${encodeURIComponent(story.music.trackId)}/stream`)) {
+      audio.src = streamUrl;
+      audio.load();
+    }
+    if (audio.readyState >= 1) startAt();
+    else audio.addEventListener("loadedmetadata", startAt, { once: true });
+    return () => {
+      audio.removeEventListener("loadedmetadata", startAt);
+      audio.pause();
+    };
+  }, [story?._id, story?.music?.trackId, story?.music?.startAt, audioRef]);
+  useEffect(() => setSpotifyEmbedOpen(false), [story?._id]);
+  useEffect(() => {
+    if (!story?._id) return undefined;
+    let animationFrame;
+    const startedAt = performance.now();
+    setStoryProgress(0);
+    const updateProgress = (now) => {
+      const progress = Math.min((now - startedAt) / STORY_VIEW_DURATION, 1);
+      setStoryProgress(progress);
+      if (progress >= 1) {
+        if (nextStory) onNavigate(nextStory);
+        else onClose();
+        return;
+      }
+      animationFrame = requestAnimationFrame(updateProgress);
+    };
+    animationFrame = requestAnimationFrame(updateProgress);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [story?._id, nextStory, onClose, onNavigate]);
+  const toggleMusic = async () => {
+    if (story?.music?.provider === "spotify" || story?.music?.provider === "youtube") {
+      setSpotifyEmbedOpen((open) => !open);
+      return;
+    }
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      try { await audio.play(); } catch { message.warning("Trình duyệt chưa thể phát nhạc"); }
+    } else {
+      audio.pause();
+    }
+  };
+  return (
+    <Modal open={Boolean(story)} footer={null} onCancel={onClose} width={420} className="cfs-story-viewer" centered destroyOnHidden classNames={{ content: "cfs-story-modal-content", body: "cfs-story-modal-body" }} styles={{ content: { padding: 0, border: 0, background: "transparent", boxShadow: "none" }, body: { padding: 0, background: "transparent" } }}>
+      {story && <div className="cfs-story-full" style={story.imageUrl ? { backgroundImage: `linear-gradient(0deg, rgba(0,0,0,.72), rgba(0,0,0,.12)), url(${optimizedCfsImage(story.imageUrl, 1080)})` } : { background: story.background }}>
+        <div className="cfs-story-progress" aria-label="Tiến trình Story">{storyGroup.map((item, itemIndex) => <span key={item._id}><i style={{ width: `${itemIndex < index ? 100 : itemIndex === index ? storyProgress * 100 : 0}%` }} /></span>)}</div>
+        <button type="button" className="cfs-story-nav cfs-story-nav-prev" aria-label="Story trước" disabled={!previousStory} onClick={() => previousStory && onNavigate(previousStory)} />
+        <button type="button" className="cfs-story-nav cfs-story-nav-next" aria-label="Story kế tiếp" disabled={!nextStory} onClick={() => nextStory && onNavigate(nextStory)} />
+        <div className="cfs-story-full-author">
+          <UserAvatar size={40} user={story.author}>{story.author.name?.slice(0, 1)}</UserAvatar>
+          <span><b>{story.author.name}</b><small>{timeAgo(story.createdAt)}</small>{story.music?.trackId && <button type="button" className="cfs-story-inline-music" onClick={toggleMusic} title={musicPlaying ? "Tạm dừng nhạc" : "Phát nhạc"}><SoundOutlined /><em>{story.music.title} · {story.music.artist}</em>{musicPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}</button>}</span>
+          {storyMenuItems.length > 0 && <Dropdown menu={{ items: storyMenuItems }} trigger={["click"]} placement="bottomRight"><button type="button" className="cfs-story-more" aria-label="Tùy chọn Story"><MoreOutlined /></button></Dropdown>}
+        </div>
+        {story.content && <p>{story.content}</p>}
+        {!story.content && story.music?.trackId && <button type="button" className="cfs-story-music-card" onClick={toggleMusic}>{story.music.artworkUrl ? <img src={story.music.artworkUrl} alt="" /> : <span className="cfs-story-music-card-icon"><SoundOutlined /></span>}<span><small>{story.music.provider === "spotify" ? "Spotify" : "Audius"}</small><b>{story.music.title}</b><em>{story.music.artist}</em></span>{story.music.provider === "spotify" ? <PlayCircleOutlined /> : musicPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}</button>}
+        {(story.music?.provider === "spotify" || story.music?.provider === "youtube") && spotifyEmbedOpen && <iframe className="cfs-story-spotify-embed" title={`${story.music.provider}: ${story.music.title}`} src={story.music.embedUrl} width="100%" height={story.music.provider === "youtube" ? "180" : "80"} frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" />}
+        {!externalAudioRef && story.music?.provider === "audius" && story.music.trackId && <audio ref={localAudioRef} className="cfs-story-audio" preload="auto" onPlay={() => setMusicPlaying(true)} onPause={() => setMusicPlaying(false)} src={`${API_BASE_URL}/cfs/audius/tracks/${encodeURIComponent(story.music.trackId)}/stream`} />}
+      </div>}
+    </Modal>
+  );
+};
 
 const CfsActivityBell = ({ onOpenPost, elevated = false }) => {
   const [notifications, setNotifications] = useState([]);
@@ -707,6 +979,8 @@ const DetailPage = ({
   onlineUsers,
   viewer,
   onLike,
+  onTogglePin,
+  onShowLikes,
   onDeletePost,
   onDeleteReply,
   onLikeReply,
@@ -746,14 +1020,16 @@ const DetailPage = ({
                     author={post.author}
                     createdAt={post.createdAt}
                     admin={admin}
+                    post={post}
+                    onTogglePin={() => onTogglePin(post._id)}
+                    onDelete={onDeletePost}
                   />
                   <p>{post.content}</p>
                   <PostActions
                     post={post}
                     onLike={onLike}
+                    onShowLikes={onShowLikes}
                     onOpenReplies={() => {}}
-                    showDelete={post.canManage}
-                    onDelete={onDeletePost}
                   />
                 </div>
               </div>
@@ -833,6 +1109,10 @@ const Cfs = () => {
   const { postId } = useParams();
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
+  const [stories, setStories] = useState([]);
+  const [storyCreatorOpen, setStoryCreatorOpen] = useState(false);
+  const [activeStory, setActiveStory] = useState(null);
+  const storyAudioRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -846,6 +1126,7 @@ const Cfs = () => {
   const [savingAlias, setSavingAlias] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [detailPost, setDetailPost] = useState(null);
+  const [likesPost, setLikesPost] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyContent, setReplyContent] = useState("");
   const [replyAnonymous, setReplyAnonymous] = useState(false);
@@ -859,6 +1140,35 @@ const Cfs = () => {
     () => user?.fullName || user?.username || "Bạn",
     [user],
   );
+  const openStory = useCallback((story) => {
+    if (story?.music?.provider === "audius" && story.music.trackId) {
+      const audio = storyAudioRef.current || new Audio();
+      const streamUrl = `${API_BASE_URL}/cfs/audius/tracks/${encodeURIComponent(story.music.trackId)}/stream`;
+      audio.pause();
+      audio.src = streamUrl;
+      audio.preload = "auto";
+      audio.addEventListener("loadedmetadata", () => {
+        audio.currentTime = Math.min(story.music.startAt || 0, Math.max(0, (audio.duration || 1) - 1));
+      }, { once: true });
+      // Gọi play ngay trong event click để trình duyệt nhận đây là thao tác của người dùng.
+      audio.play().catch(() => {});
+      storyAudioRef.current = audio;
+    }
+    setActiveStory(story);
+  }, []);
+  const closeStory = useCallback(() => {
+    storyAudioRef.current?.pause();
+    setActiveStory(null);
+  }, []);
+  useEffect(() => () => storyAudioRef.current?.pause(), []);
+  const loadStories = useCallback(async () => {
+    try {
+      const response = await getCfsStories();
+      setStories(response.data?.data?.stories || []);
+    } catch {
+      // Story không làm gián đoạn việc đọc bảng tin khi tải thất bại.
+    }
+  }, []);
   const loadPosts = useCallback(
     async (requestedPage = page, showLoading = true) => {
       try {
@@ -886,6 +1196,9 @@ const Cfs = () => {
   useEffect(() => {
     loadPosts(page);
   }, [page, loadPosts]);
+  useEffect(() => {
+    loadStories();
+  }, [loadStories]);
   useEffect(
     () => onOnlineUsers(({ userIds }) => setOnlineUsers(new Set(userIds))),
     [],
@@ -903,7 +1216,12 @@ const Cfs = () => {
       if (!changedPost) return;
       setPosts((current) => {
         const index = current.findIndex((post) => String(post._id) === String(changedPostId));
-        if (index >= 0) return current.map((post) => String(post._id) === String(changedPostId) ? changedPost : post);
+        if (index >= 0) return current
+          .map((post) => String(post._id) === String(changedPostId) ? changedPost : post)
+          .sort((left, right) => {
+            if (Boolean(left.isPinned) !== Boolean(right.isPinned)) return left.isPinned ? -1 : 1;
+            return new Date(right.isPinned ? right.pinnedAt : right.createdAt) - new Date(left.isPinned ? left.pinnedAt : left.createdAt);
+          });
         return action === "created" && page === 1 ? [changedPost, ...current] : current;
       });
       if (String(postId) === String(changedPostId)) setDetailPost(changedPost);
@@ -1066,6 +1384,25 @@ const Cfs = () => {
       message.error("Không thể cập nhật lượt thích");
     }
   };
+  const togglePin = async (id) => {
+    try {
+      const response = await toggleCfsPin(id);
+      const updatedPost = response.data?.data?.post;
+      if (!updatedPost) return;
+      const applyUpdatedPost = (current) =>
+        current
+          .map((post) => (post._id === id ? updatedPost : post))
+          .sort((left, right) => {
+            if (Boolean(left.isPinned) !== Boolean(right.isPinned)) return left.isPinned ? -1 : 1;
+            return new Date(right.isPinned ? right.pinnedAt : right.createdAt) - new Date(left.isPinned ? left.pinnedAt : left.createdAt);
+          });
+      setPosts(applyUpdatedPost);
+      setDetailPost((current) => (current?._id === id ? updatedPost : current));
+      message.success(updatedPost.isPinned ? "Đã ghim bài viết" : "Đã bỏ ghim bài viết");
+    } catch (error) {
+      message.error(error.response?.data?.message || "Không thể cập nhật trạng thái ghim");
+    }
+  };
   const removePost = async (targetPostId) => {
     try {
       await deleteCfsPost(targetPostId);
@@ -1156,6 +1493,8 @@ const Cfs = () => {
           onlineUsers={onlineUsers}
           viewer={user}
           onLike={like}
+          onTogglePin={togglePin}
+          onShowLikes={setLikesPost}
           onDeletePost={removePost}
           onDeleteReply={removeReply}
           onLikeReply={likeReply}
@@ -1173,6 +1512,7 @@ const Cfs = () => {
           setReplySort={setReplySort}
         />
         <CfsActivityBell onOpenPost={setDetailPostId} />
+        <CfsLikesModal post={likesPost} onClose={() => setLikesPost(null)} />
       </>
     );
   return (
@@ -1193,6 +1533,7 @@ const Cfs = () => {
       </header>
       <div className="cfs-layout">
         <main className="cfs-feed">
+          <StoryTray stories={stories} user={user} onCreate={() => setStoryCreatorOpen(true)} onOpen={openStory} />
           <section className="cfs-composer">
             <Avatar size={40} src={user?.avatar || undefined}>
               {displayName.slice(0, 1)}
@@ -1242,18 +1583,20 @@ const Cfs = () => {
                       author={post.author}
                       createdAt={post.createdAt}
                       admin={user?.role === "admin"}
+                      post={post}
+                      onTogglePin={() => togglePin(post._id)}
+                      onDelete={removePost}
                     />
                     <p>{post.content}</p>
                     <PostActions
                       post={post}
                       onLike={like}
+                      onShowLikes={setLikesPost}
                       onOpenReplies={() => {
                         setDetailPostId(post._id);
                         setReplyingTo(null);
                         setReplyContent("");
                       }}
-                      showDelete={post.canManage}
-                      onDelete={removePost}
                     />
                   </div>
                 </div>
@@ -1279,6 +1622,28 @@ const Cfs = () => {
         </main>
       </div>
       <CfsActivityBell onOpenPost={setDetailPostId} elevated />
+      <StoryCreator
+        open={storyCreatorOpen}
+        onClose={() => setStoryCreatorOpen(false)}
+        onCreated={(story) => story && setStories((current) => [story, ...current])}
+      />
+      <StoryViewer
+        story={activeStory}
+        stories={stories}
+        onClose={closeStory}
+        onNavigate={setActiveStory}
+        externalAudioRef={storyAudioRef}
+        onDelete={async (storyId) => {
+          try {
+            await deleteCfsStory(storyId);
+            setStories((current) => current.filter((story) => story._id !== storyId));
+            closeStory();
+            message.success("Đã xóa Story");
+          } catch (error) {
+            message.error(error.response?.data?.message || "Không thể xóa Story");
+          }
+        }}
+      />
       <DetailModal
         post={detailPost}
         open={Boolean(detailPost)}
@@ -1290,6 +1655,8 @@ const Cfs = () => {
         onlineUsers={onlineUsers}
         viewer={user}
         onLike={like}
+        onTogglePin={togglePin}
+        onShowLikes={setLikesPost}
         onDeletePost={removePost}
         onDeleteReply={removeReply}
         onLikeReply={likeReply}
@@ -1303,6 +1670,7 @@ const Cfs = () => {
         requestAnonymous={requestAnonymous}
         onSendReply={sendReply}
       />
+      <CfsLikesModal post={likesPost} onClose={() => setLikesPost(null)} />
       <Modal
         open={aliasModalOpen}
         title="Tạo biệt danh ẩn danh"

@@ -7,7 +7,7 @@ const isMonthKey = (value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value || "");
 const getMyCommissionGGImages = async (req, res) => {
   try {
     const monthKey = req.query.month;
-    const filter = { createdBy: req.user._id };
+    const filter = { createdBy: req.user._id, trashedAt: null };
 
     if (monthKey) {
       if (!isMonthKey(monthKey)) {
@@ -31,7 +31,7 @@ const getCommissionGGImagesByUser = async (req, res) => {
       return res.status(400).json({ success: false, message: "Tháng không hợp lệ" });
     }
 
-    const images = await CommissionGGImage.find({ createdBy: req.params.userId, monthKey })
+    const images = await CommissionGGImage.find({ createdBy: req.params.userId, monthKey, trashedAt: null })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -49,7 +49,7 @@ const downloadCommissionGGImages = async (req, res) => {
 
     const isOwnArchive = req.params.userId === undefined;
     const createdBy = isOwnArchive ? req.user._id : req.params.userId;
-    const images = await CommissionGGImage.find({ createdBy, monthKey }).sort({ createdAt: -1 }).lean();
+    const images = await CommissionGGImage.find({ createdBy, monthKey, trashedAt: null }).sort({ createdAt: -1 }).lean();
     if (!images.length) return res.status(404).json({ success: false, message: "Không có ảnh để tải" });
 
     const files = await Promise.all(images.map(async (image, index) => {
@@ -110,11 +110,9 @@ const deleteMyCommissionGGImagesByMonth = async (req, res) => {
       return res.status(400).json({ success: false, message: "Tháng không hợp lệ" });
     }
 
-    const images = await CommissionGGImage.find({ createdBy: req.user._id, monthKey });
-    await Promise.all(images.map((image) => cloudinary.uploader.destroy(image.publicId).catch(() => null)));
-    await CommissionGGImage.deleteMany({ createdBy: req.user._id, monthKey });
+    const result = await CommissionGGImage.updateMany({ createdBy: req.user._id, monthKey, trashedAt: null }, { $set: { trashedAt: new Date() } });
 
-    return res.json({ success: true, message: `Đã xóa ${images.length} ảnh tháng ${monthKey}`, data: { deletedCount: images.length } });
+    return res.json({ success: true, message: `Đã chuyển ${result.modifiedCount} ảnh tháng ${monthKey} vào thùng rác`, data: { deletedCount: result.modifiedCount } });
   } catch (error) {
     console.error("Delete Commission GG images error:", error);
     return res.status(500).json({ success: false, message: "Không thể xóa ảnh Commission GG" });

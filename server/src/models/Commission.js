@@ -61,6 +61,14 @@ const commissionSchema = new mongoose.Schema(
       min: 0,
     },
 
+    // Đánh dấu khi nhân viên đã lấy bill của commission này.
+    billCollected: {
+      type: Boolean,
+      default: false,
+    },
+
+    trashedAt: { type: Date, default: null, index: true },
+
     // Người tạo commission
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

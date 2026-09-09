@@ -22,6 +22,9 @@ const cfsPostSchema = new mongoose.Schema(
     anonymousAlias: { type: String, default: "", trim: true, maxlength: 40 },
     imageUrl: { type: String, default: "", trim: true, maxlength: 1000 },
     background: { type: String, default: "", trim: true, maxlength: 40 },
+    isPinned: { type: Boolean, default: false },
+    pinnedAt: { type: Date, default: null },
+    pinnedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     replies: { type: [cfsReplySchema], default: [] },
@@ -29,6 +32,6 @@ const cfsPostSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-cfsPostSchema.index({ createdAt: -1 });
+cfsPostSchema.index({ isPinned: -1, pinnedAt: -1, createdAt: -1 });
 
 module.exports = mongoose.model("CfsPost", cfsPostSchema);

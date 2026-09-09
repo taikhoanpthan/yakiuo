@@ -123,6 +123,7 @@ const getMyCommissions = async (req, res) => {
     );
     const filter = {
       createdBy: req.user._id,
+      trashedAt: null,
     };
 
     const [commissions, total] = await Promise.all([
@@ -278,12 +279,13 @@ const deleteCommission = async (req, res) => {
           message: "Không tìm thấy commission hoặc bạn không có quyền xóa",
         });
     }
-    await commission.deleteOne();
+    commission.trashedAt = new Date();
+    await commission.save();
     return res
       .status(200)
       .json({
         success: true,
-        message: "Xóa commission thành công",
+        message: "Đã chuyển commission vào thùng rác",
         data: { deletedId: id },
       });
   } catch (error) {
@@ -297,6 +299,18 @@ const deleteCommission = async (req, res) => {
       });
   }
 };
+
+const toggleBillCollected = async (req, res) => {
+  try {
+    const commission = await Commission.findOne({ _id: req.params.id, createdBy: req.user._id });
+    if (!commission) return res.status(404).json({ success: false, message: "Không tìm thấy commission hoặc bạn không có quyền cập nhật" });
+    commission.billCollected = !commission.billCollected;
+    await commission.save();
+    return res.json({ success: true, data: { _id: commission._id, billCollected: commission.billCollected } });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: "Không thể cập nhật trạng thái bill" });
+  }
+};
 const getCommissionsByUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -305,6 +319,7 @@ const getCommissionsByUser = async (req, res) => {
 
     const filter = {
       createdBy: userId,
+      trashedAt: null,
     };
 
     // Lọc theo tháng/năm nếu frontend gửi
@@ -359,16 +374,17 @@ const deleteMyCommissionsByMonth = async (req, res) => {
     const endDate = new Date(year, month, 1);
 
     // Thực hiện xóa dữ liệu dựa theo createdBy và khoảng thời gian
-    const result = await Commission.deleteMany({
+    const result = await Commission.updateMany({
       createdBy: userId,
+      trashedAt: null,
       date: { $gte: startDate, $lt: endDate },
-    });
+    }, { $set: { trashedAt: new Date() } });
 
     return res.status(200).json({
       success: true,
-      message: `Đã xóa ${result.deletedCount} commission tháng ${month}/${year}`,
+      message: `Đã chuyển ${result.modifiedCount} commission tháng ${month}/${year} vào thùng rác`,
       data: {
-        deletedCount: result.deletedCount,
+        deletedCount: result.modifiedCount,
         month,
         year,
       },
@@ -389,6 +405,7 @@ module.exports = {
   getCommissionById,
   updateCommission,
   deleteCommission,
+  toggleBillCollected,
   getCommissionsByUser,
   deleteMyCommissionsByMonth,
 };

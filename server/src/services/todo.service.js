@@ -1,15 +1,23 @@
 const Todo = require("../models/Todo");
 
-const getTodos = async () => {
-  return Todo.find()
+const getTodos = async ({ page = 1, limit = 5, priority, completed } = {}) => {
+  const filter = {};
+  if (priority) filter.priority = priority;
+  if (typeof completed === "boolean") filter.completed = completed;
+  const [todos, total] = await Promise.all([
+    Todo.find(filter)
     .populate(
       "createdBy",
       "username fullName avatar avatarPosition avatarZoom coverImage coverPosition coverZoom",
     )
     .sort({
-      dueDate: 1,
       createdAt: -1,
-    });
+    })
+    .skip((page - 1) * limit)
+    .limit(limit),
+    Todo.countDocuments(filter),
+  ]);
+  return { todos, total };
 };
 
 const createTodo = async (data, userId) => {

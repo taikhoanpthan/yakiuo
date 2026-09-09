@@ -49,3 +49,8 @@ export const deleteMyCommissionsByMonth = async (month, year) => {
 
   return response.data;
 };
+
+export const toggleCommissionBillCollected = async (id) => {
+  const response = await api.patch(`/commissions/${id}/bill-collected`);
+  return response.data;
+};

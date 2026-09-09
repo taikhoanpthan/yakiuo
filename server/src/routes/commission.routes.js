@@ -8,6 +8,7 @@ const {
   getCommissionById,
   updateCommission,
   deleteCommission,
+  toggleBillCollected,
   getCommissionsByUser,
   deleteMyCommissionsByMonth,
 } = require("../controllers/commission.controller");
@@ -70,6 +71,8 @@ router.put(
   authenticate,
   updateCommission,
 );
+
+router.patch("/:id/bill-collected", authenticate, toggleBillCollected);
 
 // =====================================================
 // DELETE ONE

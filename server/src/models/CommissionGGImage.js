@@ -22,6 +22,7 @@ const commissionGGImageSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    trashedAt: { type: Date, default: null, index: true },
   },
   { timestamps: true },
 );

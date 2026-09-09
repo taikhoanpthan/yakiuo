@@ -112,6 +112,7 @@ const Layout = ({ children }) => {
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const lastNotificationAccountRef = useRef(null);
 
   useEffect(() => {
     const openUserDetail = (event) => {
@@ -488,7 +489,7 @@ const Layout = ({ children }) => {
   // ===================================================
 
   const loadNotifications = useCallback(
-    async (showPopup = false) => {
+    async (showPopup = false, forcePopup = false) => {
       try {
         setNotificationLoading(true);
 
@@ -509,7 +510,11 @@ const Layout = ({ children }) => {
           return;
         }
 
-        const latest = list[0];
+        // Ưu tiên thông báo Quan trọng (type: error) mới nhất. Nếu chưa có
+        // thông báo quan trọng thì mới dùng thông báo mới nhất nói chung.
+        const latest =
+          list.find((notificationItem) => notificationItem.type === "error") ||
+          list[0];
 
         if (!latest?._id) {
           return;
@@ -519,7 +524,7 @@ const Layout = ({ children }) => {
 
         try {
           shownIds = JSON.parse(
-            localStorage.getItem("shownNotificationIds") || "[]",
+            localStorage.getItem(`shownNotificationIds:${user._id}`) || "[]",
           );
 
           if (!Array.isArray(shownIds)) {
@@ -529,12 +534,12 @@ const Layout = ({ children }) => {
           shownIds = [];
         }
 
-        if (shownIds.includes(latest._id)) {
+        if (!forcePopup && shownIds.includes(latest._id)) {
           return;
         }
 
         localStorage.setItem(
-          "shownNotificationIds",
+          `shownNotificationIds:${user._id}`,
           JSON.stringify([latest._id, ...shownIds].slice(0, 50)),
         );
 
@@ -548,7 +553,7 @@ const Layout = ({ children }) => {
         setNotificationLoading(false);
       }
     },
-    [showNotificationPopup],
+    [showNotificationPopup, user?._id],
   );
 
   // ===================================================
@@ -559,11 +564,17 @@ const Layout = ({ children }) => {
     if (!user?._id) {
       setNotifications([]);
       setNotificationCount(0);
+      lastNotificationAccountRef.current = null;
 
       return;
     }
 
-    loadNotifications(true);
+    // Khi vừa đăng nhập hoặc chuyển sang tài khoản khác, luôn mở thông báo
+    // ưu tiên để từng tài khoản đều nhận được thông báo quan trọng gần nhất.
+    const isAccountLogin = lastNotificationAccountRef.current !== user._id;
+    lastNotificationAccountRef.current = user._id;
+
+    loadNotifications(isAccountLogin, isAccountLogin);
 
     const refreshNotifications = () => {
       if (!document.hidden) {

@@ -31,6 +31,7 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "../../store/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -726,8 +727,9 @@ const StoryViewer = ({ story, stories, onClose, onNavigate, onDelete, externalAu
   const [storyProgress, setStoryProgress] = useState(0);
   const storyGroup = useMemo(() => stories.filter((item) => getStoryAuthorKey(item) === getStoryAuthorKey(story)), [stories, story]);
   const index = storyGroup.findIndex((item) => item._id === story?._id);
-  const previousStory = index > 0 ? storyGroup[index - 1] : null;
-  const nextStory = index >= 0 && index < storyGroup.length - 1 ? storyGroup[index + 1] : null;
+  const allStoriesIndex = stories.findIndex((item) => item._id === story?._id);
+  const previousStory = index > 0 ? storyGroup[index - 1] : allStoriesIndex > 0 ? stories[allStoriesIndex - 1] : null;
+  const nextStory = index >= 0 && index < storyGroup.length - 1 ? storyGroup[index + 1] : allStoriesIndex >= 0 && allStoriesIndex < stories.length - 1 ? stories[allStoriesIndex + 1] : null;
   const storyMenuItems = story?.canManage ? [{
     key: "delete",
     icon: <DeleteOutlined />,
@@ -787,10 +789,21 @@ const StoryViewer = ({ story, stories, onClose, onNavigate, onDelete, externalAu
       audio.pause();
     }
   };
+  useEffect(() => {
+    if (!story) return undefined;
+    const handleEscape = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [story, onClose]);
   return (
-    <Modal open={Boolean(story)} footer={null} onCancel={onClose} width={420} className="cfs-story-viewer" centered destroyOnHidden classNames={{ content: "cfs-story-modal-content", body: "cfs-story-modal-body" }} styles={{ content: { padding: 0, border: 0, background: "transparent", boxShadow: "none" }, body: { padding: 0, background: "transparent" } }}>
-      {story && <div className="cfs-story-full" style={story.imageUrl ? { backgroundImage: `linear-gradient(0deg, rgba(0,0,0,.72), rgba(0,0,0,.12)), url(${optimizedCfsImage(story.imageUrl, 1080)})` } : { background: story.background }}>
+    <AnimatePresence>
+    {story && <motion.div className="cfs-story-overlay" role="dialog" aria-modal="true" aria-label="Xem Story" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <motion.div className="cfs-story-shell" initial={{ opacity: 0, scale: 0.84, y: 18 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.88, y: 12 }} transition={{ type: "spring", stiffness: 340, damping: 28 }}>
+      <div className="cfs-story-full" style={story.imageUrl ? { backgroundImage: `linear-gradient(0deg, rgba(0,0,0,.72), rgba(0,0,0,.12)), url(${optimizedCfsImage(story.imageUrl, 1080)})` } : { background: story.background }}>
         <div className="cfs-story-progress" aria-label="Tiến trình Story">{storyGroup.map((item, itemIndex) => <span key={item._id}><i style={{ width: `${itemIndex < index ? 100 : itemIndex === index ? storyProgress * 100 : 0}%` }} /></span>)}</div>
+        <button type="button" className="cfs-story-close" aria-label="Đóng Story" onClick={onClose}><CloseOutlined /></button>
         <button type="button" className="cfs-story-nav cfs-story-nav-prev" aria-label="Story trước" disabled={!previousStory} onClick={() => previousStory && onNavigate(previousStory)} />
         <button type="button" className="cfs-story-nav cfs-story-nav-next" aria-label="Story kế tiếp" disabled={!nextStory} onClick={() => nextStory && onNavigate(nextStory)} />
         <div className="cfs-story-full-author">
@@ -802,8 +815,10 @@ const StoryViewer = ({ story, stories, onClose, onNavigate, onDelete, externalAu
         {!story.content && story.music?.trackId && <button type="button" className="cfs-story-music-card" onClick={toggleMusic}>{story.music.artworkUrl ? <img src={story.music.artworkUrl} alt="" /> : <span className="cfs-story-music-card-icon"><SoundOutlined /></span>}<span><small>{story.music.provider === "spotify" ? "Spotify" : "Audius"}</small><b>{story.music.title}</b><em>{story.music.artist}</em></span>{story.music.provider === "spotify" ? <PlayCircleOutlined /> : musicPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}</button>}
         {(story.music?.provider === "spotify" || story.music?.provider === "youtube") && spotifyEmbedOpen && <iframe className="cfs-story-spotify-embed" title={`${story.music.provider}: ${story.music.title}`} src={story.music.embedUrl} width="100%" height={story.music.provider === "youtube" ? "180" : "80"} frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" />}
         {!externalAudioRef && story.music?.provider === "audius" && story.music.trackId && <audio ref={localAudioRef} className="cfs-story-audio" preload="auto" onPlay={() => setMusicPlaying(true)} onPause={() => setMusicPlaying(false)} src={`${API_BASE_URL}/cfs/audius/tracks/${encodeURIComponent(story.music.trackId)}/stream`} />}
-      </div>}
-    </Modal>
+      </div>
+      </motion.div>
+    </motion.div>}
+    </AnimatePresence>
   );
 };
 

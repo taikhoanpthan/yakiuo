@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { Card, Empty, Image, message } from "antd";
+import { Button, Card, Empty, Image, Modal, message } from "antd";
 
 import {
   CalendarOutlined,
+  ReloadOutlined,
   ShopOutlined,
 } from "@ant-design/icons";
 
 import dayjs from "dayjs";
 
-import { getWorkSchedule } from "../../services/workSchedule.service";
+import { getPreviousWorkSchedule, getWorkSchedule } from "../../services/workSchedule.service";
 import { connectSocket } from "../../services/socket";
 import weeklyCleaningMonThuImage from "../../assets/dashboard/weekly-cleaning-mon-thu.jpg";
 import weeklyCleaningFriSunImage from "../../assets/dashboard/weekly-cleaning-fri-sun.jpg";
@@ -18,6 +19,9 @@ import HamsterLoader from "../../components/common/HamsterLoader";
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [workSchedule, setWorkSchedule] = useState(null);
+  const [previousSchedule, setPreviousSchedule] = useState(null);
+  const [previousScheduleOpen, setPreviousScheduleOpen] = useState(false);
+  const [previousScheduleLoading, setPreviousScheduleLoading] = useState(false);
   // =========================
   // CURRENT USER
   // =========================
@@ -79,6 +83,21 @@ const Dashboard = () => {
       socket.off("work-schedule:updated", handleWorkScheduleUpdated);
     };
   }, []);
+
+  const viewPreviousSchedule = async () => {
+    try {
+      setPreviousScheduleLoading(true);
+      const response = await getPreviousWorkSchedule();
+      const schedule = response.data?.data ?? null;
+      if (!schedule) return message.info("Chưa có lịch tuần trước để xem");
+      setPreviousSchedule(schedule);
+      setPreviousScheduleOpen(true);
+    } catch (error) {
+      message.error(error.response?.data?.message || "Không thể tải lịch tuần trước");
+    } finally {
+      setPreviousScheduleLoading(false);
+    }
+  };
 
   // =========================
   // LOADING
@@ -182,6 +201,10 @@ const Dashboard = () => {
       </div>
     </div>
 
+    <Button icon={<ReloadOutlined />} loading={previousScheduleLoading} onClick={viewPreviousSchedule}>
+      Xem tuần trước
+    </Button>
+
     {workSchedule?.updatedAt && (
       <div className="text-xs text-slate-400">
         Cập nhật:{" "}
@@ -265,6 +288,28 @@ const Dashboard = () => {
     </div>
   </div>
 </Card>
+
+      <Modal
+        open={previousScheduleOpen}
+        title="Lịch làm việc tuần trước"
+        footer={null}
+        onCancel={() => setPreviousScheduleOpen(false)}
+        width={900}
+      >
+        {previousSchedule?.imageUrl && (
+          <Image
+            src={previousSchedule.imageUrl}
+            alt="Lịch làm việc tuần trước"
+            width="100%"
+            preview={{ mask: <div className="text-sm font-medium">Xem lịch lớn</div> }}
+          />
+        )}
+        {previousSchedule?.createdAt && (
+          <div className="mt-3 text-right text-xs text-slate-400">
+            Cập nhật: {dayjs(previousSchedule.createdAt).format("DD/MM/YYYY HH:mm")}
+          </div>
+        )}
+      </Modal>
 
       {/* ==================================================
           FOOTER

@@ -42,6 +42,7 @@ import {
 } from "../../services/notificationService";
 import {
   getWorkSchedule,
+  deleteWorkSchedule,
   updateWorkSchedule,
 } from "../../services/workSchedule.service";
 import { createFeedbackTag, deleteFeedbackTag, getFeedbackTags } from "../../services/feedbackTag.service";
@@ -64,6 +65,7 @@ const Notifications = () => {
   const [workSchedule, setWorkSchedule] = useState(null);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleUploading, setScheduleUploading] = useState(false);
+  const [scheduleDeleting, setScheduleDeleting] = useState(false);
   const [feedbackTags, setFeedbackTags] = useState([]);
   const [newFeedbackTag, setNewFeedbackTag] = useState("");
   const [tagSaving, setTagSaving] = useState(false);
@@ -256,6 +258,19 @@ const Notifications = () => {
           onError,
         }),
     });
+  };
+
+  const handleDeleteWorkSchedule = async () => {
+    try {
+      setScheduleDeleting(true);
+      const response = await deleteWorkSchedule();
+      setWorkSchedule(response.data?.data ?? null);
+      message.success("Đã xóa lịch làm việc");
+    } catch (error) {
+      message.error(error.response?.data?.message || "Không thể xóa lịch làm việc");
+    } finally {
+      setScheduleDeleting(false);
+    }
   };
 
   // =========================
@@ -665,6 +680,21 @@ const Notifications = () => {
                 {workSchedule ? "Cập nhật lịch" : "Thêm lịch"}
               </Button>
             </Upload>
+
+            {workSchedule && (
+              <Popconfirm
+                title="Xóa lịch làm việc?"
+                description="Ảnh lịch hiện tại sẽ bị xóa. Lịch gần nhất trước đó sẽ được dùng lại nếu có."
+                okText="Xóa lịch"
+                cancelText="Hủy"
+                okButtonProps={{ danger: true }}
+                onConfirm={handleDeleteWorkSchedule}
+              >
+                <Button danger icon={<DeleteOutlined />} loading={scheduleDeleting}>
+                  Xóa lịch
+                </Button>
+              </Popconfirm>
+            )}
           </div>
         </div>
 

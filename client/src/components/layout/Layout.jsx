@@ -20,6 +20,7 @@ import {
   CheckSquareOutlined,
   CommentOutlined,
   CoffeeOutlined,
+  TrophyOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   InfoCircleOutlined,
@@ -224,6 +225,15 @@ const Layout = ({ children }) => {
 
     ];
 
+    if (["admin", "employee", "premium"].includes(user?.role)) {
+      items.push({
+        key: "/caro",
+        label: "Cờ caro",
+        shortLabel: "Caro",
+        icon: <TrophyOutlined />,
+      });
+    }
+
     // Mọi tài khoản đã đăng nhập đều có thể xem hồ sơ nhân viên.
     items.splice(1, 0, {
       key: "/users",
@@ -257,6 +267,8 @@ const Layout = ({ children }) => {
     // Các trang quản trị (như Nhân viên) nằm trong menu tài khoản trên header
     // để taskbar điện thoại luôn gọn và dễ bấm.
     const keys = ["/dashboard", "/feedback", "/cfs", "/todos"];
+
+    if (["admin", "employee", "premium"].includes(user?.role)) keys.push("/caro");
 
     if (["admin", "manager"].includes(user?.role)) {
       keys.push("/notifications");

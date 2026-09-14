@@ -15,6 +15,7 @@ const ChatPage = lazy(() => import("../pages/chat/ChatPage"));
 const UserActivityHistory = lazy(() => import("../pages/admin/UserActivityHistory"));
 const Cfs = lazy(() => import("../pages/cfs/Cfs"));
 const Maintenance = lazy(() => import("../pages/maintenance/Maintenance"));
+const Caro = lazy(() => import("../pages/caro/Caro"));
 
 const PageLoader = () => (
   <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">
@@ -33,6 +34,11 @@ const renderProtectedPage = (Page) => (
 );
 const renderAdminPage = (Page) => (
   <ProtectedRoute roles={["admin"]}>
+    <Layout><Suspense fallback={<PageLoader />}><Page /></Suspense></Layout>
+  </ProtectedRoute>
+);
+const renderCaroPage = (Page) => (
+  <ProtectedRoute roles={["admin", "employee", "premium"]}>
     <Layout><Suspense fallback={<PageLoader />}><Page /></Suspense></Layout>
   </ProtectedRoute>
 );
@@ -98,6 +104,7 @@ const AppRouter = () => {
         path="/chat"
         element={renderProtectedPage(ChatPage)}
       />
+      <Route path="/caro" element={renderCaroPage(Caro)} />
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

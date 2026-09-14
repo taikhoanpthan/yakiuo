@@ -145,6 +145,19 @@ const Feedback = () => {
     "admin",
   ].includes(user?.role);
 
+  // Tài khoản thường chỉ được nhập feedback trong 24 giờ sau khi ngày đó kết thúc.
+  // Admin và Premium vẫn có thể chọn/chỉnh sửa ngày cũ khi cần.
+  const canManageExpiredFeedbackDate = [
+    "premium",
+    "admin",
+  ].includes(user?.role);
+
+  const isExpiredFeedbackDate = (date) =>
+    date
+      ?.endOf("day")
+      .add(24, "hour")
+      .isBefore(dayjs());
+
   // =====================================================
   // INSERT PRESET TAG
   // =====================================================
@@ -957,6 +970,10 @@ const Feedback = () => {
                 placeholder="Chọn ngày feedback"
                 allowClear={false}
                 inputReadOnly
+                disabledDate={(current) =>
+                  !canManageExpiredFeedbackDate &&
+                  isExpiredFeedbackDate(current)
+                }
               />
             </Form.Item>
           </div>

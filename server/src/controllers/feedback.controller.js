@@ -68,6 +68,7 @@ const createFeedback = async (req, res) => {
         dateTime,
       },
       userId,
+      req.user.role,
     );
 
     return res.status(201).json({
@@ -92,6 +93,7 @@ const updateFeedback = async (req, res) => {
     const feedback = await feedbackService.updateFeedback(
       req.params.id,
       req.body,
+      req.user?.role,
     );
 
     return res.status(200).json({

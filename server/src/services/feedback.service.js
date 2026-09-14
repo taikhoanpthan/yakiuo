@@ -1,5 +1,28 @@
 const Feedback = require("../models/Feedback");
 
+const canManageExpiredFeedbackDate = (role) =>
+  ["admin", "premium"].includes(role);
+
+const assertFeedbackDateCanBeUsed = (dateTime, role) => {
+  if (canManageExpiredFeedbackDate(role)) return;
+
+  const feedbackDate = new Date(dateTime);
+
+  if (Number.isNaN(feedbackDate.getTime())) {
+    throw new Error("Ngày feedback không hợp lệ");
+  }
+
+  const expiresAt = new Date(feedbackDate);
+  expiresAt.setHours(23, 59, 59, 999);
+  expiresAt.setHours(expiresAt.getHours() + 24);
+
+  if (expiresAt < new Date()) {
+    throw new Error(
+      "Chỉ Admin hoặc Premium mới được nhập/chỉnh ngày feedback quá 24 giờ",
+    );
+  }
+};
+
 const getFeedbacks = async ({
   page = 1,
   limit = 20,
@@ -110,8 +133,12 @@ const getFeedbackById = async (
 
 const createFeedback = async (
   data,
-  userId
+  userId,
+  userRole
 ) => {
+  const dateTime = data.dateTime || new Date();
+  assertFeedbackDateCanBeUsed(dateTime, userRole);
+
   const feedback =
     await Feedback.create({
       customerName:
@@ -134,7 +161,7 @@ const createFeedback = async (
         data.content?.trim() || "",
 
       dateTime:
-        data.dateTime || new Date(),
+        dateTime,
 
       createdBy: userId,
     });
@@ -144,7 +171,8 @@ const createFeedback = async (
 
 const updateFeedback = async (
   feedbackId,
-  data
+  data,
+  userRole
 ) => {
   const feedback =
     await Feedback.findById(
@@ -207,8 +235,18 @@ const updateFeedback = async (
   if (
     data.dateTime !== undefined
   ) {
+    const updatedDate = new Date(data.dateTime);
+
+    if (Number.isNaN(updatedDate.getTime())) {
+      throw new Error("Ngày feedback không hợp lệ");
+    }
+
+    if (updatedDate.getTime() !== feedback.dateTime.getTime()) {
+      assertFeedbackDateCanBeUsed(updatedDate, userRole);
+    }
+
     feedback.dateTime =
-      data.dateTime;
+      updatedDate;
   }
 
   await feedback.save();

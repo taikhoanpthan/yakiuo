@@ -42,6 +42,7 @@ const conversationRoutes = require("./routes/conversation.routes");
 const messageRoutes = require("./routes/message.routes");
 const cfsRoutes = require("./routes/cfs.routes");
 const trashRoutes = require("./routes/trash.routes");
+const caroRoutes = require("./routes/caro.routes");
 const { startTrashCleanup } = require("./services/trashCleanup.service");
 const { auditMutations } = require("./middleware/audit.middleware");
 // =========================
@@ -51,6 +52,7 @@ const { auditMutations } = require("./middleware/audit.middleware");
 // File:
 // server/src/sockets/chat.socket.js
 const setupChatSocket = require("./sockets/chat.socket");
+const setupCaroSocket = require("./sockets/caro.socket");
 
 // =========================
 // APP
@@ -129,13 +131,14 @@ io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth?.token;
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-    const user = await User.findById(decoded.userId).select("_id status");
+    const user = await User.findById(decoded.userId).select("_id status role");
 
     if (!user || user.status !== "active") {
       return next(new Error("Account is inactive"));
     }
 
     socket.data.authUserId = String(user._id);
+    socket.data.authUserRole = user.role;
     return next();
   } catch (error) {
     return next(new Error("Invalid or expired token"));
@@ -151,6 +154,7 @@ app.set("io", io);
 // Toàn bộ socket event nằm trong:
 // src/sockets/chat.socket.js
 setupChatSocket(io);
+setupCaroSocket(io);
 
 // =========================
 // BODY PARSER
@@ -194,6 +198,7 @@ app.use("/api/messages", messageRoutes);
 
 app.use("/api/cfs", cfsRoutes);
 app.use("/api/trash", trashRoutes);
+app.use("/api/caro", caroRoutes);
 // =========================
 // CLOUDINARY TEST
 // =========================

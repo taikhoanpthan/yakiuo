@@ -1,6 +1,7 @@
 const express = require("express");
 const { authenticate } = require("../middleware/auth.middleware");
-const { getAiMove } = require("../controllers/caro.controller");
+const { getAiMove, getHint } = require("../controllers/caro.controller");
+const { getCaroHistory, deleteCaroMatch } = require("../controllers/caroHistory.controller");
 
 const router = express.Router();
 
@@ -12,5 +13,8 @@ router.use((req, res, next) => {
   next();
 });
 router.post("/ai-move", getAiMove);
+router.post("/hint", getHint);
+router.get("/history", getCaroHistory);
+router.delete("/history/:id", deleteCaroMatch);
 
 module.exports = router;

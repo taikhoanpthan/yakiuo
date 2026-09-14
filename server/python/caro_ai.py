@@ -39,7 +39,8 @@ def strength(board, row, col, mark):
     return max(line_score(board, row, col, mark, dr, dc) for dr, dc in ((0, 1), (1, 0), (1, 1), (1, -1)))
 
 
-def choose_move(board, difficulty="medium"):
+def choose_move(board, difficulty="medium", ai_mark=AI):
+    opponent = HUMAN if ai_mark == AI else AI
     candidates = [(r, c) for r in range(SIZE) for c in range(SIZE) if board[r][c] == EMPTY and nearby(board, r, c)]
     if not candidates:
         return {"row": SIZE // 2, "col": SIZE // 2}
@@ -48,7 +49,7 @@ def choose_move(board, difficulty="medium"):
         row, col = random.choice(candidates)
         return {"row": row, "col": col}
 
-    for mark in (AI, HUMAN):
+    for mark in (ai_mark, opponent):
         for row, col in candidates:
             board[row][col] = mark
             wins = would_win(board, row, col, mark)
@@ -58,10 +59,10 @@ def choose_move(board, difficulty="medium"):
 
     def score(cell):
         row, col = cell
-        board[row][col] = AI
-        attack = strength(board, row, col, AI)
-        board[row][col] = HUMAN
-        defense = strength(board, row, col, HUMAN)
+        board[row][col] = ai_mark
+        attack = strength(board, row, col, ai_mark)
+        board[row][col] = opponent
+        defense = strength(board, row, col, opponent)
         board[row][col] = EMPTY
         distance = abs(row - SIZE // 2) + abs(col - SIZE // 2)
         multiplier = 16 if difficulty == "hard" else 12
@@ -79,7 +80,10 @@ def main():
     difficulty = payload.get("difficulty", "medium")
     if difficulty not in ("easy", "medium", "hard"):
         difficulty = "medium"
-    print(json.dumps(choose_move(board, difficulty)))
+    mark = payload.get("mark", AI)
+    if mark not in (AI, HUMAN):
+        mark = AI
+    print(json.dumps(choose_move(board, difficulty, mark)))
 
 
 if __name__ == "__main__":

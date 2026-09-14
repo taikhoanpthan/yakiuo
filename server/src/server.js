@@ -131,7 +131,7 @@ io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth?.token;
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-    const user = await User.findById(decoded.userId).select("_id status role");
+    const user = await User.findById(decoded.userId).select("_id status role fullName username avatar avatarPosition avatarZoom");
 
     if (!user || user.status !== "active") {
       return next(new Error("Account is inactive"));
@@ -139,6 +139,10 @@ io.use(async (socket, next) => {
 
     socket.data.authUserId = String(user._id);
     socket.data.authUserRole = user.role;
+    socket.data.authUserProfile = {
+      _id: String(user._id), fullName: user.fullName, username: user.username,
+      avatar: user.avatar, avatarPosition: user.avatarPosition, avatarZoom: user.avatarZoom,
+    };
     return next();
   } catch (error) {
     return next(new Error("Invalid or expired token"));

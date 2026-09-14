@@ -13,6 +13,7 @@ const FeedbackTable = ({
   onPaginationChange,
   onEdit,
   onView,
+  canEdit,
   onDelete,
   onUserClick,
 }) => {
@@ -220,7 +221,7 @@ const FeedbackTable = ({
           )}
 
           {/* SỬA */}
-          {onEdit && (
+          {onEdit && canEdit?.(record) && (
             <Tooltip title="Chỉnh sửa">
               <Button
                 type="text"

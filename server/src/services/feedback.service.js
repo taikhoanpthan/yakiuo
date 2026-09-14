@@ -4,13 +4,13 @@ const canManageExpiredFeedbackDate = (role) =>
   ["admin", "premium"].includes(role);
 
 const assertFeedbackDateCanBeUsed = (dateTime, role) => {
-  if (canManageExpiredFeedbackDate(role)) return;
-
   const feedbackDate = new Date(dateTime);
 
   if (Number.isNaN(feedbackDate.getTime())) {
     throw new Error("Ngày feedback không hợp lệ");
   }
+
+  if (canManageExpiredFeedbackDate(role)) return;
 
   const expiresAt = new Date(feedbackDate);
   expiresAt.setHours(23, 59, 59, 999);
@@ -185,6 +185,10 @@ const updateFeedback = async (
     );
   }
 
+  // Kiểm tra ngày đang lưu cho mọi lần sửa, kể cả khi request không đổi dateTime.
+  // Điều này ngăn employee sửa nội dung của feedback đã quá thời hạn 24 giờ.
+  assertFeedbackDateCanBeUsed(feedback.dateTime, userRole);
+
   if (
     data.customerName !==
     undefined
@@ -241,9 +245,7 @@ const updateFeedback = async (
       throw new Error("Ngày feedback không hợp lệ");
     }
 
-    if (updatedDate.getTime() !== feedback.dateTime.getTime()) {
-      assertFeedbackDateCanBeUsed(updatedDate, userRole);
-    }
+    assertFeedbackDateCanBeUsed(updatedDate, userRole);
 
     feedback.dateTime =
       updatedDate;

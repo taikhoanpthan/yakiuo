@@ -1,5 +1,6 @@
 const { execFile } = require("child_process");
 const path = require("path");
+const CaroMatch = require("../models/CaroMatch");
 
 const BOARD_SIZE = 15;
 
@@ -43,7 +44,27 @@ const getAiMove = (req, res) => {
   const difficulty = ["easy", "medium", "hard"].includes(req.body?.difficulty)
     ? req.body.difficulty
     : "medium";
-  child.stdin.end(JSON.stringify({ board: req.body.board, difficulty }));
+  const mark = ["X", "O"].includes(req.body?.mark) ? req.body.mark : "O";
+  child.stdin.end(JSON.stringify({ board: req.body.board, difficulty, mark }));
 };
 
-module.exports = { getAiMove };
+const getHint = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    const winCount = await CaroMatch.countDocuments({
+      $or: [
+        { playerX: userId, winner: "X" },
+        { playerO: userId, winner: "O" },
+      ],
+    });
+    if (winCount < 3) {
+      return res.status(403).json({ success: false, message: `Cần thắng ít nhất 3 trận online để dùng gợi ý (${winCount}/3)` });
+    }
+    return getAiMove(req, res);
+  } catch (error) {
+    console.error("Get caro hint failed:", error);
+    return res.status(500).json({ success: false, message: "Không thể kiểm tra quyền dùng gợi ý" });
+  }
+};
+
+module.exports = { getAiMove, getHint };

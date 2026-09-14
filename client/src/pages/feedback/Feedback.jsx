@@ -145,7 +145,7 @@ const Feedback = () => {
     "admin",
   ].includes(user?.role);
 
-  // Tài khoản thường chỉ được nhập feedback trong 24 giờ sau khi ngày đó kết thúc.
+  // Employee chỉ được thêm hoặc sửa feedback trong 24 giờ sau khi ngày đó kết thúc.
   // Admin và Premium vẫn có thể chọn/chỉnh sửa ngày cũ khi cần.
   const canManageExpiredFeedbackDate = [
     "premium",
@@ -157,6 +157,12 @@ const Feedback = () => {
       ?.endOf("day")
       .add(24, "hour")
       .isBefore(dayjs());
+
+  const canEditFeedback = (record) =>
+    canManageExpiredFeedbackDate ||
+    !isExpiredFeedbackDate(
+      dayjs(record.dateTime || record.createdAt),
+    );
 
   // =====================================================
   // INSERT PRESET TAG
@@ -224,6 +230,11 @@ const Feedback = () => {
   // =====================================================
 
   const handleEdit = (record) => {
+    if (!canEditFeedback(record)) {
+      message.error("Employee chỉ được sửa feedback trong vòng 24 giờ");
+      return;
+    }
+
     setEditingFeedback(record);
 
     setShowPresetTags(false);
@@ -516,6 +527,7 @@ const Feedback = () => {
           pagination={pagination}
           onView={setSelectedFeedback}
           onEdit={handleEdit}
+          canEdit={canEditFeedback}
           onDelete={handleDelete}
           onUserClick={setSelectedUser}
           onPaginationChange={(

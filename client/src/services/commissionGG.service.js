@@ -33,3 +33,8 @@ export const deleteMyCommissionGGImagesByMonth = async (month) => {
   const response = await api.delete("/commission-gg/my/month", { params: { month } });
   return response.data;
 };
+
+export const deleteMyCommissionGGImage = async (imageId) => {
+  const response = await api.delete(`/commission-gg/my/${imageId}`);
+  return response.data;
+};

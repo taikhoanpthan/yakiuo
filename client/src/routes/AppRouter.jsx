@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import Layout from "../components/layout/Layout";
 import ProtectedRoute from "./ProtectedRoute";
+import FeatureRoute from "./FeatureRoute";
 
 const Login = lazy(() => import("../pages/auth/Login"));
 const Dashboard = lazy(() => import("../pages/dashboard/Dashboard"));
@@ -37,9 +38,11 @@ const renderAdminPage = (Page) => (
     <Layout><Suspense fallback={<PageLoader />}><Page /></Suspense></Layout>
   </ProtectedRoute>
 );
-const renderCaroPage = (Page) => (
-  <ProtectedRoute roles={["admin", "employee", "premium"]}>
-    <Layout><Suspense fallback={<PageLoader />}><Page /></Suspense></Layout>
+const renderFeaturePage = (Page, feature, roles) => (
+  <ProtectedRoute roles={roles}>
+    <FeatureRoute feature={feature}>
+      <Layout><Suspense fallback={<PageLoader />}><Page /></Suspense></Layout>
+    </FeatureRoute>
   </ProtectedRoute>
 );
 
@@ -78,8 +81,8 @@ const AppRouter = () => {
         path="/feedback"
         element={renderProtectedPage(Feedback)}
       />
-      <Route path="/cfs" element={renderProtectedPage(Cfs)} />
-      <Route path="/cfs/:postId" element={renderProtectedPage(Cfs)} />
+      <Route path="/cfs" element={renderFeaturePage(Cfs, "cfs")} />
+      <Route path="/cfs/:postId" element={renderFeaturePage(Cfs, "cfs")} />
 
       {/* NOTIFICATIONS */}
       <Route
@@ -102,9 +105,9 @@ const AppRouter = () => {
       {/* CHAT */}
       <Route
         path="/chat"
-        element={renderProtectedPage(ChatPage)}
+        element={renderFeaturePage(ChatPage, "chat")}
       />
-      <Route path="/caro" element={renderCaroPage(Caro)} />
+      <Route path="/caro" element={renderFeaturePage(Caro, "caro", ["admin", "employee", "premium"])} />
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

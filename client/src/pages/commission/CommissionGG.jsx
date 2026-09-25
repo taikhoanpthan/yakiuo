@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import { downloadFile, saveImageToPhotos } from "../../utils/downloadImages";
 
 import {
+  deleteMyCommissionGGImage,
   deleteMyCommissionGGImagesByMonth,
   getMyCommissionGGImages,
   downloadMyCommissionGGImages,
@@ -18,6 +19,7 @@ const CommissionGG = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deletingImageId, setDeletingImageId] = useState(null);
   const [downloading, setDownloading] = useState(false);
 
   const monthKey = month.format("YYYY-MM");
@@ -66,6 +68,19 @@ const CommissionGG = () => {
       message.error(error?.response?.data?.message || "Không thể xóa ảnh");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleDeleteImage = async (imageId) => {
+    try {
+      setDeletingImageId(imageId);
+      const response = await deleteMyCommissionGGImage(imageId);
+      setImages((current) => current.filter((image) => image._id !== imageId));
+      message.success(response?.message || "Đã chuyển ảnh vào thùng rác");
+    } catch (error) {
+      message.error(error?.response?.data?.message || "Không thể xóa ảnh");
+    } finally {
+      setDeletingImageId(null);
     }
   };
 
@@ -131,7 +146,28 @@ const CommissionGG = () => {
         <Image.PreviewGroup toolbarRender={(node, info) => <>{node}<Button type="primary" size="small" onClick={() => handleSaveImage(info.image.url)}>Lưu vào Ảnh</Button></>}>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {images.map((image) => (
-              <Image key={image._id} src={image.imageUrl} alt="Commission GG" className="aspect-square overflow-hidden rounded-xl object-cover" />
+              <div key={image._id} className="relative">
+                <Image src={image.imageUrl} alt="Commission GG" className="aspect-square overflow-hidden rounded-xl object-cover" />
+                <Popconfirm
+                  title="Chuyển ảnh này vào thùng rác?"
+                  description="Bạn có thể khôi phục ảnh trong 15 ngày."
+                  okText="Chuyển vào thùng rác"
+                  cancelText="Hủy"
+                  okButtonProps={{ danger: true }}
+                  onConfirm={() => handleDeleteImage(image._id)}
+                >
+                  <Button
+                    danger
+                    type="primary"
+                    shape="circle"
+                    size="small"
+                    icon={<DeleteOutlined />}
+                    loading={deletingImageId === image._id}
+                    className="absolute right-2 top-2"
+                    aria-label="Xóa ảnh"
+                  />
+                </Popconfirm>
+              </div>
             ))}
           </div>
         </Image.PreviewGroup>

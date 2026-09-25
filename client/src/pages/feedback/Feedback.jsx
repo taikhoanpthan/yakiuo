@@ -145,17 +145,15 @@ const Feedback = () => {
     "admin",
   ].includes(user?.role);
 
-  // Employee chỉ được thêm hoặc sửa feedback trong 24 giờ sau khi ngày đó kết thúc.
-  // Admin và Premium vẫn có thể chọn/chỉnh sửa ngày cũ khi cần.
-  const canManageExpiredFeedbackDate = [
-    "premium",
-    "admin",
-  ].includes(user?.role);
+  // Employee được thêm hoặc sửa feedback thêm 12 giờ sau mốc 23:59 của ngày hôm sau.
+  // Các role khác vẫn có thể chọn/chỉnh sửa ngày cũ khi cần.
+  const canManageExpiredFeedbackDate = user?.role !== "employee";
 
   const isExpiredFeedbackDate = (date) =>
     date
       ?.endOf("day")
-      .add(24, "hour")
+      .add(1, "day")
+      .add(12, "hour")
       .isBefore(dayjs());
 
   const canEditFeedback = (record) =>
@@ -231,7 +229,7 @@ const Feedback = () => {
 
   const handleEdit = (record) => {
     if (!canEditFeedback(record)) {
-      message.error("Employee chỉ được sửa feedback trong vòng 24 giờ");
+      message.error("Employee chỉ được sửa feedback đến 11:59 ngày thứ hai sau ngày feedback");
       return;
     }
 

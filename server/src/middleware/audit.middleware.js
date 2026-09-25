@@ -43,6 +43,11 @@ const getAuditTarget = (req) => {
 };
 
 const auditMutations = (req, res, next) => {
+  // Caro có nhiều request theo từng nước đi/gợi ý; không đưa các request này
+  // vào lịch sử hoạt động chung của người dùng.
+  const requestPath = req.originalUrl.split("?")[0];
+  if (/^\/api\/caro(?:\/|$)/.test(requestPath)) return next();
+
   const activityType = { POST: "created", PUT: "updated", PATCH: "updated", DELETE: "deleted" }[req.method];
   if (!activityType) return next();
 

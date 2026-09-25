@@ -341,6 +341,12 @@ export const onSystemNotificationChanged = (callback) => {
   return () => currentSocket.off("notification:changed", callback);
 };
 
+export const onSystemFeaturesChanged = (callback) => {
+  const currentSocket = createSocket();
+  currentSocket.on("system:features-changed", callback);
+  return () => currentSocket.off("system:features-changed", callback);
+};
+
 // =====================================================
 // ONLINE COUNT
 // =====================================================
@@ -427,6 +433,7 @@ export default {
   onCfsChanged,
   onCfsNotification,
   onSystemNotificationChanged,
+  onSystemFeaturesChanged,
   onOnlineCount,
   onUserOnline,
   onUserOffline,

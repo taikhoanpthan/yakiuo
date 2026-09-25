@@ -43,7 +43,8 @@ import { useAuth } from "../../store/AuthContext";
 
 import { getNotifications } from "../../services/notificationService";
 
-import { onOnlineUsers, onSystemNotificationChanged, setSocketUser } from "../../services/socket";
+import { onOnlineUsers, onSystemFeaturesChanged, onSystemNotificationChanged, setSocketUser } from "../../services/socket";
+import { getSystemStatus } from "../../services/system.service";
 import MobileTaskbar from "./MobileTaskbar";
 import DesktopSidebar from "./DesktopSidebar";
 import HamsterLoader from "../common/HamsterLoader";
@@ -113,6 +114,7 @@ const Layout = ({ children }) => {
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [features, setFeatures] = useState({ cfs: true, caro: true, chat: true });
   const lastNotificationAccountRef = useRef(null);
 
   useEffect(() => {
@@ -122,6 +124,24 @@ const Layout = ({ children }) => {
 
     window.addEventListener("user:open-detail", openUserDetail);
     return () => window.removeEventListener("user:open-detail", openUserDetail);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    getSystemStatus()
+      .then((response) => {
+        if (active) setFeatures((current) => ({ ...current, ...(response.data?.data?.features || {}) }));
+      })
+      .catch(() => {});
+
+    const unsubscribe = onSystemFeaturesChanged(({ features: nextFeatures } = {}) => {
+      if (active && nextFeatures) setFeatures((current) => ({ ...current, ...nextFeatures }));
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
   // ===================================================
@@ -209,12 +229,12 @@ const Layout = ({ children }) => {
         shortLabel: "Feedback",
         icon: <CommentOutlined />,
       },
-      {
+      ...(features.cfs ? [{
         key: "/cfs",
         label: "Yakiuo CFS",
         shortLabel: "CFS",
         icon: <CoffeeOutlined />,
-      },
+      }] : []),
 
       {
         key: "/todos",
@@ -225,7 +245,7 @@ const Layout = ({ children }) => {
 
     ];
 
-    if (["admin", "employee", "premium"].includes(user?.role)) {
+    if (features.caro && ["admin", "employee", "premium"].includes(user?.role)) {
       items.push({
         key: "/caro",
         label: "Cờ caro",
@@ -246,8 +266,8 @@ const Layout = ({ children }) => {
     if (["admin", "manager"].includes(user?.role)) {
       items.push({
         key: "/notifications",
-        label: "Thông báo",
-        shortLabel: "Thông báo",
+        label: user?.role === "admin" ? "Quản trị hệ thống" : "Thông báo",
+        shortLabel: user?.role === "admin" ? "Quản trị" : "Thông báo",
         icon: <BellOutlined />,
       });
     }
@@ -257,7 +277,7 @@ const Layout = ({ children }) => {
     }
 
     return items;
-  }, [user?.role]);
+  }, [features.caro, features.cfs, user?.role]);
 
   // ===================================================
   // MOBILE MENU
@@ -266,9 +286,9 @@ const Layout = ({ children }) => {
   const mobileMenuItems = useMemo(() => {
     // Các trang quản trị (như Nhân viên) nằm trong menu tài khoản trên header
     // để taskbar điện thoại luôn gọn và dễ bấm.
-    const keys = ["/dashboard", "/feedback", "/cfs", "/todos"];
+    const keys = ["/dashboard", "/feedback", ...(features.cfs ? ["/cfs"] : []), "/todos"];
 
-    if (["admin", "employee", "premium"].includes(user?.role)) keys.push("/caro");
+    if (features.caro && ["admin", "employee", "premium"].includes(user?.role)) keys.push("/caro");
 
     if (["admin", "manager"].includes(user?.role)) {
       keys.push("/notifications");
@@ -277,7 +297,7 @@ const Layout = ({ children }) => {
     return keys
       .map((key) => menuItems.find((item) => item.key === key))
       .filter(Boolean);
-  }, [menuItems, user?.role]);
+  }, [features.caro, features.cfs, menuItems, user?.role]);
 
   const mobileTaskbarItems = useMemo(
     () => [

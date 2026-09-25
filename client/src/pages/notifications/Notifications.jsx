@@ -19,16 +19,20 @@ import {
 } from "antd";
 
 import {
+  AppstoreOutlined,
   BellOutlined,
   CalendarOutlined,
   CheckCircleOutlined,
   CloudUploadOutlined,
+  CoffeeOutlined,
   DeleteOutlined,
   EditOutlined,
   ExclamationCircleOutlined,
   InfoCircleOutlined,
+  MessageOutlined,
   PlusOutlined,
   ReloadOutlined,
+  TrophyOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
 
@@ -47,7 +51,7 @@ import {
 } from "../../services/workSchedule.service";
 import { createFeedbackTag, deleteFeedbackTag, getFeedbackTags } from "../../services/feedbackTag.service";
 import { useAuth } from "../../store/AuthContext";
-import { getSystemStatus, setMaintenanceMode } from "../../services/system.service";
+import { getSystemStatus, setFeatureVisibility, setMaintenanceMode } from "../../services/system.service";
 import { onSystemNotificationChanged } from "../../services/socket";
 const Notifications = () => {
   const { user } = useAuth();
@@ -71,6 +75,8 @@ const Notifications = () => {
   const [tagSaving, setTagSaving] = useState(false);
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
   const [maintenanceSaving, setMaintenanceSaving] = useState(false);
+  const [features, setFeatures] = useState({ cfs: true, caro: true, chat: true });
+  const [featureSaving, setFeatureSaving] = useState(null);
   // =========================
   // LOAD DATA
   // =========================
@@ -129,7 +135,15 @@ const Notifications = () => {
       setFeedbackTags([]);
     }
   }, [user?.role]);
-  const loadMaintenance = useCallback(async () => { if (user?.role !== "admin") return; try { const response = await getSystemStatus(); setMaintenanceModeState(Boolean(response.data?.data?.maintenanceMode)); } catch {} }, [user?.role]);
+  const loadMaintenance = useCallback(async () => {
+    if (user?.role !== "admin") return;
+    try {
+      const response = await getSystemStatus();
+      const status = response.data?.data || {};
+      setMaintenanceModeState(Boolean(status.maintenanceMode));
+      setFeatures((current) => ({ ...current, ...(status.features || {}) }));
+    } catch {}
+  }, [user?.role]);
 
   useEffect(() => {
     void loadNotifications();
@@ -139,6 +153,18 @@ const Notifications = () => {
   }, [loadNotifications, loadWorkSchedule, loadFeedbackTags, loadMaintenance]);
   useEffect(() => onSystemNotificationChanged(loadNotifications), [loadNotifications]);
   const changeMaintenance = async (checked) => { try { setMaintenanceSaving(true); await setMaintenanceMode(checked); setMaintenanceModeState(checked); message.success(checked ? "Đã bật chế độ bảo trì" : "Đã tắt chế độ bảo trì"); } catch (error) { message.error(error.response?.data?.message || "Không thể cập nhật chế độ bảo trì"); } finally { setMaintenanceSaving(false); } };
+  const changeFeature = async (feature, enabled) => {
+    try {
+      setFeatureSaving(feature);
+      const response = await setFeatureVisibility(feature, enabled);
+      setFeatures((current) => ({ ...current, ...(response.data?.data?.features || { [feature]: enabled }) }));
+      message.success(enabled ? "Đã bật hiển thị tính năng" : "Đã tắt hiển thị tính năng");
+    } catch (error) {
+      message.error(error.response?.data?.message || "Không thể cập nhật tính năng");
+    } finally {
+      setFeatureSaving(null);
+    }
+  };
 
   const handleCreateFeedbackTag = async () => {
     const label = newFeedbackTag.trim();
@@ -605,10 +631,10 @@ const Notifications = () => {
             </div>
 
             <div>
-              <h1 className="erp-page-title">Thông báo</h1>
+              <h1 className="erp-page-title">{user?.role === "admin" ? "Quản trị hệ thống" : "Thông báo"}</h1>
 
               <p className="erp-page-description">
-                Quản lý các thông báo được gửi đến nhân viên trong hệ thống.
+                {user?.role === "admin" ? "Cấu hình vận hành, tính năng và thông báo trong hệ thống." : "Quản lý các thông báo được gửi đến nhân viên trong hệ thống."}
               </p>
             </div>
           </div>
@@ -622,6 +648,8 @@ const Notifications = () => {
             onClick={() => {
               void loadNotifications();
               void loadWorkSchedule();
+              void loadFeedbackTags();
+              void loadMaintenance();
             }}
           >
             Làm mới
@@ -637,7 +665,33 @@ const Notifications = () => {
           </Button>
         </Space>
       </div>
-      {user?.role === "admin" && <Card className="erp-section-card"><div className="flex items-center justify-between gap-4"><div><b>Chế độ bảo trì</b><p className="m-0 mt-1 text-sm text-slate-500">Bật lên để đăng xuất toàn bộ người dùng và hiển thị trang bảo trì. Admin vẫn có thể truy cập để tắt.</p></div><Switch checked={maintenanceMode} loading={maintenanceSaving} onChange={changeMaintenance} checkedChildren="Bật" unCheckedChildren="Tắt" /></div></Card>}
+      {user?.role === "admin" && (
+        <Card className="erp-section-card">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-xl text-blue-600"><AppstoreOutlined /></div>
+            <div>
+              <h2 className="m-0 text-base font-semibold text-slate-800">Vận hành & tính năng</h2>
+              <p className="mb-0 mt-1 text-sm text-slate-400">Bật hoặc tắt các trang hiển thị cho toàn hệ thống.</p>
+            </div>
+          </div>
+          <div className="mt-5 flex items-center justify-between gap-4 rounded-xl border border-amber-100 bg-amber-50/60 p-4">
+            <div><b className="text-slate-800">Chế độ bảo trì</b><p className="m-0 mt-1 text-sm text-slate-500">Đăng xuất người dùng và hiển thị trang bảo trì. Admin vẫn có thể truy cập để tắt.</p></div>
+            <Switch checked={maintenanceMode} loading={maintenanceSaving} onChange={changeMaintenance} checkedChildren="Bật" unCheckedChildren="Tắt" />
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            {[
+              { key: "cfs", title: "Yakiuo CFS", description: "Hiển thị trang CFS cho người dùng.", icon: <CoffeeOutlined /> },
+              { key: "caro", title: "Cờ caro", description: "Hiển thị trang chơi cờ caro.", icon: <TrophyOutlined /> },
+              { key: "chat", title: "Chat nội bộ", description: "Hiển thị trang trò chuyện nội bộ.", icon: <MessageOutlined /> },
+            ].map((feature) => (
+              <div key={feature.key} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-4">
+                <div className="flex items-center gap-3"><span className="text-lg text-blue-600">{feature.icon}</span><div><b className="text-sm text-slate-800">{feature.title}</b><p className="m-0 mt-1 text-xs text-slate-400">{feature.description}</p></div></div>
+                <Switch checked={features[feature.key]} loading={featureSaving === feature.key} onChange={(checked) => changeFeature(feature.key, checked)} checkedChildren="Bật" unCheckedChildren="Tắt" />
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
       {/* ================= WORK SCHEDULE ================= */}
 
       <Card

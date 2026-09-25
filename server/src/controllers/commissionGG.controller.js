@@ -119,10 +119,30 @@ const deleteMyCommissionGGImagesByMonth = async (req, res) => {
   }
 };
 
+const deleteMyCommissionGGImage = async (req, res) => {
+  try {
+    const image = await CommissionGGImage.findOneAndUpdate(
+      { _id: req.params.imageId, createdBy: req.user._id, trashedAt: null },
+      { $set: { trashedAt: new Date() } },
+      { new: true },
+    );
+
+    if (!image) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy ảnh cần xóa" });
+    }
+
+    return res.json({ success: true, message: "Đã chuyển ảnh vào thùng rác", data: image });
+  } catch (error) {
+    console.error("Delete Commission GG image error:", error);
+    return res.status(400).json({ success: false, message: "Không thể xóa ảnh Commission GG" });
+  }
+};
+
 module.exports = {
   getMyCommissionGGImages,
   getCommissionGGImagesByUser,
   downloadCommissionGGImages,
   uploadCommissionGGImages,
   deleteMyCommissionGGImagesByMonth,
+  deleteMyCommissionGGImage,
 };

@@ -1,7 +1,6 @@
 const Feedback = require("../models/Feedback");
 
-const canManageExpiredFeedbackDate = (role) =>
-  ["admin", "premium"].includes(role);
+const canManageExpiredFeedbackDate = (role) => role !== "employee";
 
 const assertFeedbackDateCanBeUsed = (dateTime, role) => {
   const feedbackDate = new Date(dateTime);
@@ -14,11 +13,12 @@ const assertFeedbackDateCanBeUsed = (dateTime, role) => {
 
   const expiresAt = new Date(feedbackDate);
   expiresAt.setHours(23, 59, 59, 999);
-  expiresAt.setHours(expiresAt.getHours() + 24);
+  expiresAt.setDate(expiresAt.getDate() + 1);
+  expiresAt.setHours(expiresAt.getHours() + 12);
 
   if (expiresAt < new Date()) {
     throw new Error(
-      "Chỉ Admin hoặc Premium mới được nhập/chỉnh ngày feedback quá 24 giờ",
+      "Employee chỉ được nhập/chỉnh feedback đến 11:59 ngày thứ hai sau ngày feedback",
     );
   }
 };
@@ -186,7 +186,7 @@ const updateFeedback = async (
   }
 
   // Kiểm tra ngày đang lưu cho mọi lần sửa, kể cả khi request không đổi dateTime.
-  // Điều này ngăn employee sửa nội dung của feedback đã quá thời hạn 24 giờ.
+  // Điều này ngăn employee sửa nội dung của feedback đã quá thời hạn cho phép.
   assertFeedbackDateCanBeUsed(feedback.dateTime, userRole);
 
   if (

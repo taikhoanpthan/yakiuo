@@ -1,11 +1,14 @@
 import { BrowserRouter } from "react-router-dom";
 import { ConfigProvider } from "antd";
+import { QueryClientProvider } from "@tanstack/react-query";
 
 import { AuthProvider } from "./store/AuthContext";
 import AppRouter from "./routes/AppRouter";
+import { queryClient } from "./lib/queryClient";
 
 function App() {
   return (
+    <QueryClientProvider client={queryClient}>
     <ConfigProvider
       theme={{
         token: {
@@ -33,6 +36,7 @@ function App() {
         </AuthProvider>
       </BrowserRouter>
     </ConfigProvider>
+    </QueryClientProvider>
   );
 }
 

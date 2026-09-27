@@ -35,6 +35,8 @@ import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "../../store/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { cfsKeys, patchCachedCfsPost, useCfsIdentity, useCfsPost, useCfsPosts, useCfsStories } from "../../features/cfs/queries";
 import {
   createCfsPost,
   createCfsStory,
@@ -44,11 +46,8 @@ import {
   deleteCfsPost,
   deleteCfsReply,
   getCfsActivity,
-  getCfsIdentity,
-  getAudiusTracks,
   getCfsPost,
-  getCfsStories,
-  getCfsPosts,
+  getAudiusTracks,
   markCfsActivityItemRead,
   resolveCfsMusicLink,
   setCfsIdentity,
@@ -1118,27 +1117,23 @@ const DetailModal = DetailPage;
 
 const Cfs = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const Avatar = (props) => <UserAvatar user={user} {...props} />;
   const { postId } = useParams();
   const navigate = useNavigate();
-  const [posts, setPosts] = useState([]);
-  const [stories, setStories] = useState([]);
   const [storyCreatorOpen, setStoryCreatorOpen] = useState(false);
   const [activeStory, setActiveStory] = useState(null);
   const storyAudioRef = useRef(null);
-  const [loading, setLoading] = useState(true);
   const [content, setContent] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [background, setBackground] = useState("");
   const [composerOpen, setComposerOpen] = useState(false);
   const [anonymous, setAnonymous] = useState(false);
-  const [alias, setAlias] = useState("");
   const [aliasDraft, setAliasDraft] = useState("");
   const [aliasModalOpen, setAliasModalOpen] = useState(false);
   const [aliasTarget, setAliasTarget] = useState(null);
   const [savingAlias, setSavingAlias] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [detailPost, setDetailPost] = useState(null);
   const [likesPost, setLikesPost] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
   const [editingPostSaving, setEditingPostSaving] = useState(false);
@@ -1149,7 +1144,10 @@ const Cfs = () => {
   const [replySort, setReplySort] = useState("top");
   const [onlineUsers, setOnlineUsers] = useState(() => new Set());
   const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({ totalPages: 1 });
+  const { posts, pagination, setPosts, isLoading: postsLoading, isFetching: postsFetching, refetch: refetchPosts } = useCfsPosts(page);
+  const { stories, setStories } = useCfsStories();
+  const { alias, setAlias } = useCfsIdentity();
+  const { detailPost, setDetailPost } = useCfsPost(postId);
   const [, setClock] = useState(Date.now());
   const displayName = useMemo(
     () => user?.fullName || user?.username || "Bạn",
@@ -1176,52 +1174,16 @@ const Cfs = () => {
     setActiveStory(null);
   }, []);
   useEffect(() => () => storyAudioRef.current?.pause(), []);
-  const loadStories = useCallback(async () => {
-    try {
-      const response = await getCfsStories();
-      setStories(response.data?.data?.stories || []);
-    } catch {
-      // Story không làm gián đoạn việc đọc bảng tin khi tải thất bại.
-    }
-  }, []);
-  const loadPosts = useCallback(
-    async (requestedPage = page, showLoading = true) => {
-      try {
-        if (showLoading) setLoading(true);
-        const response = await getCfsPosts({ page: requestedPage, limit: 100 });
-        const receivedPosts = response.data?.data?.posts || [];
-        setPosts((current) =>
-          receivedPosts.map((post) => ({
-            ...post,
-            background:
-              post.background ||
-              current.find((item) => item._id === post._id)?.background ||
-              "",
-          })),
-        );
-        setPagination(response.data?.data?.pagination || { totalPages: 1 });
-      } catch {
-        message.error("Không thể tải bảng tin CFS");
-      } finally {
-        if (showLoading) setLoading(false);
-      }
-    },
-    [page],
-  );
-  useEffect(() => {
-    loadPosts(page);
-  }, [page, loadPosts]);
-  useEffect(() => {
-    loadStories();
-  }, [loadStories]);
+  const loadPosts = useCallback(() => refetchPosts(), [refetchPosts]);
   useEffect(
     () => onOnlineUsers(({ userIds }) => setOnlineUsers(new Set(userIds))),
     [],
   );
   const applyCfsRealtimeChange = useCallback(async ({ postId: changedPostId, action } = {}) => {
-    if (!changedPostId) return loadPosts(page, false);
+    if (!changedPostId) return;
     if (action === "deleted") {
-      setPosts((current) => current.filter((post) => String(post._id) !== String(changedPostId)));
+      queryClient.setQueriesData({ queryKey: ["cfs", "posts"] }, (current) => current?.posts ? { ...current, posts: current.posts.filter((post) => String(post._id) !== String(changedPostId)) } : current);
+      queryClient.removeQueries({ queryKey: cfsKeys.post(changedPostId) });
       if (String(postId) === String(changedPostId)) navigate("/cfs", { replace: true });
       return;
     }
@@ -1229,21 +1191,17 @@ const Cfs = () => {
       const response = await getCfsPost(changedPostId);
       const changedPost = response.data?.data?.post;
       if (!changedPost) return;
-      setPosts((current) => {
-        const index = current.findIndex((post) => String(post._id) === String(changedPostId));
-        if (index >= 0) return current
-          .map((post) => String(post._id) === String(changedPostId) ? changedPost : post)
-          .sort((left, right) => {
-            if (Boolean(left.isPinned) !== Boolean(right.isPinned)) return left.isPinned ? -1 : 1;
-            return new Date(right.isPinned ? right.pinnedAt : right.createdAt) - new Date(left.isPinned ? left.pinnedAt : left.createdAt);
-          });
-        return action === "created" && page === 1 ? [changedPost, ...current] : current;
+      queryClient.setQueryData(cfsKeys.post(changedPostId), changedPost);
+      queryClient.setQueriesData({ queryKey: ["cfs", "posts"] }, (current) => {
+        if (!current?.posts) return current;
+        const found = current.posts.some((post) => String(post._id) === String(changedPostId));
+        const next = found ? current.posts.map((post) => String(post._id) === String(changedPostId) ? changedPost : post) : action === "created" && current.pagination?.page === 1 ? [changedPost, ...current.posts] : current.posts;
+        return { ...current, posts: next };
       });
-      if (String(postId) === String(changedPostId)) setDetailPost(changedPost);
     } catch {
       // Event có thể đến sau khi bài viết đã bị xóa; lần tải sau sẽ tự đồng bộ.
     }
-  }, [loadPosts, navigate, page, postId]);
+  }, [navigate, postId, queryClient]);
   useEffect(
     () =>
       onCfsChanged(applyCfsRealtimeChange),
@@ -1254,26 +1212,12 @@ const Cfs = () => {
     return () => window.clearInterval(timer);
   }, []);
   useEffect(() => {
-    getCfsIdentity()
-      .then((response) => setAlias(response.data?.data?.alias || ""))
-      .catch(() => message.error("Không thể kiểm tra biệt danh CFS"));
-  }, []);
-  useEffect(() => {
     const receiveImage = (event) => {
       if (event.detail) setImageUrl(event.detail);
     };
     window.addEventListener("cfs:image-selected", receiveImage);
     return () => window.removeEventListener("cfs:image-selected", receiveImage);
   }, []);
-  useEffect(() => {
-    if (!postId) return setDetailPost(null);
-    getCfsPost(postId)
-      .then((response) => setDetailPost(response.data?.data?.post || null))
-      .catch(() => {
-        message.error("Không thể tải bài viết");
-        navigate("/cfs", { replace: true });
-      });
-  }, [postId, navigate]);
   const requestAnonymous = (value, target) => {
     if (!value)
       return target === "post" ? setAnonymous(false) : setReplyAnonymous(false);
@@ -1413,6 +1357,7 @@ const Cfs = () => {
           });
       setPosts(applyUpdatedPost);
       setDetailPost((current) => (current?._id === id ? updatedPost : current));
+      patchCachedCfsPost(queryClient, id, () => updatedPost);
       message.success(updatedPost.isPinned ? "Đã ghim bài viết" : "Đã bỏ ghim bài viết");
     } catch (error) {
       message.error(error.response?.data?.message || "Không thể cập nhật trạng thái ghim");
@@ -1422,7 +1367,8 @@ const Cfs = () => {
     try {
       await deleteCfsPost(targetPostId);
       if (postId === targetPostId) navigate("/cfs");
-      await loadPosts(page);
+      queryClient.setQueriesData({ queryKey: ["cfs", "posts"] }, (current) => current?.posts ? { ...current, posts: current.posts.filter((post) => String(post._id) !== String(targetPostId)) } : current);
+      queryClient.removeQueries({ queryKey: cfsKeys.post(targetPostId) });
       message.success("Đã xóa bài viết");
     } catch (error) {
       message.error(error.response?.data?.message || "Không thể xóa bài viết");
@@ -1438,6 +1384,7 @@ const Cfs = () => {
       if (updatedPost) {
         setPosts((current) => current.map((post) => post._id === updatedPost._id ? updatedPost : post));
         setDetailPost((current) => current?._id === updatedPost._id ? updatedPost : current);
+        patchCachedCfsPost(queryClient, updatedPost._id, () => updatedPost);
       }
       setEditingPost(null);
       message.success("Đã chỉnh sửa bài viết");
@@ -1450,11 +1397,9 @@ const Cfs = () => {
   const removeReply = async (targetPostId, replyId) => {
     try {
       await deleteCfsReply(targetPostId, replyId);
-      if (postId === targetPostId) {
-        const response = await getCfsPost(targetPostId);
-        setDetailPost(response.data?.data?.post || null);
-      }
-      await loadPosts(page);
+      const response = await getCfsPost(targetPostId);
+      const updatedPost = response.data?.data?.post || null;
+      if (updatedPost) patchCachedCfsPost(queryClient, targetPostId, () => updatedPost);
     } catch (error) {
       message.error(error.response?.data?.message || "Không thể xóa phản hồi");
     }
@@ -1508,8 +1453,8 @@ const Cfs = () => {
       setReplyContent("");
       setReplyAnonymous(false);
       const response = await getCfsPost(postId);
-      setDetailPost(response.data?.data?.post || null);
-      await loadPosts(page);
+      const updatedPost = response.data?.data?.post || null;
+      if (updatedPost) patchCachedCfsPost(queryClient, postId, () => updatedPost);
     } catch (error) {
       message.error(error.response?.data?.message || "Không thể gửi phản hồi");
     } finally {
@@ -1559,8 +1504,8 @@ const Cfs = () => {
         <Button
           type="text"
           icon={<ReloadOutlined />}
-          onClick={() => loadPosts(page)}
-          loading={loading}
+          onClick={loadPosts}
+          loading={postsFetching}
         >
           Làm mới
         </Button>
@@ -1598,7 +1543,7 @@ const Cfs = () => {
               </div>
             </div>
           </section>
-          {loading ? (
+          {postsLoading && posts.length === 0 ? (
             <div className="cfs-loading">Đang tải bài viết...</div>
           ) : posts.length === 0 ? (
             <div className="cfs-empty">

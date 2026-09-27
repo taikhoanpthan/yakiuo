@@ -33,7 +33,7 @@ import {
   WarningOutlined,
 } from "@ant-design/icons";
 
-import { useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { motion } from "framer-motion";
 
@@ -45,6 +45,7 @@ import { getNotifications } from "../../services/notificationService";
 
 import { onOnlineUsers, onSystemFeaturesChanged, onSystemNotificationChanged, setSocketUser } from "../../services/socket";
 import { getSystemStatus } from "../../services/system.service";
+import { queryClient } from "../../lib/queryClient";
 import MobileTaskbar from "./MobileTaskbar";
 import DesktopSidebar from "./DesktopSidebar";
 import HamsterLoader from "../common/HamsterLoader";
@@ -90,7 +91,7 @@ const getNotificationTypeConfig = (type) => {
 // LAYOUT
 // =====================================================
 
-const Layout = ({ children }) => {
+const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -130,11 +131,14 @@ const Layout = ({ children }) => {
     let active = true;
     getSystemStatus()
       .then((response) => {
-        if (active) setFeatures((current) => ({ ...current, ...(response.data?.data?.features || {}) }));
+        const nextFeatures = response.data?.data?.features || {};
+        queryClient.setQueryData(["system", "features"], nextFeatures);
+        if (active) setFeatures((current) => ({ ...current, ...nextFeatures }));
       })
       .catch(() => {});
 
     const unsubscribe = onSystemFeaturesChanged(({ features: nextFeatures } = {}) => {
+      if (nextFeatures) queryClient.setQueryData(["system", "features"], nextFeatures);
       if (active && nextFeatures) setFeatures((current) => ({ ...current, ...nextFeatures }));
     });
 
@@ -1190,7 +1194,6 @@ const Layout = ({ children }) => {
             )}
 
             <motion.main
-              key={location.pathname}
               className={`erp-page ${isChatPage ? "erp-page-chat" : ""}`}
               initial={{
                 opacity: 0,
@@ -1219,7 +1222,7 @@ const Layout = ({ children }) => {
                     }),
               }}
             >
-              {children}
+              <Outlet />
             </motion.main>
 
             {!isChatPage && (

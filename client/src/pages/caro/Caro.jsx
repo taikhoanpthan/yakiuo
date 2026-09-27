@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, Card, Input, Modal, Popconfirm, Segmented, Space, Table, Tag, Typography, message } from "antd";
 import { ClockCircleOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, RobotOutlined, TeamOutlined, ThunderboltOutlined, ThunderboltOutlined as LightbulbOutlined, WifiOutlined } from "@ant-design/icons";
-import { deleteCaroHistory, getCaroAiMove, getCaroHint, getCaroHistory } from "../../services/caro.service";
+import { deleteCaroHistory, getCaroAiMove, getCaroHint } from "../../services/caro.service";
 import { connectSocket } from "../../services/socket";
 import { useAuth } from "../../store/AuthContext";
 import UserAvatar from "../../components/common/UserAvatar";
+import { useCaroHistory } from "../../features/caro/queries";
 
 const SIZE = 15;
 const createBoard = () => Array.from({ length: SIZE }, () => Array(SIZE).fill(""));
@@ -80,7 +81,7 @@ const MatchHistory = ({ games, loading, pagination, onChange, canDelete, onDelet
 const Caro = () => {
   const { user } = useAuth();
   const [mode, setMode] = useState("machine");
-  const [difficulty, setDifficulty] = useState("medium");
+  const [difficulty, setDifficulty] = useState("hard");
   const [machineBoard, setMachineBoard] = useState(createBoard);
   const [machineLastMove, setMachineLastMove] = useState(null);
   const [machineWinner, setMachineWinner] = useState(null);
@@ -93,29 +94,14 @@ const Caro = () => {
   const [roomCode, setRoomCode] = useState("");
   const [roomBusy, setRoomBusy] = useState(false);
   const [socketOnline, setSocketOnline] = useState(false);
-  const [matchHistory, setMatchHistory] = useState([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyPagination, setHistoryPagination] = useState({ page: 1, limit: 10, total: 0 });
+  const [historyPage, setHistoryPage] = useState(1);
   const [clockNow, setClockNow] = useState(Date.now());
   const [hintMove, setHintMove] = useState(null);
   const [hintLoading, setHintLoading] = useState(false);
-  const [hintStatus, setHintStatus] = useState({ winCount: 0, requiredWins: 3, available: false });
   const [replayGame, setReplayGame] = useState(null);
   const [replayStep, setReplayStep] = useState(0);
 
-  const loadHistory = useCallback(async (page = historyPagination.page) => {
-    try {
-      setHistoryLoading(true);
-      const response = await getCaroHistory({ page, limit: historyPagination.limit });
-      setMatchHistory(response.data?.data?.games || []);
-      setHistoryPagination((previous) => ({ ...previous, ...(response.data?.data?.pagination || {}), page }));
-      setHintStatus(response.data?.data?.hint || { winCount: 0, requiredWins: 3, available: false });
-    } catch {
-      setMatchHistory([]);
-    } finally {
-      setHistoryLoading(false);
-    }
-  }, [historyPagination.limit, historyPagination.page]);
+  const { games: matchHistory, pagination: historyPagination, hint: cachedHintStatus, isFetching: historyLoading, invalidate: invalidateHistory } = useCaroHistory(historyPage);
 
   useEffect(() => {
     const socket = connectSocket();
@@ -127,8 +113,8 @@ const Caro = () => {
     return () => { socket.off("connect", online); socket.off("disconnect", offline); socket.off("caro:state", onState); socket.off("caro:closed", onClosed); };
   }, []);
 
-  useEffect(() => { void loadHistory(); }, [loadHistory]);
-  useEffect(() => { if (room?.winner) void loadHistory(); }, [room?.winner, loadHistory]);
+  const hintStatus = cachedHintStatus;
+  useEffect(() => { if (room?.winner) void invalidateHistory(); }, [room?.winner, invalidateHistory]);
   useEffect(() => {
     if (mode !== "friend" || !room?.players?.O || room.winner) return undefined;
     setClockNow(Date.now());
@@ -185,7 +171,7 @@ const Caro = () => {
   const localStatus = localWinner ? "Ván cờ đã kết thúc" : `Đến lượt Người chơi ${localTurn === "X" ? "1" : "2"} — quân ${localTurn}`;
   const friendStatus = !room ? "Tạo phòng hoặc nhập mã phòng của bạn bè." : !room.players.O ? `Mã ${room.code}: đang chờ đối thủ vào phòng.` : friendWinner ? "Ván cờ đã kết thúc" : room.turn === room.yourMark ? `Đến lượt bạn — quân ${room.yourMark}` : "Đối thủ đang suy nghĩ...";
   const friendWinnerName = friendWinner && friendWinner !== "draw" ? `${playerName(room?.playerInfo?.[friendWinner])} ${room?.timeoutWinner ? "thắng do đối thủ hết giờ" : "thắng"}` : undefined;
-  const handleDeleteHistory = async (id) => { try { await deleteCaroHistory(id); message.success("Đã xóa lịch sử ván đấu"); const page = matchHistory.length === 1 && historyPagination.page > 1 ? historyPagination.page - 1 : historyPagination.page; void loadHistory(page); } catch (error) { message.error(error?.response?.data?.message || "Không thể xóa lịch sử ván đấu"); } };
+  const handleDeleteHistory = async (id) => { try { await deleteCaroHistory(id); message.success("Đã xóa lịch sử ván đấu"); if (matchHistory.length === 1 && historyPage > 1) setHistoryPage((page) => page - 1); else void invalidateHistory(); } catch (error) { message.error(error?.response?.data?.message || "Không thể xóa lịch sử ván đấu"); } };
   const openReplay = (game) => { setReplayGame(game); setReplayStep(game.moves?.length || 0); };
   const replayMoves = replayGame?.moves || [];
   const replayLastMove = replayStep ? replayMoves[replayStep - 1] : null;
@@ -195,7 +181,7 @@ const Caro = () => {
     <section className="caro-hero mb-5"><div className="flex flex-wrap items-center justify-between gap-3"><Typography.Title level={2} className="!m-0 !text-slate-900">Caro</Typography.Title><Tag color={socketOnline ? "success" : "warning"} icon={<WifiOutlined />}>{socketOnline ? "Đã kết nối" : "Đang kết nối"}</Tag></div></section>
     <Segmented className="mb-5" size="large" value={mode} onChange={setMode} options={[{ value:"machine", label:<Space><RobotOutlined />Đấu máy</Space> }, { value:"local", label:<Space><TeamOutlined />Cùng thiết bị</Space> }, { value:"friend", label:<Space><ThunderboltOutlined />Đấu online</Space> }]} />
     {mode === "friend" && <div className="mb-4 text-sm text-slate-500">Gợi ý: <Tag color={hintStatus.available ? "success" : "default"}>{hintStatus.available ? "Đã mở" : `${hintStatus.winCount}/${hintStatus.requiredWins} trận thắng`}</Tag></div>}
-    {mode === "machine" ? <Card className="!rounded-3xl"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><div className="mb-2"><Tag color="magenta">Bạn · X</Tag><Tag color="blue">Máy Python · O</Tag></div><b className="text-slate-800">{machineStatus}</b></div><Space wrap><Segmented value={difficulty} onChange={setDifficulty} disabled={thinking || machineBoard.some((line) => line.some(Boolean))} options={[{ value:"easy", label:"Dễ" }, { value:"medium", label:"Vừa" }, { value:"hard", label:"Khó" }]} /><Button icon={<ReloadOutlined />} onClick={resetMachine}>Ván mới</Button></Space></div><Board board={machineBoard} lastMove={machineLastMove} onMove={playMachine} disabled={thinking || Boolean(machineWinner)} /></Card> : mode === "local" ? <Card className="!rounded-3xl"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><div className="mb-2"><Tag color="magenta">Người chơi 1 · X</Tag><Tag color="blue">Người chơi 2 · O</Tag></div><b className="text-slate-800">{localStatus}</b></div><Button icon={<ReloadOutlined />} onClick={resetLocal}>Ván mới</Button></div><Board board={localBoard} lastMove={localLastMove} onMove={playLocal} disabled={Boolean(localWinner)} /></Card> : <><Card className="!rounded-3xl"><div className="mb-5 flex flex-wrap items-center gap-2"><Button type="primary" icon={<ThunderboltOutlined />} loading={roomBusy} onClick={createRoom}>Tạo phòng mới</Button><Input value={roomCode} onChange={(event) => setRoomCode(event.target.value.toUpperCase())} placeholder="Mã phòng" maxLength={5} className="w-36" /><Button loading={roomBusy} onClick={joinRoom}>Vào phòng</Button>{room && <Button icon={<ReloadOutlined />} onClick={restartRoom}>Chơi lại</Button>}<Button icon={<LightbulbOutlined />} loading={hintLoading} disabled={!room?.players.O || Boolean(friendWinner) || room?.turn !== room?.yourMark} onClick={requestHint}>Gợi ý</Button></div>{room && <div className="caro-players mb-4"><PlayerCard player={room.playerInfo?.X} mark="X" active={!friendWinner && room.turn === "X"} /><div className="caro-versus">VS</div><PlayerCard player={room.playerInfo?.O} mark="O" active={!friendWinner && room.turn === "O"} /></div>}<div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-slate-700"><div><b>{friendStatus}</b>{room && <span className="ml-2 text-slate-400">Bạn: {room.yourMark || "khán giả"}</span>}</div>{room?.players.O && !friendWinner && <Tag color={secondsLeft <= 10 ? "error" : "blue"} icon={<ClockCircleOutlined />}>{secondsLeft}s</Tag>}</div>{room ? <Board board={room.board} lastMove={room.lastMove} hintMove={hintMove} onMove={(row, col) => connectSocket().emit("caro:move", { code: room.code, row, col })} disabled={!room.players.O || Boolean(friendWinner) || room.turn !== room.yourMark} /> : <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-12 text-center text-slate-400"><TeamOutlined className="mb-3 text-3xl" /><p className="m-0">Mời đồng đội vào một phòng để bắt đầu.</p></div>}</Card><MatchHistory games={matchHistory} loading={historyLoading} pagination={historyPagination} onChange={(page) => void loadHistory(page)} canDelete={user?.role === "admin"} onDelete={handleDeleteHistory} onReplay={openReplay} /></>}
+    {mode === "machine" ? <Card className="!rounded-3xl"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><div className="mb-2"><Tag color="magenta">Bạn · X</Tag><Tag color="blue">Máy Python · O</Tag></div><b className="text-slate-800">{machineStatus}</b></div><Space wrap><Segmented value={difficulty} onChange={setDifficulty} disabled={thinking || machineBoard.some((line) => line.some(Boolean))} options={[{ value:"easy", label:"Dễ" }, { value:"medium", label:"Vừa" }, { value:"hard", label:"Khó" }]} /><Button icon={<ReloadOutlined />} onClick={resetMachine}>Ván mới</Button></Space></div><Board board={machineBoard} lastMove={machineLastMove} onMove={playMachine} disabled={thinking || Boolean(machineWinner)} /></Card> : mode === "local" ? <Card className="!rounded-3xl"><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><div className="mb-2"><Tag color="magenta">Người chơi 1 · X</Tag><Tag color="blue">Người chơi 2 · O</Tag></div><b className="text-slate-800">{localStatus}</b></div><Button icon={<ReloadOutlined />} onClick={resetLocal}>Ván mới</Button></div><Board board={localBoard} lastMove={localLastMove} onMove={playLocal} disabled={Boolean(localWinner)} /></Card> : <><Card className="!rounded-3xl"><div className="mb-5 flex flex-wrap items-center gap-2"><Button type="primary" icon={<ThunderboltOutlined />} loading={roomBusy} onClick={createRoom}>Tạo phòng mới</Button><Input value={roomCode} onChange={(event) => setRoomCode(event.target.value.toUpperCase())} placeholder="Mã phòng" maxLength={5} className="w-36" /><Button loading={roomBusy} onClick={joinRoom}>Vào phòng</Button>{room && <Button icon={<ReloadOutlined />} onClick={restartRoom}>Chơi lại</Button>}<Button icon={<LightbulbOutlined />} loading={hintLoading} disabled={!room?.players.O || Boolean(friendWinner) || room?.turn !== room?.yourMark} onClick={requestHint}>Gợi ý</Button></div>{room && <div className="caro-players mb-4"><PlayerCard player={room.playerInfo?.X} mark="X" active={!friendWinner && room.turn === "X"} /><div className="caro-versus">VS</div><PlayerCard player={room.playerInfo?.O} mark="O" active={!friendWinner && room.turn === "O"} /></div>}<div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-slate-700"><div><b>{friendStatus}</b>{room && <span className="ml-2 text-slate-400">Bạn: {room.yourMark || "khán giả"}</span>}</div>{room?.players.O && !friendWinner && <Tag color={secondsLeft <= 10 ? "error" : "blue"} icon={<ClockCircleOutlined />}>{secondsLeft}s</Tag>}</div>{room ? <Board board={room.board} lastMove={room.lastMove} hintMove={hintMove} onMove={(row, col) => connectSocket().emit("caro:move", { code: room.code, row, col })} disabled={!room.players.O || Boolean(friendWinner) || room.turn !== room.yourMark} /> : <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-12 text-center text-slate-400"><TeamOutlined className="mb-3 text-3xl" /><p className="m-0">Mời đồng đội vào một phòng để bắt đầu.</p></div>}</Card><MatchHistory games={matchHistory} loading={historyLoading} pagination={historyPagination} onChange={setHistoryPage} canDelete={user?.role === "admin"} onDelete={handleDeleteHistory} onReplay={openReplay} /></>}
     <WinnerOverlay winner={mode === "machine" ? machineWinner : mode === "local" ? localWinner : friendWinner} machine={mode === "machine"} winnerName={mode === "friend" ? friendWinnerName : undefined} onRestart={mode === "machine" ? resetMachine : mode === "local" ? resetLocal : restartRoom} />
     <Modal open={Boolean(replayGame)} title="Xem lại ván đấu" footer={null} onCancel={() => setReplayGame(null)} width={760}>{replayGame && <><div className="mb-4 flex flex-wrap items-center justify-between gap-2"><div><b>{playerName(replayGame.playerX)} vs {playerName(replayGame.playerO)}</b><span className="ml-2 text-slate-400">{replayGame.winner === "draw" ? "Hòa" : `${playerName(replayGame.winner === "X" ? replayGame.playerX : replayGame.playerO)} thắng`}</span></div><Tag>{replayStep}/{replayMoves.length} nước</Tag></div><div className="mb-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">{replayGame.endReason === "timeout" ? "Phân tích: ván đấu kết thúc do một người chơi hết thời gian." : replayGame.winner === "draw" ? "Phân tích: ván đấu kết thúc hòa." : `Phân tích: nước ${replayMoves.length} (${replayLastMove?.mark}) là nước kết thúc ván.`}</div><Board board={replayBoardAt(replayMoves, replayStep)} lastMove={replayLastMove} disabled /><div className="mt-3 flex justify-center gap-2"><Button disabled={!replayStep} onClick={() => setReplayStep((step) => step - 1)}>Trước</Button><Button disabled={replayStep >= replayMoves.length} onClick={() => setReplayStep((step) => step + 1)}>Sau</Button></div></>}</Modal>
   </div>;

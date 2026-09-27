@@ -1,6 +1,5 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-
 import Layout from "../components/layout/Layout";
 import ProtectedRoute from "./ProtectedRoute";
 import FeatureRoute from "./FeatureRoute";
@@ -18,101 +17,30 @@ const Cfs = lazy(() => import("../pages/cfs/Cfs"));
 const Maintenance = lazy(() => import("../pages/maintenance/Maintenance"));
 const Caro = lazy(() => import("../pages/caro/Caro"));
 
-const PageLoader = () => (
-  <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">
-    Đang tải...
-  </div>
-);
+const PageLoader = () => <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">Đang tải...</div>;
+const page = (Page) => <Suspense fallback={<PageLoader />}><Page /></Suspense>;
+const featurePage = (Page, feature, roles) => <ProtectedRoute roles={roles}><FeatureRoute feature={feature}>{page(Page)}</FeatureRoute></ProtectedRoute>;
 
-const renderProtectedPage = (Page) => (
-  <ProtectedRoute>
-    <Layout>
-      <Suspense fallback={<PageLoader />}>
-        <Page />
-      </Suspense>
-    </Layout>
-  </ProtectedRoute>
-);
-const renderAdminPage = (Page) => (
-  <ProtectedRoute roles={["admin"]}>
-    <Layout><Suspense fallback={<PageLoader />}><Page /></Suspense></Layout>
-  </ProtectedRoute>
-);
-const renderFeaturePage = (Page, feature, roles) => (
-  <ProtectedRoute roles={roles}>
-    <FeatureRoute feature={feature}>
-      <Layout><Suspense fallback={<PageLoader />}><Page /></Suspense></Layout>
-    </FeatureRoute>
-  </ProtectedRoute>
-);
-
-const AppRouter = () => {
-  return (
-    <Routes>
-      {/* AUTH */}
-      <Route
-        path="/login"
-        element={
-          <Suspense fallback={<PageLoader />}>
-            <Login />
-          </Suspense>
-        }
-      />
-      <Route path="/maintenance" element={<Suspense fallback={<PageLoader />}><Maintenance /></Suspense>} />
-
-      {/* DEFAULT */}
+const AppRouter = () => (
+  <Routes>
+    <Route path="/login" element={page(Login)} />
+    <Route path="/maintenance" element={page(Maintenance)} />
+    <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
-      {/* DASHBOARD */}
-      <Route
-        path="/dashboard"
-        element={renderProtectedPage(Dashboard)}
-      />
-
-      {/* USERS */}
-      <Route
-        path="/users"
-        element={renderProtectedPage(Users)}
-      />
-      <Route path="/admin/user-activity" element={renderAdminPage(UserActivityHistory)} />
-
-      {/* FEEDBACK */}
-      <Route
-        path="/feedback"
-        element={renderProtectedPage(Feedback)}
-      />
-      <Route path="/cfs" element={renderFeaturePage(Cfs, "cfs")} />
-      <Route path="/cfs/:postId" element={renderFeaturePage(Cfs, "cfs")} />
-
-      {/* NOTIFICATIONS */}
-      <Route
-        path="/notifications"
-        element={renderProtectedPage(Notifications)}
-      />
-
-      {/* PROFILE */}
-      <Route
-        path="/profile"
-        element={renderProtectedPage(Profile)}
-      />
-
-      {/* TODOS */}
-      <Route
-        path="/todos"
-        element={renderProtectedPage(Todos)}
-      />
-
-      {/* CHAT */}
-      <Route
-        path="/chat"
-        element={renderFeaturePage(ChatPage, "chat")}
-      />
-      <Route path="/caro" element={renderFeaturePage(Caro, "caro", ["admin", "employee", "premium"])} />
-
-      {/* 404 */}
+      <Route path="/dashboard" element={page(Dashboard)} />
+      <Route path="/users" element={page(Users)} />
+      <Route path="/feedback" element={page(Feedback)} />
+      <Route path="/notifications" element={page(Notifications)} />
+      <Route path="/profile" element={page(Profile)} />
+      <Route path="/todos" element={page(Todos)} />
+      <Route path="/admin/user-activity" element={<ProtectedRoute roles={["admin"]}>{page(UserActivityHistory)}</ProtectedRoute>} />
+      <Route path="/chat" element={featurePage(ChatPage, "chat")} />
+      <Route path="/cfs" element={featurePage(Cfs, "cfs")} />
+      <Route path="/cfs/:postId" element={featurePage(Cfs, "cfs")} />
+      <Route path="/caro" element={featurePage(Caro, "caro", ["admin", "employee", "premium"])} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
-  );
-};
+    </Route>
+  </Routes>
+);
 
 export default AppRouter;

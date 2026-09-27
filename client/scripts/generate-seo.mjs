@@ -1,10 +1,10 @@
 import { mkdir, writeFile } from "node:fs/promises";
 
-const rawSiteUrl = process.env.VITE_SITE_URL;
-
-if (!rawSiteUrl) {
-  throw new Error("VITE_SITE_URL is required to generate production SEO files.");
-}
+const configuredSiteUrl = process.env.VITE_SITE_URL;
+const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+const rawSiteUrl = configuredSiteUrl
+  ?? (vercelProductionUrl ? `https://${vercelProductionUrl}` : null)
+  ?? "https://yakiuo.vercel.app";
 
 let siteUrl;
 try {

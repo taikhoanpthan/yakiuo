@@ -161,6 +161,7 @@ const Layout = () => {
   // ===================================================
 
   const [onlineCount, setOnlineCount] = useState(0);
+  const [onlineProfiles, setOnlineProfiles] = useState([]);
 
   // ===================================================
   // NOTIFICATION
@@ -338,6 +339,7 @@ const Layout = () => {
       await logout();
 
       setOnlineCount(0);
+      setOnlineProfiles([]);
 
       message.success("Bạn đã đăng xuất an toàn");
 
@@ -376,6 +378,7 @@ const Layout = () => {
   useEffect(() => {
     if (!user?._id) {
       setOnlineCount(0);
+      setOnlineProfiles([]);
       return;
     }
 
@@ -388,10 +391,12 @@ const Layout = () => {
       console.log("👥 REALTIME ONLINE USERS:", payload);
 
       const userIds = Array.isArray(payload?.userIds) ? payload.userIds : [];
+      const users = Array.isArray(payload?.users) ? payload.users : [];
 
       const count = Number(payload?.count ?? userIds.length);
 
       setOnlineCount(Number.isFinite(count) ? count : userIds.length);
+      setOnlineProfiles(users);
     });
 
     return () => {
@@ -1012,56 +1017,36 @@ const Layout = () => {
                   REALTIME ONLINE
               ======================================= */}
 
-              <Tooltip title={`${onlineCount} người đang online`}>
-                <div
-                  className="erp-online-indicator"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 7,
-                    height: 36,
-                    padding: "0 11px",
-                    borderRadius: 12,
-                    background: "#f0fdf4",
-                    border: "1px solid #dcfce7",
-                    color: "#166534",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 9,
-                      height: 9,
-                      minWidth: 9,
-                      borderRadius: "50%",
-                      background: onlineCount > 0 ? "#22c55e" : "#94a3b8",
-                      boxShadow:
-                        onlineCount > 0
-                          ? "0 0 0 3px rgba(34,197,94,.12)"
-                          : "none",
-                    }}
-                  />
-
-                  <span
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {onlineCount}
+              <Popover
+                trigger="click"
+                placement="bottomRight"
+                title={`Đang online · ${onlineCount}`}
+                content={
+                  <div className="erp-online-popover-list">
+                    {onlineProfiles.length ? onlineProfiles.map((profile) => {
+                      const name = profile.fullName || profile.username || "Người dùng Yakiuo";
+                      return (
+                        <div className="erp-online-popover-user" key={profile._id}>
+                          <UserAvatar user={profile} size={32} openDetail={false}>{name.charAt(0).toUpperCase()}</UserAvatar>
+                          <span>{name}</span><i aria-label="Đang online" />
+                        </div>
+                      );
+                    }) : <span className="erp-online-empty">Chưa có người dùng online.</span>}
+                  </div>
+                }
+              >
+                <button type="button" className="erp-online-indicator" aria-label={`${onlineCount} người đang online`}>
+                  <span className={`erp-online-dot ${onlineCount ? "is-online" : ""}`} />
+                  <span className="erp-online-avatars">
+                    {onlineProfiles.slice(0, 2).map((profile) => {
+                      const name = profile.fullName || profile.username || "Người dùng Yakiuo";
+                      return <Tooltip title={name} key={profile._id}><span><UserAvatar user={profile} size={28} openDetail={false}>{name.charAt(0).toUpperCase()}</UserAvatar></span></Tooltip>;
+                    })}
                   </span>
-
-                  <span
-                    className="erp-online-label"
-                    style={{
-                      fontSize: 12,
-                      color: "#4b5563",
-                    }}
-                  >
-                    đang online
-                  </span>
-                </div>
-              </Tooltip>
+                  {onlineCount > 2 && <b>+{onlineCount - 2}</b>}
+                  <span className="erp-online-label">online</span>
+                </button>
+              </Popover>
 
               {/* =======================================
                   NOTIFICATION

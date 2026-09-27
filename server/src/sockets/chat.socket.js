@@ -178,11 +178,17 @@ const removeOnlineSocket = (userId, socketId) => {
 // BUILD PRESENCE PAYLOAD
 // =====================================================
 
-const getPresencePayload = () => {
+const getPresencePayload = (io) => {
   const userIds = getOnlineUserIds();
+  const users = userIds.map((userId) => {
+    const socketId = onlineUsers.get(userId)?.values().next().value;
+    const profile = socketId ? io.sockets.sockets.get(socketId)?.data?.authUserProfile : null;
+    return profile || { _id: userId, fullName: "Người dùng Yakiuo", username: "", avatar: "" };
+  });
 
   return {
     userIds,
+    users,
     count: userIds.length,
   };
 };
@@ -192,7 +198,7 @@ const getPresencePayload = () => {
 // =====================================================
 
 const broadcastOnlineState = (io) => {
-  const payload = getPresencePayload();
+  const payload = getPresencePayload(io);
 
   debugLog("=================================");
   debugLog("📡 PRESENCE SYNC");
@@ -212,8 +218,8 @@ const broadcastOnlineState = (io) => {
 // SEND CURRENT PRESENCE TO SOCKET
 // =====================================================
 
-const sendCurrentPresence = (socket) => {
-  const payload = getPresencePayload();
+const sendCurrentPresence = (io, socket) => {
+  const payload = getPresencePayload(io);
 
   debugLog(
     "📤 SEND CURRENT PRESENCE:",
@@ -318,7 +324,7 @@ module.exports = (io) => {
     // SEND CURRENT PRESENCE
     // =================================================
 
-    sendCurrentPresence(socket);
+    sendCurrentPresence(io, socket);
 
     // Socket đã được middleware xác thực. Join presence ngay tại đây để
     // reconnect không phụ thuộc vào việc client kịp emit `user:join`.
@@ -372,7 +378,7 @@ module.exports = (io) => {
             socket.id
           );
 
-          sendCurrentPresence(socket);
+          sendCurrentPresence(io, socket);
 
           return;
         }

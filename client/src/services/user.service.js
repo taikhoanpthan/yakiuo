@@ -48,6 +48,10 @@ export const updateMyProfile = async (data) => {
 
   return response.data;
 };
+export const removeMyAvatar = async () => {
+  const response = await api.delete("/users/me/avatar");
+  return response.data;
+};
 export const getUserActivities = async (params = {}) => {
   const response = await api.get("/users/activities", { params });
   return response.data;

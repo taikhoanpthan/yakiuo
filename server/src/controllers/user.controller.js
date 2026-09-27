@@ -270,6 +270,23 @@ const updateMyProfile = async (req, res) => {
   }
 };
 
+const removeMyAvatar = async (req, res) => {
+  try {
+    const user = await userService.removeOwnAvatar(req.user._id);
+    await recordActivity({
+      user: user._id,
+      type: "avatar_changed",
+      oldImageUrl: req.user.avatar || "",
+      newImageUrl: "",
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent") || "",
+    });
+    return res.status(200).json({ success: true, message: "Đã xóa ảnh đại diện", data: { user } });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 const changePassword = async (req, res) => {
   try {
     const {
@@ -342,6 +359,7 @@ const removeAllUserActivities = async (_req, res) => {
 module.exports = {
   getMe,
   updateMyProfile,
+  removeMyAvatar,
   getUsers,
   getChatUsers,
   getUserById,

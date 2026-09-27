@@ -292,6 +292,7 @@ export const onOnlineUsers = (callback) => {
 
   const handler = (data = {}) => {
     const userIds = Array.isArray(data.userIds) ? data.userIds.map(String) : [];
+    const users = Array.isArray(data.users) ? data.users : [];
     latestOnlineUsers = userIds;
 
     const count = Number(data.count ?? userIds.length);
@@ -303,6 +304,7 @@ export const onOnlineUsers = (callback) => {
 
     callback({
       userIds,
+      users,
       count: Number.isFinite(count) ? count : userIds.length,
     });
   };
@@ -311,6 +313,7 @@ export const onOnlineUsers = (callback) => {
 
   callback({
     userIds: latestOnlineUsers,
+    users: [],
     count: latestOnlineUsers.length,
   });
 

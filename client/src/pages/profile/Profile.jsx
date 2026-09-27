@@ -37,6 +37,7 @@ import {
   getMe,
   updateMyProfile,
   changePassword,
+  removeMyAvatar,
 } from "../../services/user.service";
 
 import Commission from "../commission/Commission";
@@ -183,6 +184,29 @@ const Profile = () => {
       );
 
       onError?.(error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      setUploading(true);
+      const response = await removeMyAvatar();
+      const updatedUser = response?.data?.user;
+      setUser((current) => ({
+        ...current,
+        ...(updatedUser || {}),
+        avatar: "",
+        avatarPosition: { x: 50, y: 50 },
+        avatarZoom: 1,
+      }));
+      updateUser({ avatar: "", avatarPosition: { x: 50, y: 50 }, avatarZoom: 1 });
+      setShowAvatarModal(false);
+      setImageAdjustTarget(null);
+      message.success("Đã trở về ảnh đại diện mặc định");
+    } catch (error) {
+      message.error(error.response?.data?.message || "Không thể xóa ảnh đại diện");
     } finally {
       setUploading(false);
     }
@@ -521,6 +545,23 @@ const Profile = () => {
                     onClick={() => openImageAdjuster("avatar")}
                   >
                     <DragOutlined />
+                  </button>
+                )}
+                {user?.avatar && (
+                  <button
+                    type="button"
+                    className="yakiuo-avatar-remove"
+                    title="Xóa ảnh đại diện"
+                    onClick={() => Modal.confirm({
+                      title: "Xóa ảnh đại diện?",
+                      content: "Ảnh đại diện sẽ trở về biểu tượng mặc định.",
+                      okText: "Xóa ảnh",
+                      okButtonProps: { danger: true },
+                      cancelText: "Hủy",
+                      onOk: handleRemoveAvatar,
+                    })}
+                  >
+                    <CloseOutlined />
                   </button>
                 )}
               </div>

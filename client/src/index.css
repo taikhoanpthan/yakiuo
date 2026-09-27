@@ -1269,6 +1269,28 @@ button:focus-visible,
   cursor: pointer;
 }
 
+.yakiuo-avatar-remove {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.yakiuo-avatar-remove:hover {
+  background: #dc2626;
+  transform: scale(1.06);
+}
+
 .yakiuo-profile-identity {
   flex: 1;
 

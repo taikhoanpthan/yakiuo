@@ -253,6 +253,17 @@ const updateOwnProfile = async (userId, { username, email, fullName, phone, avat
   await user.save();
   return sanitizeUser(user);
 };
+
+const removeOwnAvatar = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  user.avatar = "";
+  user.avatarPosition = { x: 50, y: 50 };
+  user.avatarZoom = 1;
+  await user.save();
+  return sanitizeUser(user);
+};
 const updateUserStatus = async (userId, status) => {
   const user = await User.findById(userId);
 
@@ -332,6 +343,7 @@ module.exports = {
   createUser,
   updateUser,
   updateOwnProfile,
+  removeOwnAvatar,
   updateUserStatus,
   deleteUser,
   changePassword,

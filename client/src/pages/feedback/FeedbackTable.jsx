@@ -67,9 +67,12 @@ const FeedbackTable = ({
       width: 90,
       align: "center",
 
-      render: (value) => (
-        <span className="font-medium text-slate-700">{value || "—"}</span>
-      ),
+      render: (value) =>
+        value ? (
+          <Tag color="orange">{value}</Tag>
+        ) : (
+          <span className="text-slate-400">—</span>
+        ),
     },
 
     // =========================
@@ -272,12 +275,14 @@ const FeedbackTable = ({
     .filter(Boolean);
 
   return (
-    <div className="w-full overflow-hidden">
+    <div className="feedback-table-shell w-full overflow-hidden">
       <Table
+        className="feedback-data-table"
         rowKey="_id"
         loading={loading}
         dataSource={feedbacks}
         columns={orderedColumns}
+        rowClassName={(_, index) => index % 2 ? "feedback-row-even" : "feedback-row-odd"}
         scroll={{
           x: 1250,
         }}

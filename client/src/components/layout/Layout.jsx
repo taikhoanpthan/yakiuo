@@ -43,7 +43,7 @@ import { useAuth } from "../../store/AuthContext";
 
 import { getNotifications } from "../../services/notificationService";
 
-import { onOnlineUsers, onSystemFeaturesChanged, onSystemNotificationChanged, setSocketUser } from "../../services/socket";
+import { onOnlineProfileUpdated, onOnlineUsers, onSystemFeaturesChanged, onSystemNotificationChanged, setSocketUser } from "../../services/socket";
 import { getSystemStatus } from "../../services/system.service";
 import { queryClient } from "../../lib/queryClient";
 import MobileTaskbar from "./MobileTaskbar";
@@ -398,11 +398,20 @@ const Layout = () => {
       setOnlineCount(Number.isFinite(count) ? count : userIds.length);
       setOnlineProfiles(users);
     });
+    const unsubscribeProfile = onOnlineProfileUpdated((updatedProfile) => {
+      if (!updatedProfile?._id) return;
+      setOnlineProfiles((profiles) => profiles.map((profile) =>
+        String(profile._id) === String(updatedProfile._id)
+          ? { ...profile, ...updatedProfile }
+          : profile,
+      ));
+    });
 
     return () => {
       console.log("👋 STOP LISTENING PRESENCE:", user._id);
 
       unsubscribeUsers();
+      unsubscribeProfile();
     };
   }, [user?._id]);
   // ===================================================

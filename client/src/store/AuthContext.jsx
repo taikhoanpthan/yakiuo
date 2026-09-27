@@ -19,6 +19,7 @@ import {
   disconnectSocket,
 } from "../services/socket";
 import { getSystemStatus } from "../services/system.service";
+import { setMonitoringUser } from "../lib/monitoring";
 
 // =====================================================
 // AUTH CONTEXT
@@ -40,6 +41,10 @@ export const AuthProvider = ({ children }) => {
   const [permissions, setPermissions] = useState([]);
 
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setMonitoringUser(user);
+  }, [user?._id, user?.username]);
 
   // ===================================================
   // REFS

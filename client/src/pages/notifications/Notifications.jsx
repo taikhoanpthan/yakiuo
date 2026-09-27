@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
   Card,
@@ -57,9 +58,6 @@ const Notifications = () => {
   const { user } = useAuth();
   const [form] = Form.useForm();
 
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false);
-
   const [modalOpen, setModalOpen] = useState(false);
   const [editingNotification, setEditingNotification] = useState(null);
 
@@ -81,28 +79,20 @@ const Notifications = () => {
   // LOAD DATA
   // =========================
 
-  const loadNotifications = useCallback(async () => {
-    try {
-      setLoading(true);
-
+  const queryClient = useQueryClient();
+  const notificationsQuery = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
       const response = await getNotifications();
-
-      const data =
-        response.data?.data?.notifications ??
-        response.data?.notifications ??
-        [];
-
-      setNotifications(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Load notifications error:", error);
-
-      message.error(
-        error.response?.data?.message || "Không thể tải danh sách thông báo",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      const data = response.data?.data?.notifications ?? response.data?.notifications ?? [];
+      return Array.isArray(data) ? data : [];
+    },
+    placeholderData: (previous) => previous,
+  });
+  const notifications = notificationsQuery.data || [];
+  const loading = notificationsQuery.isFetching;
+  const setNotifications = (updater) => queryClient.setQueryData(["notifications"], (current = []) => typeof updater === "function" ? updater(current) : updater);
+  const loadNotifications = notificationsQuery.refetch;
   const loadWorkSchedule = useCallback(async () => {
     try {
       setScheduleLoading(true);
@@ -146,7 +136,6 @@ const Notifications = () => {
   }, [user?.role]);
 
   useEffect(() => {
-    void loadNotifications();
     void loadWorkSchedule();
     void loadFeedbackTags();
     void loadMaintenance();

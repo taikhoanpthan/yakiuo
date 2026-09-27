@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import { captureError } from "../lib/monitoring";
 
 const debugLog = (...args) => {
   if (import.meta.env.DEV) {
@@ -106,6 +107,7 @@ const createSocket = () => {
 
   socket.on("connect_error", (error) => {
     console.error("❌ SOCKET CONNECT ERROR:", error?.message || error);
+    captureError(error, { source: "socket", event: "connect_error" });
   });
 
   // =================================================
@@ -114,6 +116,7 @@ const createSocket = () => {
 
   socket.on("presence:error", (data) => {
     console.error("❌ PRESENCE ERROR:", data);
+    captureError(new Error(data?.message || "Socket presence error"), { source: "socket", event: "presence:error" });
   });
 
   // Server gửi sự kiện này khi quản trị viên khóa tài khoản.
@@ -322,6 +325,13 @@ export const onOnlineUsers = (callback) => {
   };
 };
 
+export const onOnlineProfileUpdated = (callback) => {
+  const currentSocket = createSocket();
+  const handler = (data = {}) => callback(data.user || null);
+  currentSocket.on("user:profile-updated", handler);
+  return () => currentSocket.off("user:profile-updated", handler);
+};
+
 // =====================================================
 // CFS REALTIME
 // =====================================================
@@ -433,6 +443,7 @@ export default {
   leavePresence,
   disconnectSocket,
   onOnlineUsers,
+  onOnlineProfileUpdated,
   onCfsChanged,
   onCfsNotification,
   onSystemNotificationChanged,

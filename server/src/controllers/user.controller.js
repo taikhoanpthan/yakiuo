@@ -16,6 +16,20 @@ const forceLogoutUserSockets = (io, userId) => {
   }
 };
 
+const broadcastProfileUpdate = (req, user) => {
+  if (!user?._id) return;
+  req.app.get("io")?.emit("user:profile-updated", {
+    user: {
+      _id: String(user._id),
+      fullName: user.fullName,
+      username: user.username,
+      avatar: user.avatar || "",
+      avatarPosition: user.avatarPosition,
+      avatarZoom: user.avatarZoom,
+    },
+  });
+};
+
 const getUsers = async (req, res) => {
   try {
     const result = await userService.getUsers(req.query);
@@ -259,6 +273,7 @@ const getMe = async (req, res) => {
 const updateMyProfile = async (req, res) => {
   try {
     const user = await userService.updateOwnProfile(req.user._id, req.body);
+    broadcastProfileUpdate(req, user);
 
     return res.status(200).json({
       success: true,
@@ -273,6 +288,7 @@ const updateMyProfile = async (req, res) => {
 const removeMyAvatar = async (req, res) => {
   try {
     const user = await userService.removeOwnAvatar(req.user._id);
+    broadcastProfileUpdate(req, user);
     await recordActivity({
       user: user._id,
       type: "avatar_changed",

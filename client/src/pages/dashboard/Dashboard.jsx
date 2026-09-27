@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button, Card, Empty, Image, Modal, message } from "antd";
 
@@ -17,8 +18,6 @@ import weeklyCleaningFriSunImage from "../../assets/dashboard/weekly-cleaning-fr
 import HamsterLoader from "../../components/common/HamsterLoader";
 
 const Dashboard = () => {
-  const [loading, setLoading] = useState(true);
-  const [workSchedule, setWorkSchedule] = useState(null);
   const [previousSchedule, setPreviousSchedule] = useState(null);
   const [previousScheduleOpen, setPreviousScheduleOpen] = useState(false);
   const [previousScheduleLoading, setPreviousScheduleLoading] = useState(false);
@@ -45,36 +44,21 @@ const Dashboard = () => {
   // LOAD DASHBOARD
   // =========================
 
-  const loadDashboard = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      const scheduleResponse = await getWorkSchedule();
-      const scheduleData =
-        scheduleResponse.data?.data ?? scheduleResponse.data ?? null;
-
-      setWorkSchedule(scheduleData);
-    } catch (error) {
-      console.error("Load dashboard failed:", error);
-
-      message.error(
-        error.response?.data?.message || "Không thể tải dữ liệu dashboard",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadDashboard();
-  }, [loadDashboard]);
+  const queryClient = useQueryClient();
+  const { data: workSchedule = null, isLoading: loading } = useQuery({
+    queryKey: ["work-schedule", "current"],
+    queryFn: async () => {
+      const response = await getWorkSchedule();
+      return response.data?.data ?? response.data ?? null;
+    },
+  });
 
   // Nhận lịch mới do Admin/Manager cập nhật mà không cần người dùng tải lại trang.
   useEffect(() => {
     const socket = connectSocket();
 
     const handleWorkScheduleUpdated = (payload = {}) => {
-      setWorkSchedule(payload.data ?? payload ?? null);
+      queryClient.setQueryData(["work-schedule", "current"], payload.data ?? payload ?? null);
     };
 
     socket.on("work-schedule:updated", handleWorkScheduleUpdated);
@@ -82,7 +66,7 @@ const Dashboard = () => {
     return () => {
       socket.off("work-schedule:updated", handleWorkScheduleUpdated);
     };
-  }, []);
+  }, [queryClient]);
 
   const viewPreviousSchedule = async () => {
     try {

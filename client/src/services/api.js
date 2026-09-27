@@ -1,4 +1,5 @@
 import axios from "axios";
+import { captureError } from "../lib/monitoring";
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:4000/api";
@@ -91,6 +92,9 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     const status = error?.response?.status;
+    if (!status || status >= 500) {
+      captureError(error, { source: "api", method: originalRequest?.method, url: originalRequest?.url, status });
+    }
     if (status === 503 && error?.response?.data?.code === "MAINTENANCE") {
       localStorage.removeItem("accessToken"); localStorage.removeItem("refreshToken"); window.location.href = "/maintenance";
       return Promise.reject(error);

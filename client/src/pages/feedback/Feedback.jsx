@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   AutoComplete,
@@ -44,10 +45,6 @@ import {
 const Feedback = () => {
   const { user } = useAuth();
 
-  const [feedbacks, setFeedbacks] = useState([]);
-
-  const [loading, setLoading] = useState(false);
-
   const [selectedFeedback, setSelectedFeedback] =
     useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -82,59 +79,22 @@ const Feedback = () => {
   // LOAD FEEDBACK
   // =====================================================
 
-  const loadFeedbacks = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      const response = await getFeedbacks({
-        page: pagination.current,
-        limit: pagination.pageSize,
-      });
-
-      const data =
-        response?.data?.feedbacks ??
-        response?.data ??
-        [];
-
-      setFeedbacks(
-        Array.isArray(data)
-          ? data
-          : [],
-      );
-
-      setPagination((previous) => ({
-        ...previous,
-
-        total:
-          response?.pagination?.total ??
-          response?.data?.pagination?.total ??
-          0,
-      }));
-    } catch (error) {
-      console.error(
-        "Load feedbacks error:",
-        error,
-      );
-
-      message.error(
-        error?.response?.data?.message ||
-          "Không thể tải danh sách feedback",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    pagination.current,
-    pagination.pageSize,
-  ]);
-
-  // =====================================================
-  // INITIAL LOAD
-  // =====================================================
-
-  useEffect(() => {
-    void loadFeedbacks();
-  }, [loadFeedbacks]);
+  const feedbackQuery = useQuery({
+    queryKey: ["feedbacks", { page: pagination.current, limit: pagination.pageSize }],
+    queryFn: async () => {
+      const response = await getFeedbacks({ page: pagination.current, limit: pagination.pageSize });
+      const data = response?.data?.feedbacks ?? response?.data ?? [];
+      return {
+        feedbacks: Array.isArray(data) ? data : [],
+        total: response?.pagination?.total ?? response?.data?.pagination?.total ?? 0,
+      };
+    },
+    placeholderData: (previous) => previous,
+  });
+  const feedbacks = feedbackQuery.data?.feedbacks || [];
+  const loading = feedbackQuery.isFetching;
+  const loadFeedbacks = feedbackQuery.refetch;
+  const tablePagination = { ...pagination, total: feedbackQuery.data?.total ?? pagination.total };
 
   // =====================================================
   // PRESET TAG PERMISSION
@@ -522,7 +482,7 @@ const Feedback = () => {
           feedbacks={feedbacks}
           loading={loading}
           deletingId={deletingId}
-          pagination={pagination}
+          pagination={tablePagination}
           onView={setSelectedFeedback}
           onEdit={handleEdit}
           canEdit={canEditFeedback}

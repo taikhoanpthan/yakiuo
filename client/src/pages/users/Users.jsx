@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Button,
   Card,
@@ -37,9 +38,6 @@ const Users = () => {
   const { user: currentUser } = useAuth();
   const canManageUsers = ["admin", "manager"].includes(currentUser?.role);
   const canManageRoles = currentUser?.role === "admin";
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
-
   const [search, setSearch] = useState("");
   const [role, setRole] = useState(undefined);
   const [status, setStatus] = useState(undefined);
@@ -52,33 +50,14 @@ const Users = () => {
 
   useEffect(() => onOnlineUsers(({ userIds }) => setOnlineUserIds(userIds)), []);
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-
-      const response = await getUsers({
-        page: 1,
-        limit: 100,
-        search,
-        role,
-        status,
-      });
-
-      setUsers(response.data.users || []);
-    } catch (error) {
-      console.error(error);
-
-      message.error(
-        error.response?.data?.message || "Không thể tải danh sách nhân viên",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, [role, status]);
+  const usersQuery = useQuery({
+    queryKey: ["users", { role, status }],
+    queryFn: async () => (await getUsers({ page: 1, limit: 100, search, role, status })).data.users || [],
+    placeholderData: (previous) => previous,
+  });
+  const users = usersQuery.data || [];
+  const loading = usersQuery.isFetching;
+  const fetchUsers = usersQuery.refetch;
 
   const handleSearch = () => {
     fetchUsers();

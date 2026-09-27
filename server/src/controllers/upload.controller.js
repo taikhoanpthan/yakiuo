@@ -52,6 +52,14 @@ const uploadImage = async (req, res) => {
     }
 
     await user.save();
+    if (imageType === "avatar") {
+      req.app.get("io")?.emit("user:profile-updated", {
+        user: {
+          _id: String(user._id), fullName: user.fullName, username: user.username,
+          avatar: user.avatar || "", avatarPosition: user.avatarPosition, avatarZoom: user.avatarZoom,
+        },
+      });
+    }
     await recordActivity({
       user: user._id,
       type: imageType === "cover" ? "cover_changed" : "avatar_changed",

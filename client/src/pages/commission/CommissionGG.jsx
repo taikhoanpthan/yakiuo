@@ -119,7 +119,7 @@ const CommissionGG = () => {
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <DatePicker picker="month" value={month} onChange={(value) => setMonth(value || dayjs())} format="MM/YYYY" allowClear={false} />
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button icon={<DownloadOutlined />} disabled={!images.length} loading={downloading} onClick={handleDownloadAll}>Tải tất cả</Button>
           <Upload multiple showUploadList={false} accept="image/png,image/jpeg,image/webp" customRequest={handleUpload} disabled={uploading}>
             <Button type="primary" icon={<CloudUploadOutlined />} loading={uploading}>Thêm ảnh</Button>

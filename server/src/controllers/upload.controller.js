@@ -109,7 +109,37 @@ const uploadChatImage = async (req, res) => {
   }
 };
 
+const uploadCfsVideo = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Vui lòng chọn video MP4 hoặc WebM" });
+    }
+
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: "yakiuo-erp/cfs-stories", resource_type: "video" },
+        (error, uploadResult) => (error ? reject(error) : resolve(uploadResult)),
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
+    if ((result.duration || 0) > 60) {
+      await cloudinary.uploader.destroy(result.public_id, { resource_type: "video" });
+      return res.status(400).json({ success: false, message: "Video Story chỉ được dài tối đa 60 giây" });
+    }
+
+    return res.status(201).json({
+      success: true,
+      data: { url: result.secure_url, duration: result.duration || 0, format: result.format },
+    });
+  } catch (error) {
+    console.error("Upload CFS video failed:", error);
+    return res.status(500).json({ success: false, message: "Không thể tải video Story lên" });
+  }
+};
+
 module.exports = {
   uploadImage,
   uploadChatImage,
+  uploadCfsVideo,
 };

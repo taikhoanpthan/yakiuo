@@ -30,6 +30,7 @@ import {
   SearchOutlined,
   SoundOutlined,
   UserOutlined,
+  VideoCameraOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
@@ -55,6 +56,7 @@ import {
   toggleCfsPin,
   toggleCfsReplyLike,
   uploadCfsImage,
+  uploadCfsVideo,
   updateCfsPost,
 } from "../../services/cfs.service";
 import { onCfsChanged, onCfsNotification, onOnlineUsers } from "../../services/socket";
@@ -602,9 +604,10 @@ const StoryTray = ({ stories, user, onCreate, onOpen }) => (
         className="cfs-story-card"
         key={story._id}
         onClick={() => onOpen(story)}
-        style={story.imageUrl ? undefined : { background: story.background }}
+        style={story.imageUrl || story.videoUrl ? undefined : { background: story.background }}
       >
         {story.imageUrl && <img className="cfs-story-card-image" src={optimizedCfsImage(story.imageUrl, 320)} alt="" loading="lazy" decoding="async" />}
+        {story.videoUrl && <video className="cfs-story-card-image" src={story.videoUrl} muted playsInline preload="metadata" aria-label="Story video" />}
         <UserAvatar size={38} user={story.author} className="cfs-story-avatar" openDetail={false}>
           {story.author.name?.slice(0, 1)}
         </UserAvatar>
@@ -618,6 +621,8 @@ const StoryTray = ({ stories, user, onCreate, onOpen }) => (
 const StoryCreator = ({ open, onClose, onCreated }) => {
   const [content, setContent] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [videoDuration, setVideoDuration] = useState(0);
   const [background, setBackground] = useState(storyBackgrounds[0]);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -629,15 +634,27 @@ const StoryCreator = ({ open, onClose, onCreated }) => {
   const [resolvingSpotify, setResolvingSpotify] = useState(false);
   const [musicPickerOpen, setMusicPickerOpen] = useState(false);
   const [musicSource, setMusicSource] = useState("audius");
-  const selectImage = async (event) => {
+  const selectMedia = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    const isVideo = file.type.startsWith("video/");
+    if (isVideo && !["video/mp4", "video/webm"].includes(file.type)) return message.warning("Story chỉ hỗ trợ video MP4 hoặc WebM");
+    if (isVideo && file.size > 30 * 1024 * 1024) return message.warning("Video Story phải nhỏ hơn 30 MB");
     try {
       setUploading(true);
-      const response = await uploadCfsImage(file);
-      setImageUrl(response.data?.data?.url || "");
-    } catch {
-      message.error("Không thể tải ảnh lên");
+      const response = isVideo ? await uploadCfsVideo(file) : await uploadCfsImage(file);
+      if (isVideo) {
+        setVideoUrl(response.data?.data?.url || "");
+        setVideoDuration(response.data?.data?.duration || 0);
+        setImageUrl("");
+        setSelectedMusic(null);
+      } else {
+        setImageUrl(response.data?.data?.url || "");
+        setVideoUrl("");
+        setVideoDuration(0);
+      }
+    } catch (error) {
+      message.error(error.response?.data?.message || `Không thể tải ${isVideo ? "video" : "ảnh"} lên`);
     } finally {
       setUploading(false);
       event.target.value = "";
@@ -670,13 +687,15 @@ const StoryCreator = ({ open, onClose, onCreated }) => {
     }
   };
   const submit = async () => {
-    if (!content.trim() && !imageUrl && !selectedMusic) return message.warning("Hãy thêm ảnh, nội dung hoặc nhạc cho Story");
+    if (!content.trim() && !imageUrl && !videoUrl && !selectedMusic) return message.warning("Hãy thêm ảnh, video, nội dung hoặc nhạc cho Story");
     try {
       setSaving(true);
-      const response = await createCfsStory({ content, imageUrl, background, music: selectedMusic });
+      const response = await createCfsStory({ content, imageUrl, videoUrl, videoDuration, background, music: selectedMusic });
       onCreated(response.data?.data?.story);
       setContent("");
       setImageUrl("");
+      setVideoUrl("");
+      setVideoDuration(0);
       setMusicQuery("");
       setMusicResults([]);
       setSelectedMusic(null);
@@ -695,15 +714,16 @@ const StoryCreator = ({ open, onClose, onCreated }) => {
     <Modal open={open} title="Tạo Story" onCancel={onClose} onOk={submit} okText="Đăng Story" confirmLoading={saving} destroyOnHidden className="cfs-story-creator-modal" styles={{ body: { maxHeight: "min(58dvh, 510px)", overflowY: "auto" } }}>
       <div className="cfs-story-creator">
         <div className="cfs-story-preview" style={imageUrl ? { backgroundImage: `linear-gradient(rgba(0,0,0,.18), rgba(0,0,0,.54)), url(${optimizedCfsImage(imageUrl, 720)})` } : { background }}>
+          {videoUrl && <video className="cfs-story-preview-video" src={videoUrl} controls muted playsInline preload="metadata" />}
           <span>{content || "Story của bạn"}</span>
           {selectedMusic && <small className="cfs-story-preview-music"><SoundOutlined /> {selectedMusic.title} · {selectedMusic.artist}</small>}
         </div>
         <Input.TextArea value={content} onChange={(event) => setContent(event.target.value)} placeholder="Bạn muốn chia sẻ điều gì?" maxLength={300} autoSize={{ minRows: 2, maxRows: 4 }} />
         <div className="cfs-story-tools">
-          <label className="cfs-story-image-button"><PictureOutlined /> {uploading ? "Đang tải..." : "Chọn ảnh"}<input type="file" accept="image/*" onChange={selectImage} disabled={uploading} /></label>
-          <span className="cfs-story-colors">{storyBackgrounds.map((color) => <button type="button" aria-label="Chọn nền Story" className={background === color && !imageUrl ? "is-selected" : ""} key={color} style={{ background: color }} onClick={() => setBackground(color)} />)}</span>
+          <label className="cfs-story-image-button">{videoUrl ? <VideoCameraOutlined /> : <PictureOutlined />} {uploading ? "Đang tải..." : "Chọn ảnh/video"}<input type="file" accept="image/*,video/mp4,video/webm" onChange={selectMedia} disabled={uploading} /></label>
+          <span className="cfs-story-colors">{storyBackgrounds.map((color) => <button type="button" aria-label="Chọn nền Story" className={background === color && !imageUrl && !videoUrl ? "is-selected" : ""} key={color} style={{ background: color }} onClick={() => setBackground(color)} />)}</span>
         </div>
-        <button type="button" className={selectedMusic ? "cfs-story-music-summary has-music" : "cfs-story-music-summary"} onClick={() => setMusicPickerOpen(true)}>{selectedMusic?.artworkUrl ? <img src={selectedMusic.artworkUrl} alt="" /> : <SoundOutlined />}<span>{selectedMusic ? <><small>Nhạc trong Story</small><b>{selectedMusic.title} · {selectedMusic.artist}</b></> : <><b>Thêm nhạc</b><small>Audius, Spotify, YouTube hoặc TikTok</small></>}</span><em>{selectedMusic ? "Đổi" : "+"}</em></button>
+        <button type="button" disabled={Boolean(videoUrl)} className={selectedMusic ? "cfs-story-music-summary has-music" : "cfs-story-music-summary"} onClick={() => setMusicPickerOpen(true)}>{selectedMusic?.artworkUrl ? <img src={selectedMusic.artworkUrl} alt="" /> : <SoundOutlined />}<span>{selectedMusic ? <><small>Nhạc trong Story</small><b>{selectedMusic.title} · {selectedMusic.artist}</b></> : <><b>Thêm nhạc</b><small>{videoUrl ? "Video dùng âm thanh gốc" : "Audius, Spotify, YouTube hoặc TikTok"}</small></>}</span><em>{selectedMusic ? "Đổi" : "+"}</em></button>
       </div>
     </Modal>
     <Modal open={musicPickerOpen} footer={null} onCancel={() => setMusicPickerOpen(false)} title="Chọn nhạc" className="cfs-music-picker-modal" destroyOnHidden>
@@ -723,6 +743,7 @@ const StoryCreator = ({ open, onClose, onCreated }) => {
 
 const StoryViewer = ({ story, stories, onClose, onNavigate, onDelete, externalAudioRef }) => {
   const localAudioRef = useRef(null);
+  const videoRef = useRef(null);
   const audioRef = externalAudioRef || localAudioRef;
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [spotifyEmbedOpen, setSpotifyEmbedOpen] = useState(false);
@@ -757,6 +778,10 @@ const StoryViewer = ({ story, stories, onClose, onNavigate, onDelete, externalAu
   useEffect(() => setSpotifyEmbedOpen(false), [story?._id]);
   useEffect(() => {
     if (!story?._id) return undefined;
+    if (story.videoUrl) {
+      setStoryProgress(0);
+      return undefined;
+    }
     let animationFrame;
     const startedAt = performance.now();
     setStoryProgress(0);
@@ -798,18 +823,18 @@ const StoryViewer = ({ story, stories, onClose, onNavigate, onDelete, externalAu
     <AnimatePresence>
     {story && <motion.div className="cfs-story-overlay" role="dialog" aria-modal="true" aria-label="Xem Story" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <motion.div className="cfs-story-shell" initial={{ opacity: 0, scale: 0.84, y: 18 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.88, y: 12 }} transition={{ type: "spring", stiffness: 340, damping: 28 }}>
-      <div className="cfs-story-full" style={story.imageUrl ? { backgroundImage: `linear-gradient(0deg, rgba(0,0,0,.72), rgba(0,0,0,.12)), url(${optimizedCfsImage(story.imageUrl, 1080)})` } : { background: story.background }}>
+      <div className="cfs-story-full" style={story.videoUrl ? { background: "#020617" } : story.imageUrl ? { backgroundImage: `linear-gradient(0deg, rgba(0,0,0,.72), rgba(0,0,0,.12)), url(${optimizedCfsImage(story.imageUrl, 1080)})` } : { background: story.background }}>
+        {story.videoUrl && <video ref={videoRef} className="cfs-story-full-video" src={story.videoUrl} autoPlay muted playsInline controls preload="metadata" onTimeUpdate={(event) => setStoryProgress(event.currentTarget.duration ? Math.min(event.currentTarget.currentTime / event.currentTarget.duration, 1) : 0)} onEnded={() => nextStory ? onNavigate(nextStory) : onClose()} />}
         <div className="cfs-story-progress" aria-label="Tiến trình Story">{storyGroup.map((item, itemIndex) => <span key={item._id}><i style={{ width: `${itemIndex < index ? 100 : itemIndex === index ? storyProgress * 100 : 0}%` }} /></span>)}</div>
         <button type="button" className="cfs-story-close" aria-label="Đóng Story" onClick={onClose}><CloseOutlined /></button>
-        <button type="button" className="cfs-story-nav cfs-story-nav-prev" aria-label="Story trước" disabled={!previousStory} onClick={() => previousStory && onNavigate(previousStory)} />
-        <button type="button" className="cfs-story-nav cfs-story-nav-next" aria-label="Story kế tiếp" disabled={!nextStory} onClick={() => nextStory && onNavigate(nextStory)} />
+        {!story.videoUrl && <><button type="button" className="cfs-story-nav cfs-story-nav-prev" aria-label="Story trước" disabled={!previousStory} onClick={() => previousStory && onNavigate(previousStory)} /><button type="button" className="cfs-story-nav cfs-story-nav-next" aria-label="Story kế tiếp" disabled={!nextStory} onClick={() => nextStory && onNavigate(nextStory)} /></>}
         <div className="cfs-story-full-author">
           <UserAvatar size={40} user={story.author}>{story.author.name?.slice(0, 1)}</UserAvatar>
           <span><b>{story.author.name}</b><small>{timeAgo(story.createdAt)}</small>{story.music?.trackId && <button type="button" className="cfs-story-inline-music" onClick={toggleMusic} title={musicPlaying ? "Tạm dừng nhạc" : "Phát nhạc"}><SoundOutlined /><em>{story.music.title} · {story.music.artist}</em>{musicPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}</button>}</span>
           {story.canManage && <span className="cfs-story-menu-wrap"><button type="button" className="cfs-story-more" aria-label="Tùy chọn Story" onClick={() => setStoryMenuOpen((open) => !open)}><MoreOutlined /></button>{storyMenuOpen && <button type="button" className="cfs-story-delete-menu" onClick={() => { if (window.confirm("Xóa Story này?")) onDelete(story._id); }}><DeleteOutlined /> Xóa Story</button>}</span>}
         </div>
         {story.content && <p>{story.content}</p>}
-        {!story.content && !story.imageUrl && story.music?.trackId && <button type="button" className="cfs-story-music-card" onClick={toggleMusic}>{story.music.artworkUrl ? <img src={story.music.artworkUrl} alt="" /> : <span className="cfs-story-music-card-icon"><SoundOutlined /></span>}<span><small>{story.music.provider === "spotify" ? "Spotify" : story.music.provider === "youtube" ? "YouTube" : story.music.provider === "tiktok" ? "TikTok" : "Audius"}</small><b>{story.music.title}</b><em>{story.music.artist}</em></span>{["spotify", "youtube", "tiktok"].includes(story.music.provider) ? <PlayCircleOutlined /> : musicPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}</button>}
+        {!story.content && !story.imageUrl && !story.videoUrl && story.music?.trackId && <button type="button" className="cfs-story-music-card" onClick={toggleMusic}>{story.music.artworkUrl ? <img src={story.music.artworkUrl} alt="" /> : <span className="cfs-story-music-card-icon"><SoundOutlined /></span>}<span><small>{story.music.provider === "spotify" ? "Spotify" : story.music.provider === "youtube" ? "YouTube" : story.music.provider === "tiktok" ? "TikTok" : "Audius"}</small><b>{story.music.title}</b><em>{story.music.artist}</em></span>{["spotify", "youtube", "tiktok"].includes(story.music.provider) ? <PlayCircleOutlined /> : musicPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}</button>}
         {["spotify", "youtube", "tiktok"].includes(story.music?.provider) && spotifyEmbedOpen && <iframe className="cfs-story-spotify-embed" title={`${story.music.provider}: ${story.music.title}`} src={story.music.embedUrl} width="100%" height={story.music.provider === "spotify" ? "80" : story.music.provider === "youtube" ? "180" : "500"} frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" />}
         {!externalAudioRef && story.music?.provider === "audius" && story.music.trackId && <audio ref={localAudioRef} className="cfs-story-audio" preload="auto" onPlay={() => setMusicPlaying(true)} onPause={() => setMusicPlaying(false)} src={`${API_BASE_URL}/cfs/audius/tracks/${encodeURIComponent(story.music.trackId)}/stream`} />}
       </div>

@@ -1,6 +1,7 @@
 import api from "./api";
 
 export const uploadCfsImage = (file) => { const formData = new FormData(); formData.append("image", file); return api.post("/upload/chat-image", formData); };
+export const uploadCfsVideo = (file) => { const formData = new FormData(); formData.append("video", file); return api.post("/upload/cfs-video", formData); };
 
 export const getCfsPosts = (params) => api.get("/cfs", { params });
 export const getCfsPost = (id) => api.get(`/cfs/${id}`);

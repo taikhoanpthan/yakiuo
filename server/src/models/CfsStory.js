@@ -4,6 +4,8 @@ const cfsStorySchema = new mongoose.Schema(
   {
     content: { type: String, default: "", trim: true, maxlength: 300 },
     imageUrl: { type: String, default: "", trim: true, maxlength: 1000 },
+    videoUrl: { type: String, default: "", trim: true, maxlength: 1000 },
+    videoDuration: { type: Number, default: 0, min: 0, max: 60 },
     background: { type: String, default: "#334155", trim: true, maxlength: 40 },
     music: {
       provider: { type: String, enum: ["audius", "spotify", "youtube", "tiktok"], default: undefined },

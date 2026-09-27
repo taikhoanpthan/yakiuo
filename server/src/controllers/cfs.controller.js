@@ -79,6 +79,8 @@ const presentStory = (story, viewer) => ({
   _id: story._id,
   content: story.content,
   imageUrl: story.imageUrl || "",
+  videoUrl: story.videoUrl || "",
+  videoDuration: story.videoDuration || 0,
   background: story.background || "#334155",
   music: story.music?.trackId ? {
     provider: story.music.provider || "audius",
@@ -273,6 +275,8 @@ exports.createStory = async (req, res) => {
   try {
     const content = String(req.body.content || "").trim();
     const imageUrl = String(req.body.imageUrl || "").trim();
+    const videoUrl = String(req.body.videoUrl || "").trim();
+    const videoDuration = Math.max(0, Math.min(Number(req.body.videoDuration) || 0, 60));
     const background = String(req.body.background || "#334155").trim();
     const rawMusic = req.body.music && typeof req.body.music === "object" ? req.body.music : null;
     const externalProvider = ["spotify", "youtube", "tiktok"].includes(rawMusic?.provider) ? rawMusic.provider : "";
@@ -286,9 +290,9 @@ exports.createStory = async (req, res) => {
       startAt: Math.max(0, Math.min(Number(rawMusic.startAt) || 0, 7200)),
       embedUrl: externalProvider === "spotify" ? `https://open.spotify.com/embed/track/${String(rawMusic.trackId).trim().slice(0, 120)}` : externalProvider === "youtube" ? `https://www.youtube-nocookie.com/embed/${String(rawMusic.trackId).trim().slice(0, 120)}?autoplay=1&rel=0` : externalProvider === "tiktok" ? `https://www.tiktok.com/embed/v2/${String(rawMusic.trackId).trim().slice(0, 120)}` : "",
     } : undefined;
-    if (!content && !imageUrl && !music) return res.status(400).json({ success: false, message: "Vui lòng nhập nội dung, chọn ảnh hoặc thêm nhạc" });
+    if (!content && !imageUrl && !videoUrl && !music) return res.status(400).json({ success: false, message: "Vui lòng nhập nội dung, chọn ảnh/video hoặc thêm nhạc" });
     if (music && !/^[A-Za-z0-9_-]{1,120}$/.test(music.trackId)) return res.status(400).json({ success: false, message: "Bài hát không hợp lệ" });
-    const story = await CfsStory.create({ content, imageUrl, background, music, author: req.user._id, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) });
+    const story = await CfsStory.create({ content, imageUrl, videoUrl, videoDuration, background, music, author: req.user._id, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) });
     await story.populate("author", userFields);
     return res.status(201).json({ success: true, data: { story: presentStory(story, req.user) } });
   } catch (error) {

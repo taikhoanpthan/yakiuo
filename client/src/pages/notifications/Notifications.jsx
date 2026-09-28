@@ -72,7 +72,7 @@ const Notifications = () => {
   const [tagSaving, setTagSaving] = useState(false);
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
   const [maintenanceSaving, setMaintenanceSaving] = useState(false);
-  const [features, setFeatures] = useState({ cfs: true, caro: true, teaGame: true });
+  const [features, setFeatures] = useState({ cfs: true, caro: true });
   const [featureSaving, setFeatureSaving] = useState(null);
   // =========================
   // LOAD DATA
@@ -670,7 +670,6 @@ const Notifications = () => {
             {[
               { key: "cfs", title: "Yakiuo CFS", description: "Hiển thị trang CFS cho người dùng.", icon: <CoffeeOutlined /> },
               { key: "caro", title: "Cờ caro", description: "Hiển thị trang chơi cờ caro.", icon: <TrophyOutlined /> },
-              { key: "teaGame", title: "Quầy pha chế", description: "Cho nhân viên chơi game và xem bảng xếp hạng.", icon: <CoffeeOutlined /> },
             ].map((feature) => (
               <div key={feature.key} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-4">
                 <div className="flex items-center gap-3"><span className="text-lg text-blue-600">{feature.icon}</span><div><b className="text-sm text-slate-800">{feature.title}</b><p className="m-0 mt-1 text-xs text-slate-400">{feature.description}</p></div></div>

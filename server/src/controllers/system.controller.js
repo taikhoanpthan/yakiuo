@@ -1,6 +1,6 @@
 const SystemSetting = require("../models/SystemSetting");
 const User = require("../models/User");
-const DEFAULT_FEATURES = { cfs: true, caro: true, teaGame: true };
+const DEFAULT_FEATURES = { cfs: true, caro: true };
 const getSettings = () => SystemSetting.findOne({ key: "system" }).select("maintenanceMode features").lean();
 const getStatusData = (settings) => ({
   maintenanceMode: Boolean(settings?.maintenanceMode),

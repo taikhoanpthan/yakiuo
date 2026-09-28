@@ -16,7 +16,6 @@ const LateFeedbackEntries = lazy(() => import("../pages/admin/LateFeedbackEntrie
 const Cfs = lazy(() => import("../pages/cfs/Cfs"));
 const Maintenance = lazy(() => import("../pages/maintenance/Maintenance"));
 const Caro = lazy(() => import("../pages/caro/Caro"));
-const TeaGame = lazy(() => import("../pages/game/TeaGame"));
 
 const PageLoader = () => <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">Đang tải...</div>;
 const page = (Page) => <Suspense fallback={<PageLoader />}><Page /></Suspense>;
@@ -39,7 +38,6 @@ const AppRouter = () => (
       <Route path="/cfs" element={featurePage(Cfs, "cfs")} />
       <Route path="/cfs/:postId" element={featurePage(Cfs, "cfs")} />
       <Route path="/caro" element={featurePage(Caro, "caro", ["admin", "employee", "premium"])} />
-      <Route path="/tea-game" element={featurePage(TeaGame, "teaGame")} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Route>
   </Routes>

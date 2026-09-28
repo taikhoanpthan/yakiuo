@@ -41,7 +41,6 @@ const workScheduleRoutes = require("./routes/workSchedule.routes");
 const cfsRoutes = require("./routes/cfs.routes");
 const trashRoutes = require("./routes/trash.routes");
 const caroRoutes = require("./routes/caro.routes");
-const teaGameRoutes = require("./routes/teaGame.routes");
 const { startTrashCleanup } = require("./services/trashCleanup.service");
 const { auditMutations } = require("./middleware/audit.middleware");
 // =========================
@@ -196,7 +195,6 @@ app.use("/api/work-schedule", workScheduleRoutes);
 app.use("/api/cfs", cfsRoutes);
 app.use("/api/trash", trashRoutes);
 app.use("/api/caro", caroRoutes);
-app.use("/api/tea-game", teaGameRoutes);
 // =========================
 // CLOUDINARY TEST
 // =========================

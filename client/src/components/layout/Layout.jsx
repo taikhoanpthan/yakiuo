@@ -115,7 +115,7 @@ const Layout = () => {
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [features, setFeatures] = useState({ cfs: true, caro: true, teaGame: true });
+  const [features, setFeatures] = useState({ cfs: true, caro: true });
   const lastNotificationAccountRef = useRef(null);
 
   useEffect(() => {
@@ -252,15 +252,6 @@ const Layout = () => {
       });
     }
 
-    if (features.teaGame) {
-      items.push({
-        key: "/tea-game",
-        label: "Quầy pha chế",
-        shortLabel: "Pha chế",
-        icon: <CoffeeOutlined />,
-      });
-    }
-
     // Mọi tài khoản đã đăng nhập đều có thể xem hồ sơ nhân viên.
     items.splice(1, 0, {
       key: "/users",
@@ -285,7 +276,7 @@ const Layout = () => {
     }
 
     return items;
-  }, [features.caro, features.cfs, features.teaGame, user?.role]);
+  }, [features.caro, features.cfs, user?.role]);
 
   // ===================================================
   // MOBILE MENU
@@ -298,8 +289,6 @@ const Layout = () => {
 
     if (features.caro && ["admin", "employee", "premium"].includes(user?.role)) keys.push("/caro");
 
-    if (features.teaGame) keys.push("/tea-game");
-
     if (["admin", "manager"].includes(user?.role)) {
       keys.push("/notifications");
     }
@@ -307,7 +296,7 @@ const Layout = () => {
     return keys
       .map((key) => menuItems.find((item) => item.key === key))
       .filter(Boolean);
-  }, [features.caro, features.cfs, features.teaGame, menuItems, user?.role]);
+  }, [features.caro, features.cfs, menuItems, user?.role]);
 
   const mobileTaskbarItems = useMemo(
     () => [

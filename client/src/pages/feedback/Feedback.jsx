@@ -461,16 +461,27 @@ const Feedback = () => {
       </div>
 
       <Card className="erp-section-card erp-filter-card mb-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <span className="shrink-0 text-sm font-medium text-slate-600">Ngày feedback</span>
+        <div className="feedback-filter-row">
+          <span className="feedback-filter-label">Ngày feedback</span>
           <DatePicker.RangePicker
             value={dateRange}
             format="DD/MM/YYYY"
             placeholder={["Từ ngày", "Đến ngày"]}
             allowClear
-            className="w-full sm:w-[320px]"
+            className="feedback-date-range"
             onChange={(range) => {
               setDateRange(range);
+              setPagination((previous) => ({ ...previous, current: 1 }));
+            }}
+          />
+          <DatePicker
+            value={dateRange?.[0] || null}
+            format="DD/MM/YYYY"
+            placeholder="Chọn ngày"
+            allowClear
+            className="feedback-mobile-date"
+            onChange={(date) => {
+              setDateRange(date ? [date, date] : null);
               setPagination((previous) => ({ ...previous, current: 1 }));
             }}
           />

@@ -30,7 +30,6 @@ import {
   EditOutlined,
   ExclamationCircleOutlined,
   InfoCircleOutlined,
-  MessageOutlined,
   PlusOutlined,
   ReloadOutlined,
   TrophyOutlined,
@@ -73,7 +72,7 @@ const Notifications = () => {
   const [tagSaving, setTagSaving] = useState(false);
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
   const [maintenanceSaving, setMaintenanceSaving] = useState(false);
-  const [features, setFeatures] = useState({ cfs: true, caro: true, chat: true });
+  const [features, setFeatures] = useState({ cfs: true, caro: true, teaGame: true });
   const [featureSaving, setFeatureSaving] = useState(null);
   // =========================
   // LOAD DATA
@@ -667,11 +666,11 @@ const Notifications = () => {
             <div><b className="text-slate-800">Chế độ bảo trì</b><p className="m-0 mt-1 text-sm text-slate-500">Đăng xuất người dùng và hiển thị trang bảo trì. Admin vẫn có thể truy cập để tắt.</p></div>
             <Switch checked={maintenanceMode} loading={maintenanceSaving} onChange={changeMaintenance} checkedChildren="Bật" unCheckedChildren="Tắt" />
           </div>
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
+          <div className="mt-3 grid gap-3 md:grid-cols-4">
             {[
               { key: "cfs", title: "Yakiuo CFS", description: "Hiển thị trang CFS cho người dùng.", icon: <CoffeeOutlined /> },
               { key: "caro", title: "Cờ caro", description: "Hiển thị trang chơi cờ caro.", icon: <TrophyOutlined /> },
-              { key: "chat", title: "Chat nội bộ", description: "Hiển thị trang trò chuyện nội bộ.", icon: <MessageOutlined /> },
+              { key: "teaGame", title: "Quầy pha chế", description: "Cho nhân viên chơi game và xem bảng xếp hạng.", icon: <CoffeeOutlined /> },
             ].map((feature) => (
               <div key={feature.key} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-4">
                 <div className="flex items-center gap-3"><span className="text-lg text-blue-600">{feature.icon}</span><div><b className="text-sm text-slate-800">{feature.title}</b><p className="m-0 mt-1 text-xs text-slate-400">{feature.description}</p></div></div>

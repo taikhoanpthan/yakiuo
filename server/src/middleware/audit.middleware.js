@@ -9,8 +9,6 @@ const resourceLabels = {
   "commission-gg": "hoa hồng Google",
   "work-schedule": "lịch làm việc",
   notifications: "thông báo",
-  messages: "tin nhắn",
-  conversations: "cuộc trò chuyện",
   cfs: "CFS",
   system: "cài đặt hệ thống",
   upload: "tệp đính kèm",

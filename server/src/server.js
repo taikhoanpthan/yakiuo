@@ -38,20 +38,17 @@ const commissionRoutes = require("./routes/commission.routes");
 const commissionGGRoutes = require("./routes/commissionGG.routes");
 const feedbackTagRoutes = require("./routes/feedbackTag.routes");
 const workScheduleRoutes = require("./routes/workSchedule.routes");
-const conversationRoutes = require("./routes/conversation.routes");
-const messageRoutes = require("./routes/message.routes");
 const cfsRoutes = require("./routes/cfs.routes");
 const trashRoutes = require("./routes/trash.routes");
 const caroRoutes = require("./routes/caro.routes");
+const teaGameRoutes = require("./routes/teaGame.routes");
 const { startTrashCleanup } = require("./services/trashCleanup.service");
 const { auditMutations } = require("./middleware/audit.middleware");
 // =========================
 // SOCKET
 // =========================
 
-// File:
-// server/src/sockets/chat.socket.js
-const setupChatSocket = require("./sockets/chat.socket");
+const setupPresenceSocket = require("./sockets/presence.socket");
 const setupCaroSocket = require("./sockets/caro.socket");
 
 // =========================
@@ -156,8 +153,7 @@ app.set("io", io);
 // =========================
 
 // Toàn bộ socket event nằm trong:
-// src/sockets/chat.socket.js
-setupChatSocket(io);
+setupPresenceSocket(io);
 setupCaroSocket(io);
 
 // =========================
@@ -196,13 +192,11 @@ app.use("/api/feedback-tags", feedbackTagRoutes);
 
 app.use("/api/work-schedule", workScheduleRoutes);
 
-app.use("/api/conversations", conversationRoutes);
-
-app.use("/api/messages", messageRoutes);
 
 app.use("/api/cfs", cfsRoutes);
 app.use("/api/trash", trashRoutes);
 app.use("/api/caro", caroRoutes);
+app.use("/api/tea-game", teaGameRoutes);
 // =========================
 // CLOUDINARY TEST
 // =========================

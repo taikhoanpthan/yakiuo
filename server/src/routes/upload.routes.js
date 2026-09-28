@@ -2,7 +2,7 @@ const express = require("express");
 
 const upload = require("../middleware/upload.middleware");
 const { authenticate } = require("../middleware/auth.middleware");
-const { uploadImage, uploadChatImage, uploadCfsVideo } = require("../controllers/upload.controller");
+const { uploadImage, uploadCfsImage, uploadCfsVideo } = require("../controllers/upload.controller");
 
 const router = express.Router();
 
@@ -13,7 +13,7 @@ router.post(
   uploadImage,
 );
 
-router.post("/chat-image", authenticate, upload.single("image"), uploadChatImage);
+router.post("/cfs-image", authenticate, upload.single("image"), uploadCfsImage);
 router.post("/cfs-video", authenticate, upload.uploadVideo.single("video"), uploadCfsVideo);
 
 module.exports = router;

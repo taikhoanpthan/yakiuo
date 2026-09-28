@@ -1,0 +1,436 @@
+/* Mặt bằng pixel gốc cho phiên bản quản lý quán 2D. */
+.brew-shop-scene {
+  isolation: isolate;
+  min-height: 520px;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, #9a7657 2px, transparent 2px) 0 0 / 46px 46px,
+    linear-gradient(#9a7657 2px, transparent 2px) 0 0 / 46px 46px,
+    #d4bb8d !important;
+  image-rendering: pixelated;
+}
+
+.brew-shop-scene::after {
+  content: "Khách sẽ tự đi vào quầy · nhân viên mang ly ra bàn";
+  right: 10px;
+  bottom: 9px;
+  z-index: 20;
+  color: #fff0c1;
+  background: #392217e8;
+  border: 2px solid #9b6a41;
+  border-radius: 3px;
+  font-family: monospace;
+  letter-spacing: .1px;
+}
+
+.brew-shop-sign,
+.brew-counter,
+.brew-customer,
+.brew-sidewalk {
+  display: none;
+}
+
+.brew-day-chip {
+  z-index: 30;
+  font-family: monospace;
+  border: 2px solid #ffe19a;
+  border-radius: 2px;
+  box-shadow: 2px 2px 0 #503020;
+}
+
+.pixel-sprite {
+  position: absolute;
+  z-index: 3;
+  background-image: url('/tea-shop-pixel-sprites.png');
+  background-repeat: no-repeat;
+  background-size: 768px 512px;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.pixel-counter {
+  width: 214px;
+  height: 222px;
+  left: 8px;
+  top: 48px;
+  background-position: 0 -36px;
+}
+
+.pixel-prep {
+  width: 350px;
+  height: 190px;
+  right: -4px;
+  top: 54px;
+  background-position: -406px -288px;
+}
+
+.pixel-table {
+  width: 230px;
+  height: 160px;
+  left: 88px;
+  bottom: 65px;
+  background-position: 0 -296px;
+}
+
+.pixel-table-two {
+  left: 342px;
+  bottom: 80px;
+  width: 142px;
+  height: 142px;
+  background-position: -252px -300px;
+}
+
+.pixel-customer,
+.pixel-waiter {
+  position: absolute;
+  z-index: 12;
+  width: 94px;
+  height: 160px;
+  background-image: url('/tea-shop-pixel-sprites.png');
+  background-repeat: no-repeat;
+  background-size: 768px 512px;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.pixel-customer {
+  left: -112px;
+  top: 221px;
+  background-position: -375px -66px;
+}
+
+.pixel-customer.arriving { animation: pixel-customer-arrive 1.1s steps(6, end) forwards; }
+.pixel-customer.waiting { left: 250px; top: 145px; animation: pixel-customer-wait 1.1s steps(2, end) infinite; }
+.pixel-customer.seated { left: 158px; top: 307px; transform: scale(.72); animation: pixel-customer-sit 1.25s steps(5, end) forwards; }
+.pixel-customer.leaving { left: 250px; top: 145px; animation: pixel-customer-leave .75s steps(4, end) forwards; }
+
+.pixel-waiter {
+  left: 21px;
+  top: 144px;
+  width: 116px;
+  height: 184px;
+  background-position: -238px -43px;
+  filter: drop-shadow(2px 3px 0 #6d4a35aa);
+}
+
+.pixel-waiter.idle { animation: pixel-waiter-breathe 1.25s steps(2, end) infinite; }
+.pixel-waiter.serving { animation: pixel-waiter-serve .9s steps(6, end) forwards; }
+.pixel-waiter.returning { left: 166px; top: 280px; animation: pixel-waiter-return .75s steps(5, end) forwards; }
+
+.pixel-order-bubble {
+  position: absolute;
+  z-index: 18;
+  left: 310px;
+  top: 116px;
+  display: none;
+  min-width: 64px;
+  padding: 5px 7px;
+  border: 2px solid #704125;
+  background: #fff4ce;
+  color: #48271b;
+  box-shadow: 3px 3px 0 #8c5e3b;
+  font: 700 10px monospace;
+}
+.pixel-order-bubble::after { content: ""; position: absolute; left: 9px; bottom: -8px; border: 5px solid transparent; border-top-color: #704125; }
+.pixel-order-bubble.is-visible { display: block; animation: pixel-bubble-in .25s steps(2, end); }
+
+.brew-scene-brewer {
+  z-index: 25;
+  left: 22px;
+  right: 22px;
+  bottom: 9px;
+  padding: 7px;
+  border: 3px solid #4b2c1e;
+  border-radius: 2px;
+  background: #5b3624f2;
+  box-shadow: 3px 3px 0 #20110b;
+}
+.brew-scene-brewer select { min-width: 0; height: 30px; font: 700 11px monospace; border-radius: 1px; }
+.brew-scene-brewer button { height: 30px; font: 800 11px monospace; border-radius: 1px; }
+
+@keyframes pixel-customer-arrive { from { left: -112px; } to { left: 250px; } }
+@keyframes pixel-customer-wait { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes pixel-customer-sit { 0% { left: 250px; top: 145px; transform: scale(1); } 70% { left: 158px; top: 245px; transform: scale(.85); } 100% { left: 158px; top: 307px; transform: scale(.72); } }
+@keyframes pixel-customer-leave { from { left: 250px; } to { left: -118px; } }
+@keyframes pixel-waiter-breathe { 50% { transform: translateY(-2px); } }
+@keyframes pixel-waiter-serve { from { left: 21px; top: 144px; } to { left: 166px; top: 280px; } }
+@keyframes pixel-waiter-return { from { left: 166px; top: 280px; } to { left: 21px; top: 144px; } }
+@keyframes pixel-bubble-in { from { transform: scale(0); } to { transform: scale(1); } }
+
+@media (max-width: 600px) {
+  .brew-shop-scene { min-height: 480px; }
+  .pixel-prep { right: -104px; top: 57px; }
+  .pixel-table { left: 18px; bottom: 55px; transform: scale(.84); transform-origin: bottom left; }
+  .pixel-table-two { left: 206px; bottom: 76px; transform: scale(.78); transform-origin: bottom left; }
+  .pixel-customer.waiting { left: 184px; }
+  .pixel-customer.seated { left: 76px; }
+  .pixel-customer.arriving { animation-name: pixel-customer-arrive-mobile; }
+  .pixel-customer.leaving { left: 184px; animation-name: pixel-customer-leave-mobile; }
+  .pixel-order-bubble { left: 239px; }
+  .brew-scene-brewer { left: 7px; right: 7px; bottom: 6px; gap: 3px; }
+  .brew-scene-brewer select { width: calc(33.33% - 3px); flex: initial; }
+  .brew-scene-brewer button { width: 100%; margin-top: 3px; }
+}
+@keyframes pixel-customer-arrive-mobile { from { left: -112px; } to { left: 184px; } }
+@keyframes pixel-customer-leave-mobile { from { left: 184px; } to { left: -118px; } }
+
+/* Sprite walk cycles: nền là từng khung chân/tay xen kẽ, vị trí nhân vật vẫn do animation bên trên điều khiển. */
+.pixel-customer,
+.pixel-waiter,
+.pixel-seated {
+  background-image: none;
+  overflow: visible;
+}
+
+.pixel-customer::before,
+.pixel-waiter::before,
+.pixel-seated::before {
+  content: "";
+  display: block;
+  width: 72px;
+  height: 120px;
+  background-image: url('/tea-shop-character-walk.png');
+  background-repeat: no-repeat;
+  background-size: 360px 240px;
+  image-rendering: pixelated;
+}
+
+.pixel-customer { width: 72px; height: 120px; top: 221px; }
+.pixel-waiter { width: 72px; height: 120px; left: 21px; top: 148px; filter: drop-shadow(1px 2px 0 #6d4a35aa); }
+.pixel-customer::before { background-position: 0 -120px; animation: pixel-customer-walk-frames .48s steps(1, end) infinite; }
+.pixel-waiter::before { background-position: 0 0; animation: pixel-waiter-walk-frames .42s steps(1, end) infinite; }
+
+.pixel-customer.waiting { left: 250px; top: 158px; }
+.pixel-customer.waiting::before { animation-name: pixel-customer-idle-frames; }
+.pixel-customer.seated { left: 168px; top: 300px; transform: scale(.63); transform-origin: bottom center; }
+.pixel-customer.seated::before { animation-name: pixel-customer-sit-frame; }
+.pixel-customer.leaving { left: 250px; top: 158px; }
+.pixel-waiter.returning { left: 166px; top: 280px; }
+
+.pixel-seated {
+  position: absolute;
+  z-index: 11;
+  width: 55px;
+  height: 92px;
+  pointer-events: none;
+  transform: scale(.62);
+  transform-origin: bottom center;
+}
+.pixel-seated::before { background-position: -288px -120px; }
+.pixel-seat-0 { left: 169px; top: 305px; }
+.pixel-seat-1 { left: 389px; top: 312px; }
+
+@keyframes pixel-waiter-walk-frames {
+  0%, 100% { background-position: 0 0; }
+  25% { background-position: -72px 0; }
+  50% { background-position: -144px 0; }
+  75% { background-position: -216px 0; }
+}
+@keyframes pixel-customer-walk-frames {
+  0%, 100% { background-position: 0 -120px; }
+  25% { background-position: -72px -120px; }
+  50% { background-position: -144px -120px; }
+  75% { background-position: -216px -120px; }
+}
+@keyframes pixel-customer-idle-frames {
+  0%, 100% { background-position: 0 -120px; transform: translateY(0); }
+  50% { background-position: -72px -120px; transform: translateY(-2px); }
+}
+@keyframes pixel-customer-sit-frame { to { background-position: -288px -120px; } }
+
+@media (max-width: 600px) {
+  .pixel-customer.waiting { left: 184px; }
+  .pixel-customer.seated { left: 86px; }
+  .pixel-seat-0 { left: 88px; top: 309px; }
+  .pixel-seat-1 { left: 244px; top: 316px; }
+}
+
+/* Một tỉ lệ chung cho mọi vật thể trên mặt bằng. */
+.brew-shop-scene { --world-scale: .56; }
+.pixel-counter { left: 22px; top: 58px; transform: scale(var(--world-scale)); transform-origin: top left; }
+.pixel-prep { right: 22px; top: 62px; transform: scale(var(--world-scale)); transform-origin: top right; }
+.pixel-table { left: 150px; bottom: 118px; transform: scale(var(--world-scale)); transform-origin: bottom left; }
+.pixel-table-two { left: 430px; bottom: 132px; transform: scale(var(--world-scale)); transform-origin: bottom left; }
+
+.pixel-customer::before,
+.pixel-waiter::before,
+.pixel-seated::before { transform: scale(var(--world-scale)); transform-origin: top left; }
+.pixel-customer.waiting::before { animation-name: pixel-customer-idle-small; }
+.pixel-seated { transform: none; }
+.pixel-seat-0 { left: 208px; top: 329px; }
+.pixel-seat-1 { left: 455px; top: 335px; }
+
+.pixel-order-bubble {
+  left: 275px;
+  top: 121px;
+  min-width: 0;
+  width: 34px;
+  height: 34px;
+  padding: 3px;
+  display: none;
+  place-items: center;
+  border-radius: 50%;
+  box-shadow: 2px 2px 0 #8c5e3b;
+}
+.pixel-order-bubble.is-visible { display: grid; }
+.pixel-order-bubble span { font-size: 20px; line-height: 1; filter: drop-shadow(1px 1px 0 #fff); }
+.pixel-order-bubble::after { left: 8px; bottom: -9px; }
+
+.brew-scene-brewer {
+  left: 12px;
+  right: auto;
+  bottom: 10px;
+  width: 300px;
+  padding: 5px;
+  gap: 3px;
+}
+.brew-scene-brewer select { height: 26px; font-size: 9px; }
+.brew-scene-brewer button { height: 27px; font-size: 10px; }
+
+@keyframes pixel-customer-idle-small {
+  0%, 100% { background-position: 0 -120px; transform: scale(var(--world-scale)) translateY(0); }
+  50% { background-position: -72px -120px; transform: scale(var(--world-scale)) translateY(-2px); }
+}
+
+@media (max-width: 600px) {
+  .brew-shop-scene { --world-scale: .48; }
+  .pixel-counter { left: 11px; transform: scale(var(--world-scale)); }
+  .pixel-prep { right: -50px; transform: scale(var(--world-scale)); }
+  .pixel-table { left: 78px; bottom: 111px; transform: scale(var(--world-scale)); }
+  .pixel-table-two { left: 247px; bottom: 128px; transform: scale(var(--world-scale)); }
+  .pixel-seat-0 { left: 111px; top: 329px; }
+  .pixel-seat-1 { left: 278px; top: 336px; }
+  .pixel-order-bubble { left: 210px; top: 124px; }
+  .brew-scene-brewer { left: 7px; width: 286px; }
+}
+
+/* Luồng phục vụ: gọi bill ở quầy -> khách đi tới bàn -> nhân viên giao ly đúng bàn. */
+.pixel-customer.ordering { left: 250px; top: 158px; animation: pixel-customer-wait 1.1s steps(2, end) infinite; }
+.pixel-customer.ordering::before { animation-name: pixel-customer-idle-small; }
+.pixel-customer.to-table { left: 250px; top: 158px; }
+.pixel-customer.to-table.seat-0 { animation: pixel-customer-to-table-one 1.05s steps(7, end) forwards; }
+.pixel-customer.to-table.seat-1 { animation: pixel-customer-to-table-two 1.05s steps(7, end) forwards; }
+.pixel-customer.seated-awaiting,
+.pixel-customer.served { top: 329px; animation: pixel-customer-wait 1.1s steps(2, end) infinite; }
+.pixel-customer.seated-awaiting.seat-0,
+.pixel-customer.served.seat-0 { left: 208px; }
+.pixel-customer.seated-awaiting.seat-1,
+.pixel-customer.served.seat-1 { left: 455px; top: 335px; }
+.pixel-customer.seated-awaiting::before,
+.pixel-customer.served::before { background-position: -288px -120px; animation: none; transform: scale(var(--world-scale)); }
+.pixel-customer.leaving-from-table.seat-0 { left: 208px; top: 329px; animation: pixel-customer-leave-table-one .8s steps(6, end) forwards; }
+.pixel-customer.leaving-from-table.seat-1 { left: 455px; top: 335px; animation: pixel-customer-leave-table-two .8s steps(6, end) forwards; }
+
+.pixel-waiter.serving.seat-0 { animation: pixel-waiter-serve-table-one .9s steps(6, end) forwards; }
+.pixel-waiter.serving.seat-1 { animation: pixel-waiter-serve-table-two .9s steps(6, end) forwards; }
+.pixel-waiter.returning.seat-0 { left: 166px; top: 280px; animation: pixel-waiter-return-table-one .75s steps(5, end) forwards; }
+.pixel-waiter.returning.seat-1 { left: 430px; top: 286px; animation: pixel-waiter-return-table-two .9s steps(6, end) forwards; }
+
+.pixel-order-bill {
+  position: absolute;
+  z-index: 19;
+  left: 314px;
+  top: 150px;
+  display: none;
+  min-width: 120px;
+  padding: 6px 8px;
+  border: 2px solid #704125;
+  background: #fff4ce;
+  color: #48271b;
+  box-shadow: 3px 3px 0 #8c5e3b;
+  font: 700 9px monospace;
+  line-height: 1.5;
+}
+.pixel-order-bill.is-visible { display: grid; animation: pixel-bubble-in .25s steps(2, end); }
+.pixel-order-bill b { color: #a63c1d; }
+.pixel-order-bill small { color: #76503d; font-size: 8px; }
+
+@keyframes pixel-customer-to-table-one { from { left: 250px; top: 158px; } to { left: 208px; top: 329px; } }
+@keyframes pixel-customer-to-table-two { from { left: 250px; top: 158px; } to { left: 455px; top: 335px; } }
+@keyframes pixel-customer-leave-table-one { from { left: 208px; top: 329px; } to { left: -90px; top: 205px; } }
+@keyframes pixel-customer-leave-table-two { from { left: 455px; top: 335px; } to { left: -90px; top: 205px; } }
+@keyframes pixel-waiter-serve-table-one { from { left: 21px; top: 148px; } to { left: 166px; top: 280px; } }
+@keyframes pixel-waiter-serve-table-two { from { left: 21px; top: 148px; } to { left: 430px; top: 286px; } }
+@keyframes pixel-waiter-return-table-one { from { left: 166px; top: 280px; } to { left: 21px; top: 148px; } }
+@keyframes pixel-waiter-return-table-two { from { left: 430px; top: 286px; } to { left: 21px; top: 148px; } }
+
+@media (max-width: 600px) {
+  .pixel-customer.ordering { left: 184px; }
+  .pixel-customer.to-table.seat-0 { animation-name: pixel-customer-to-table-one-mobile; }
+  .pixel-customer.to-table.seat-1 { animation-name: pixel-customer-to-table-two-mobile; }
+  .pixel-customer.seated-awaiting.seat-0,
+  .pixel-customer.served.seat-0 { left: 111px; }
+  .pixel-customer.seated-awaiting.seat-1,
+  .pixel-customer.served.seat-1 { left: 278px; }
+  .pixel-order-bill { left: 246px; top: 152px; min-width: 102px; }
+}
+@keyframes pixel-customer-to-table-one-mobile { from { left: 184px; top: 158px; } to { left: 111px; top: 329px; } }
+@keyframes pixel-customer-to-table-two-mobile { from { left: 184px; top: 158px; } to { left: 278px; top: 335px; } }
+
+.brew-delivery-total{display:flex;justify-content:space-between;gap:10px;margin:0 0 16px;border:2px solid #b88d62;background:#fff8e8;padding:10px;color:#5d291b;font-size:13px}.brew-delivery-total b{color:#9a3412}.brew-upgrade-modal{width:min(100%,600px);border:4px solid #684530;border-radius:5px;background:#f1dfbd;padding:24px;box-shadow:0 10px 0 #2b1a12}.brew-upgrade-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.brew-upgrade-heading h2{margin:0;color:#5d291b;font-size:25px}.brew-upgrade-heading p{margin:5px 0 17px;color:#725542;font-size:13px}.brew-upgrade-heading>b{white-space:nowrap;border:2px solid #a8794e;background:#fff2cf;padding:8px;color:#7c2d12}.brew-upgrade-list{display:grid;gap:9px;margin-bottom:15px}.brew-upgrade-card{display:flex;align-items:center;gap:11px;border:2px solid #b88d62;background:#fff8e8;padding:11px}.brew-upgrade-card.is-purchased{border-color:#6d8d52;background:#edf3db}.brew-upgrade-card>span{font-size:28px}.brew-upgrade-card>div{flex:1}.brew-upgrade-card b,.brew-upgrade-card small{display:block}.brew-upgrade-card b{color:#5d291b}.brew-upgrade-card small{margin-top:3px;color:#725542;font-size:12px}.brew-upgrade-card button{border:2px solid #8f3e22;background:#b8582c;color:#fff8dc;cursor:pointer;font-weight:900;padding:7px 10px}.brew-upgrade-card button:disabled{border-color:#a58e73;background:#d4c3a7;color:#715d49;cursor:not-allowed}.brew-upgrade-modal>.brew-howto-close{border:2px solid #a8794e;border-radius:2px;background:#fff8e8;color:#5d291b;padding:8px 10px}
+
+/* Cảnh quán có hai bàn trống. Khách chỉ xuất hiện theo đúng vòng đời đơn hàng. */
+.brew-game-page { border-radius: 14px; padding: 12px; box-shadow: 0 20px 40px #1b110bb8; }
+.brew-game-hero { border-radius: 10px; }
+.brew-shop-scene { border: 0; border-radius: 10px; box-shadow: inset 0 0 0 3px #75513c, 0 12px 28px #130b0755; }
+.pixel-table-two { width: 230px; height: 160px; background-position: 0 -296px; }
+.pixel-customer.seated-awaiting,
+.pixel-customer.served { z-index: 2; }
+.pixel-customer.seated-awaiting::before,
+.pixel-customer.served::before {
+  animation: pixel-customer-sitting-breathe 2.3s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+@keyframes pixel-customer-sitting-breathe {
+  0%, 100% { background-position: -288px -120px; transform: scale(var(--world-scale)) translateY(2px); }
+  50% { background-position: -288px -120px; transform: scale(var(--world-scale)) translateY(-1px); }
+}
+@media (max-width: 600px) {
+  .brew-game-page { border-radius: 10px; padding: 8px; }
+  .pixel-table-two { width: 230px; height: 160px; }
+}
+
+/* Phiếu nhập hàng: ưu tiên đọc nhanh và thao tác bằng một tay. */
+.brew-stock-modal { width: min(100%, 680px); padding: 0; overflow: hidden; border: 0; border-radius: 16px; background: #fffaf0; box-shadow: 0 24px 64px #160b0780; }
+.brew-delivery-heading { display: flex; justify-content: space-between; gap: 16px; padding: 24px 25px 19px; color: #fff5df; background: radial-gradient(circle at 90% 0, #f0a958, transparent 31%), linear-gradient(135deg, #603922, #8d4e2b); }
+.brew-delivery-heading .brew-eyebrow { display: block; margin-bottom: 5px; color: #f8d49a; font-family: monospace; font-size: 10px; letter-spacing: .12em; }
+.brew-delivery-heading h2 { margin: 0; color: #fff8ea; font-size: clamp(22px, 4vw, 29px); line-height: 1.1; }
+.brew-delivery-heading p { max-width: 440px; margin: 7px 0 0; color: #f9ddbb; font-size: 13px; }
+.brew-delivery-truck { display: grid; width: 52px; height: 52px; place-items: center; align-self: center; border: 1px solid #e7b46e; border-radius: 16px; background: #ffffff18; font-size: 27px; transform: rotate(-4deg); }
+.brew-delivery-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0; padding: 18px 20px 13px; }
+.brew-delivery-item { display: grid; gap: 10px; min-width: 0; border: 1px solid #f1d8ae; border-radius: 13px; background: #fff; padding: 11px; box-shadow: 0 4px 12px #6e3b1710; transition: transform .16s ease, box-shadow .16s ease; }
+.brew-delivery-item:hover { transform: translateY(-2px); box-shadow: 0 9px 18px #6e3b1720; }
+.brew-delivery-item-copy { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.brew-delivery-item-copy > span { display: grid; width: 31px; height: 31px; place-items: center; flex: 0 0 auto; border-radius: 10px; background: #fff2da; font-size: 17px; }
+.brew-delivery-item-copy div { min-width: 0; }.brew-delivery-item-copy b,.brew-delivery-item-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.brew-delivery-item-copy b { color: #55301f; font-size: 12px; }.brew-delivery-item-copy small { margin-top: 2px; color: #9b7b63; font-size: 10px; }
+.brew-quantity { display: grid; grid-template-columns: 29px 1fr 29px; align-items: center; border: 1px solid #e8c797; border-radius: 9px; overflow: hidden; background: #fffaf1; }
+.brew-quantity button { height: 28px; border: 0; background: #f7e5c5; color: #8b4b28; cursor: pointer; font-size: 17px; font-weight: 700; line-height: 1; }.brew-quantity button:hover { background: #edc98e; }
+.brew-quantity input { width: 100%; min-width: 0; height: 28px; border: 0; outline: 0; background: transparent; color: #5a3320; font-weight: 800; text-align: center; appearance: textfield; }.brew-quantity input::-webkit-inner-spin-button { appearance: none; }
+.brew-delivery-total { margin: 0 20px; border: 0; border-radius: 11px; background: #f8ead0; padding: 12px 14px; color: #7a4a2d; }.brew-delivery-total span { display: grid; gap: 2px; font-size: 11px; }.brew-delivery-total b { color: #8d341e; font-size: 17px; }
+.brew-stock-modal .brew-delivery-submit { float: none; display: flex; justify-content: center; width: calc(100% - 40px); margin: 15px 20px 20px; border-radius: 11px; padding: 13px; box-shadow: 0 8px 16px #a94e2f38; }.brew-delivery-submit span { font-size: 19px; line-height: 12px; }
+@media (max-width: 600px) { .brew-stock-modal { width: min(100%, 390px); max-height: 88dvh; overflow-y: auto; }.brew-delivery-heading { padding: 19px 18px 16px; }.brew-delivery-heading p { font-size: 12px; }.brew-delivery-truck { width: 43px; height: 43px; font-size: 23px; }.brew-delivery-list { grid-template-columns: 1fr; gap: 7px; padding: 13px 14px 10px; }.brew-delivery-item { grid-template-columns: 1fr 105px; align-items: center; padding: 9px 10px; }.brew-delivery-total { margin: 0 14px; }.brew-stock-modal .brew-delivery-submit { width: calc(100% - 28px); margin: 12px 14px 15px; } }
+
+/* Mobile là luồng pha chế, không phải bản desktop bị thu nhỏ. */
+@media (max-width: 600px) {
+  .brew-game-page { margin: 0 -4px; padding: 7px; }
+  .brew-game-hero { padding: 12px; }.brew-game-hero h1 { font-size: 21px; }.brew-hero-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; width: 100%; }.brew-hero-actions button { width: 100%; min-width: 0; padding: 8px 4px; font-size: 10px; justify-content: center; }
+  .brew-game-board { display: grid; gap: 9px; }
+  .brew-score-panel { order: 0; grid-template-columns: repeat(4, 1fr); border-radius: 9px; }.brew-score-panel > div { min-height: 53px; padding: 7px 4px; text-align: center; }.brew-score-panel span { font-size: 8px; }.brew-score-panel b { font-size: 13px; }
+  .brew-shop-scene { order: 1; min-height: 350px; border-radius: 10px; }.brew-shop-scene { --world-scale: .42; }
+  .brew-day-chip { top: 9px; right: 9px; font-size: 9px; }.pixel-counter { left: 8px; top: 47px; }.pixel-prep { right: -56px; top: 52px; }.pixel-table { left: 48px; bottom: 78px; }.pixel-table-two { left: 211px; bottom: 88px; }
+  .pixel-customer.ordering { left: 160px; top: 142px; }.pixel-customer.to-table.seat-0 { animation-name: pixel-customer-to-table-one-mobile; }.pixel-customer.to-table.seat-1 { animation-name: pixel-customer-to-table-two-mobile; }.pixel-customer.seated-awaiting.seat-0,.pixel-customer.served.seat-0 { left: 82px; top: 255px; }.pixel-customer.seated-awaiting.seat-1,.pixel-customer.served.seat-1 { left: 239px; top: 260px; }.pixel-order-bubble { left: 185px; top: 111px; }.pixel-order-bill { left: 211px; top: 138px; transform: scale(.86); transform-origin: top left; }
+  .brew-scene-brewer { display: none; }
+  .brew-order-panel { display: block !important; order: 2; min-height: 0 !important; border: 0 !important; border-radius: 12px !important; padding: 13px !important; background: #fff8e9 !important; box-shadow: 0 5px 14px #1e100e24 !important; }.brew-order-drink { margin: 12px 0 10px; }.brew-order-drink > span { width: 48px; height: 48px; border-radius: 14px; font-size: 25px; }.brew-order-drink strong { font-size: 16px; }
+  .brew-controls { display: grid !important; order: 3; grid-template-columns: 1fr 1fr !important; gap: 10px !important; border: 0 !important; border-radius: 12px !important; padding: 13px !important; background: #fff8e9 !important; box-shadow: 0 5px 14px #1e100e24 !important; }.brew-controls .brew-control-group:first-child { grid-column: 1 / -1; }.brew-control-group h2 { margin-bottom: 7px; font-size: 11px; }.brew-options { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }.brew-control-group:first-child .brew-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }.brew-choice { min-height: 40px; padding: 7px 5px; border-radius: 9px; font-size: 11px; text-align: center; }
+  .brew-serve { display: flex !important; position: sticky; z-index: 50; bottom: 9px; order: 4; min-height: 52px !important; border-radius: 13px !important; box-shadow: 0 9px 20px #9a3d2580 !important; }.brew-inventory { order: 5; border-radius: 10px; }.brew-leaderboard { order: 10; }
+}
+@media (max-width: 600px) {
+  .pixel-customer.to-table.seat-0 { animation-name: pixel-customer-to-table-one-mobile-compact; }
+  .pixel-customer.to-table.seat-1 { animation-name: pixel-customer-to-table-two-mobile-compact; }
+  .pixel-customer.leaving-from-table.seat-0 { animation-name: pixel-customer-leave-table-one-mobile-compact; }
+  .pixel-customer.leaving-from-table.seat-1 { animation-name: pixel-customer-leave-table-two-mobile-compact; }
+}
+@keyframes pixel-customer-to-table-one-mobile-compact { from { left: 160px; top: 142px; } to { left: 82px; top: 255px; } }
+@keyframes pixel-customer-to-table-two-mobile-compact { from { left: 160px; top: 142px; } to { left: 239px; top: 260px; } }
+@keyframes pixel-customer-leave-table-one-mobile-compact { from { left: 82px; top: 255px; } to { left: -86px; top: 176px; } }
+@keyframes pixel-customer-leave-table-two-mobile-compact { from { left: 239px; top: 260px; } to { left: -86px; top: 176px; } }

@@ -115,7 +115,7 @@ const Layout = () => {
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [features, setFeatures] = useState({ cfs: true, caro: true, chat: true });
+  const [features, setFeatures] = useState({ cfs: true, caro: true, teaGame: true });
   const lastNotificationAccountRef = useRef(null);
 
   useEffect(() => {
@@ -170,20 +170,13 @@ const Layout = () => {
   const [notificationApi, notificationContextHolder] =
     notification.useNotification();
 
-  // ===================================================
-  // CHAT PAGE
-  // ===================================================
-
-  const isChatPage =
-    location.pathname === "/chat" || location.pathname.startsWith("/chat/");
-
   const handlePullToRefreshStart = useCallback((event) => {
-    if (!isMobile || isChatPage || isRefreshing || event.currentTarget.scrollTop > 0) {
+    if (!isMobile || isRefreshing || event.currentTarget.scrollTop > 0) {
       return;
     }
 
     pullStartYRef.current = event.touches[0]?.clientY ?? null;
-  }, [isChatPage, isMobile, isRefreshing]);
+  }, [isMobile, isRefreshing]);
 
   const handlePullToRefreshMove = useCallback((event) => {
     if (pullStartYRef.current === null || isRefreshing) {
@@ -259,6 +252,15 @@ const Layout = () => {
       });
     }
 
+    if (features.teaGame) {
+      items.push({
+        key: "/tea-game",
+        label: "Quầy pha chế",
+        shortLabel: "Pha chế",
+        icon: <CoffeeOutlined />,
+      });
+    }
+
     // Mọi tài khoản đã đăng nhập đều có thể xem hồ sơ nhân viên.
     items.splice(1, 0, {
       key: "/users",
@@ -283,7 +285,7 @@ const Layout = () => {
     }
 
     return items;
-  }, [features.caro, features.cfs, user?.role]);
+  }, [features.caro, features.cfs, features.teaGame, user?.role]);
 
   // ===================================================
   // MOBILE MENU
@@ -296,6 +298,8 @@ const Layout = () => {
 
     if (features.caro && ["admin", "employee", "premium"].includes(user?.role)) keys.push("/caro");
 
+    if (features.teaGame) keys.push("/tea-game");
+
     if (["admin", "manager"].includes(user?.role)) {
       keys.push("/notifications");
     }
@@ -303,7 +307,7 @@ const Layout = () => {
     return keys
       .map((key) => menuItems.find((item) => item.key === key))
       .filter(Boolean);
-  }, [features.caro, features.cfs, menuItems, user?.role]);
+  }, [features.caro, features.cfs, features.teaGame, menuItems, user?.role]);
 
   const mobileTaskbarItems = useMemo(
     () => [
@@ -904,7 +908,7 @@ const Layout = () => {
   // ===================================================
 
   const renderMobileTaskbar = () => {
-    if (!isMobile || isChatPage) {
+    if (!isMobile) {
       return null;
     }
 
@@ -1165,7 +1169,7 @@ const Layout = () => {
           =========================================== */}
 
           <Content
-            className={`erp-content ${isChatPage ? "erp-content-chat" : ""}`}
+            className="erp-content"
             onTouchStart={handlePullToRefreshStart}
             onTouchMove={handlePullToRefreshMove}
             onTouchEnd={handlePullToRefreshEnd}
@@ -1174,27 +1178,25 @@ const Layout = () => {
               flex: "1 1 auto",
               minHeight: 0,
               minWidth: 0,
-              overflowY: isChatPage ? "hidden" : "auto",
+              overflowY: "auto",
               overflowX: "hidden",
               WebkitOverflowScrolling: "touch",
               paddingBottom:
-                isMobile && !isChatPage
+                isMobile
                   ? "calc(var(--erp-mobile-taskbar-height) + 12px + env(safe-area-inset-bottom))"
                   : 0,
             }}
           >
-            {!isChatPage && (
-              <div
-                className="erp-pull-refresh"
-                style={{ height: isRefreshing ? 52 : pullDistance }}
-                aria-live="polite"
-              >
-                <span>{isRefreshing ? "Đang làm mới..." : pullDistance >= 64 ? "Thả để làm mới" : "Kéo xuống để làm mới"}</span>
-              </div>
-            )}
+            <div
+              className="erp-pull-refresh"
+              style={{ height: isRefreshing ? 52 : pullDistance }}
+              aria-live="polite"
+            >
+              <span>{isRefreshing ? "Đang làm mới..." : pullDistance >= 64 ? "Thả để làm mới" : "Kéo xuống để làm mới"}</span>
+            </div>
 
             <motion.main
-              className={`erp-page ${isChatPage ? "erp-page-chat" : ""}`}
+              className="erp-page"
               initial={{
                 opacity: 0,
                 y: 8,
@@ -1209,24 +1211,13 @@ const Layout = () => {
               style={{
                 minWidth: 0,
 
-                ...(isChatPage
-                  ? {
-                      height: "100%",
-                      minHeight: 0,
-                      overflow: "hidden",
-                      display: "flex",
-                      flexDirection: "column",
-                    }
-                  : {
-                      minHeight: "100%",
-                    }),
+                minHeight: "100%",
               }}
             >
               <Outlet />
             </motion.main>
 
-            {!isChatPage && (
-              <footer className="erp-footer">
+            <footer className="erp-footer">
                 <div className="erp-footer-left">
                   <div className="erp-footer-brand">
                     <img className="erp-footer-mark" src="/brand-logo.png" alt="Yakiuo Ishikawa" />
@@ -1254,8 +1245,7 @@ const Layout = () => {
 
                   <span>v1.0.0</span>
                 </div>
-              </footer>
-            )}
+            </footer>
           </Content>
         </AntLayout>
       </AntLayout>

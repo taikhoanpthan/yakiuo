@@ -179,11 +179,6 @@ button:focus-visible,
   height: 100dvh !important;
 }
 
-.erp-content-chat,
-.erp-page-chat {
-  overscroll-behavior: none;
-}
-
 .erp-sidebar-content {
   display: flex;
   flex-direction: column;
@@ -1754,16 +1749,8 @@ button:focus-visible,
     min-width: 0;
   }
 
-  .erp-content-chat {
-    padding-bottom: 0 !important;
-  }
-
   .erp-page {
     padding: 20px 16px;
-  }
-
-  .erp-page.erp-page-chat {
-    padding: 0 !important;
   }
 
   /* -------------------------------------------------------

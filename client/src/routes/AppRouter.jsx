@@ -11,12 +11,12 @@ const Feedback = lazy(() => import("../pages/feedback/Feedback"));
 const Notifications = lazy(() => import("../pages/notifications/Notifications"));
 const Profile = lazy(() => import("../pages/profile/Profile"));
 const Todos = lazy(() => import("../pages/todos/Todos"));
-const ChatPage = lazy(() => import("../pages/chat/ChatPage"));
 const UserActivityHistory = lazy(() => import("../pages/admin/UserActivityHistory"));
 const LateFeedbackEntries = lazy(() => import("../pages/admin/LateFeedbackEntries"));
 const Cfs = lazy(() => import("../pages/cfs/Cfs"));
 const Maintenance = lazy(() => import("../pages/maintenance/Maintenance"));
 const Caro = lazy(() => import("../pages/caro/Caro"));
+const TeaGame = lazy(() => import("../pages/game/TeaGame"));
 
 const PageLoader = () => <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">Đang tải...</div>;
 const page = (Page) => <Suspense fallback={<PageLoader />}><Page /></Suspense>;
@@ -36,10 +36,10 @@ const AppRouter = () => (
       <Route path="/todos" element={page(Todos)} />
       <Route path="/admin/user-activity" element={<ProtectedRoute roles={["admin"]}>{page(UserActivityHistory)}</ProtectedRoute>} />
       <Route path="/admin/late-feedbacks" element={<ProtectedRoute roles={["admin"]}>{page(LateFeedbackEntries)}</ProtectedRoute>} />
-      <Route path="/chat" element={featurePage(ChatPage, "chat")} />
       <Route path="/cfs" element={featurePage(Cfs, "cfs")} />
       <Route path="/cfs/:postId" element={featurePage(Cfs, "cfs")} />
       <Route path="/caro" element={featurePage(Caro, "caro", ["admin", "employee", "premium"])} />
+      <Route path="/tea-game" element={featurePage(TeaGame, "teaGame")} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Route>
   </Routes>

@@ -80,6 +80,67 @@
 .erp-filter-card .ant-card-body {
   padding: 16px !important;
 }
+.feedback-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.feedback-filter-label {
+  flex: 0 0 auto;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 650;
+}
+.feedback-date-range {
+  width: min(100%, 320px);
+  min-width: 0;
+}
+.feedback-mobile-date {
+  display: none;
+}
+.feedback-date-range .ant-picker-input {
+  min-width: 0;
+}
+.feedback-date-range .ant-picker-input > input {
+  min-width: 0;
+}
+@media (max-width: 640px) {
+  .erp-filter-card .ant-card-body {
+    padding: 12px !important;
+  }
+  .feedback-filter-row {
+    display: grid;
+    gap: 8px;
+  }
+  .feedback-filter-label {
+    font-size: 13px;
+  }
+  .feedback-date-range {
+    display: none !important;
+  }
+  .feedback-mobile-date {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+  }
+  .feedback-date-range.ant-picker {
+    display: flex;
+    min-width: 0;
+    padding: 7px 9px;
+  }
+  .feedback-date-range .ant-picker-input {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .feedback-date-range .ant-picker-input > input {
+    width: 100%;
+    font-size: 16px;
+  }
+  .feedback-date-range .ant-picker-range-separator {
+    padding: 0 5px;
+  }
+}
 .erp-table-card {
   overflow: hidden;
 }

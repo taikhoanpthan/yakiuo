@@ -6,6 +6,6 @@ module.exports = mongoose.model("SystemSetting", new mongoose.Schema({
   features: {
     cfs: { type: Boolean, default: true },
     caro: { type: Boolean, default: true },
-    chat: { type: Boolean, default: true },
+    teaGame: { type: Boolean, default: true },
   },
 }, { timestamps: true }));

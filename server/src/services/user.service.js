@@ -59,13 +59,6 @@ const getUsers = async ({ page = 1, limit = 20, search = "", role, status }) => 
   };
 };
 
-// Hồ sơ tối thiểu cho danh sách người có thể nhắn tin.
-const getChatUsers = async () => {
-  return User.find({ status: "active" })
-    .select("_id username fullName avatar avatarPosition avatarZoom")
-    .sort({ fullName: 1, username: 1 })
-    .lean();
-};
 
 const getUserById = async (userId) => {
   const user = await User.findById(userId).select(
@@ -338,7 +331,6 @@ const changePassword = async (userId, currentPassword, newPassword) => {
 };
 module.exports = {
   getUsers,
-  getChatUsers,
   getUserById,
   createUser,
   updateUser,

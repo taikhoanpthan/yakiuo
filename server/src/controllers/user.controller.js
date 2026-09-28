@@ -48,24 +48,6 @@ const getUsers = async (req, res) => {
   }
 };
 
-// Danh sách rút gọn để mọi người dùng đã đăng nhập có thể mở chat.
-const getChatUsers = async (req, res) => {
-  try {
-    const users = await userService.getChatUsers();
-
-    return res.status(200).json({
-      success: true,
-      data: { users },
-    });
-  } catch (error) {
-    console.error("Get chat users failed:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Không thể tải danh sách người dùng cho chat",
-    });
-  }
-};
-
 const getUserById = async (req, res) => {
   try {
     const user = await userService.getUserById(req.params.id);
@@ -377,7 +359,6 @@ module.exports = {
   updateMyProfile,
   removeMyAvatar,
   getUsers,
-  getChatUsers,
   getUserById,
   createUser,
   updateUser,

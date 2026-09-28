@@ -7,6 +7,8 @@ const userFields = "fullName username avatar avatarPosition avatarZoom coverImag
 const isAdmin = (user) => user?.role === "admin";
 const canPin = (user) => ["admin", "manager"].includes(user?.role);
 const sameId = (left, right) => String(left?._id || left) === String(right?._id || right);
+const storyReactionTypes = ["like", "love", "care", "haha", "wow", "sad", "angry"];
+const storyReactionEmoji = { like: "👍", love: "❤️", care: "🥰", haha: "😆", wow: "😮", sad: "😢", angry: "😡" };
 const broadcastCfsChanged = (req, data = {}) => req.app.get("io")?.emit("cfs:changed", { ...data, changedAt: Date.now() });
 const broadcastCfsNotification = (req, notification) => {
   if (!notification?.recipient) return;
@@ -75,12 +77,26 @@ const presentPost = (post, viewer) => ({
 });
 
 const populatePost = (query) => query.populate("author", userFields).populate("likedBy", userFields).populate("replies.author", userFields);
+const getVideoPosterUrl = (story) => {
+  if (story.videoPosterUrl) return story.videoPosterUrl;
+  // Story cũ chưa có poster: tạo URL thumbnail Cloudinary từ URL video đã lưu.
+  if (!story.videoUrl?.includes("res.cloudinary.com")) return "";
+  return story.videoUrl
+    .replace("/upload/", "/upload/so_0,w_720,c_fill,g_auto/")
+    .replace(/\.(mp4|webm)(\?.*)?$/i, ".jpg$2");
+};
 const presentStory = (story, viewer) => ({
   _id: story._id,
   content: story.content,
   imageUrl: story.imageUrl || "",
   videoUrl: story.videoUrl || "",
+  videoPosterUrl: getVideoPosterUrl(story),
   videoDuration: story.videoDuration || 0,
+  reactionCounts: (story.reactions || []).reduce((counts, reaction) => ({
+    ...counts,
+    [reaction.type]: (counts[reaction.type] || 0) + 1,
+  }), {}),
+  viewerReaction: (story.reactions || []).find((reaction) => sameId(reaction.user, viewer))?.type || "",
   background: story.background || "#334155",
   music: story.music?.trackId ? {
     provider: story.music.provider || "audius",
@@ -110,21 +126,26 @@ const notificationActorName = (notification) => notification.isAnonymous
 
 const presentNotification = (notification) => {
   const actor = notificationActorName(notification);
-  const action = notification.type === "post_like"
+  const isStoryReaction = notification.type === "story_reaction";
+  const action = isStoryReaction
+    ? `đã thả ${storyReactionEmoji[notification.reactionType] || "👍"} vào Story của bạn`
+    : notification.type === "post_like"
     ? "đã thích bài viết của bạn"
     : notification.type === "reply_like"
       ? "đã thích bình luận của bạn"
       : notification.type === "post_reply"
         ? "đã bình luận về bài viết của bạn"
         : "đã trả lời bình luận của bạn";
-  const postPreview = String(notification.post?.content || "").trim() || (notification.post?.imageUrl ? "Ảnh bạn đã đăng" : "Bài viết CFS");
-  return { _id: notification._id, postId: notification.post?._id || notification.post, type: notification.type, actor, content: `${actor} ${action}`, postPreview, createdAt: notification.createdAt, read: Boolean(notification.readAt) };
+  const postPreview = isStoryReaction
+    ? String(notification.story?.content || "").trim() || (notification.story?.videoUrl ? "Video Story của bạn" : notification.story?.imageUrl ? "Ảnh Story của bạn" : "Story của bạn")
+    : String(notification.post?.content || "").trim() || (notification.post?.imageUrl ? "Ảnh bạn đã đăng" : "Bài viết CFS");
+  return { _id: notification._id, postId: notification.post?._id || notification.post, storyId: notification.story?._id || notification.story, type: notification.type, reactionEmoji: storyReactionEmoji[notification.reactionType] || "", actor, content: `${actor} ${action}`, postPreview, createdAt: notification.createdAt, read: Boolean(notification.readAt) };
 };
 
 exports.getActivity = async (req, res) => {
   try {
     const notifications = await CfsNotification.find({ recipient: req.user._id })
-      .sort({ createdAt: -1 }).limit(30).populate("actor", userFields).populate("post", "content imageUrl").lean();
+      .sort({ createdAt: -1 }).limit(30).populate("actor", userFields).populate("post", "content imageUrl").populate("story", "content imageUrl videoUrl").lean();
     res.json({ success: true, data: { notifications: notifications.map(presentNotification), unreadCount: notifications.filter((item) => !item.readAt).length } });
   } catch (error) {
     res.status(500).json({ success: false, message: "Không thể tải hoạt động CFS" });
@@ -276,6 +297,7 @@ exports.createStory = async (req, res) => {
     const content = String(req.body.content || "").trim();
     const imageUrl = String(req.body.imageUrl || "").trim();
     const videoUrl = String(req.body.videoUrl || "").trim();
+    const videoPosterUrl = String(req.body.videoPosterUrl || "").trim().slice(0, 1000);
     const videoDuration = Math.max(0, Math.min(Number(req.body.videoDuration) || 0, 60));
     const background = String(req.body.background || "#334155").trim();
     const rawMusic = req.body.music && typeof req.body.music === "object" ? req.body.music : null;
@@ -292,11 +314,52 @@ exports.createStory = async (req, res) => {
     } : undefined;
     if (!content && !imageUrl && !videoUrl && !music) return res.status(400).json({ success: false, message: "Vui lòng nhập nội dung, chọn ảnh/video hoặc thêm nhạc" });
     if (music && !/^[A-Za-z0-9_-]{1,120}$/.test(music.trackId)) return res.status(400).json({ success: false, message: "Bài hát không hợp lệ" });
-    const story = await CfsStory.create({ content, imageUrl, videoUrl, videoDuration, background, music, author: req.user._id, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) });
+    const story = await CfsStory.create({ content, imageUrl, videoUrl, videoPosterUrl, videoDuration, background, music, author: req.user._id, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) });
     await story.populate("author", userFields);
     return res.status(201).json({ success: true, data: { story: presentStory(story, req.user) } });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message || "Không thể đăng Story" });
+  }
+};
+
+exports.toggleStoryReaction = async (req, res) => {
+  try {
+    const type = String(req.body?.type || "").trim();
+    if (!storyReactionTypes.includes(type)) {
+      return res.status(400).json({ success: false, message: "Cảm xúc không hợp lệ" });
+    }
+
+    const story = await CfsStory.findOne({ _id: req.params.storyId, expiresAt: { $gt: new Date() } });
+    if (!story) return res.status(404).json({ success: false, message: "Không tìm thấy Story" });
+
+    const existingIndex = story.reactions.findIndex((reaction) => sameId(reaction.user, req.user));
+    let shouldNotify = false;
+    if (existingIndex >= 0 && story.reactions[existingIndex].type === type) {
+      story.reactions.splice(existingIndex, 1);
+    } else if (existingIndex >= 0) {
+      story.reactions[existingIndex].type = type;
+      story.reactions[existingIndex].createdAt = new Date();
+      shouldNotify = true;
+    } else {
+      story.reactions.push({ user: req.user._id, type });
+      shouldNotify = true;
+    }
+
+    await story.save();
+    await story.populate("author", userFields);
+    if (shouldNotify) {
+      const notification = await createCfsNotification({
+        recipient: story.author,
+        actor: req.user._id,
+        story: story._id,
+        type: "story_reaction",
+        reactionType: type,
+      });
+      broadcastCfsNotification(req, notification);
+    }
+    return res.json({ success: true, data: { story: presentStory(story, req.user) } });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: "Không thể cập nhật cảm xúc Story" });
   }
 };
 

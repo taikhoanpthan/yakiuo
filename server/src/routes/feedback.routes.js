@@ -21,6 +21,11 @@ router.get(
 );
 
 router.get(
+  "/admin/late-entries",
+  feedbackController.getLateEntryFeedbacks
+);
+
+router.get(
   "/:id",
   requirePermission("feedback.read"),
   feedbackController.getFeedbackById

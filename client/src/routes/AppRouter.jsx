@@ -13,6 +13,7 @@ const Profile = lazy(() => import("../pages/profile/Profile"));
 const Todos = lazy(() => import("../pages/todos/Todos"));
 const ChatPage = lazy(() => import("../pages/chat/ChatPage"));
 const UserActivityHistory = lazy(() => import("../pages/admin/UserActivityHistory"));
+const LateFeedbackEntries = lazy(() => import("../pages/admin/LateFeedbackEntries"));
 const Cfs = lazy(() => import("../pages/cfs/Cfs"));
 const Maintenance = lazy(() => import("../pages/maintenance/Maintenance"));
 const Caro = lazy(() => import("../pages/caro/Caro"));
@@ -34,6 +35,7 @@ const AppRouter = () => (
       <Route path="/profile" element={page(Profile)} />
       <Route path="/todos" element={page(Todos)} />
       <Route path="/admin/user-activity" element={<ProtectedRoute roles={["admin"]}>{page(UserActivityHistory)}</ProtectedRoute>} />
+      <Route path="/admin/late-feedbacks" element={<ProtectedRoute roles={["admin"]}>{page(LateFeedbackEntries)}</ProtectedRoute>} />
       <Route path="/chat" element={featurePage(ChatPage, "chat")} />
       <Route path="/cfs" element={featurePage(Cfs, "cfs")} />
       <Route path="/cfs/:postId" element={featurePage(Cfs, "cfs")} />

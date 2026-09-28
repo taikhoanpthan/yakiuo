@@ -17,6 +17,7 @@ router.get("/audius/tracks", controller.searchAudiusTracks);
 router.post("/music/resolve", controller.resolveExternalMusic);
 router.get("/stories", controller.getStories);
 router.post("/stories", controller.createStory);
+router.post("/stories/:storyId/reactions", controller.toggleStoryReaction);
 router.delete("/stories/:storyId", controller.deleteStory);
 router.get("/", controller.getPosts);
 router.get("/:id", controller.getPost);

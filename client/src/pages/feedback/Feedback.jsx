@@ -75,14 +75,29 @@ const Feedback = () => {
     total: 0,
   });
 
+  const [dateRange, setDateRange] = useState(null);
+
+  const dateFrom = dateRange?.[0]
+    ? dateRange[0].startOf("day").toISOString()
+    : undefined;
+
+  const dateTo = dateRange?.[1]
+    ? dateRange[1].endOf("day").toISOString()
+    : undefined;
+
   // =====================================================
   // LOAD FEEDBACK
   // =====================================================
 
   const feedbackQuery = useQuery({
-    queryKey: ["feedbacks", { page: pagination.current, limit: pagination.pageSize }],
+    queryKey: ["feedbacks", { page: pagination.current, limit: pagination.pageSize, dateFrom, dateTo }],
     queryFn: async () => {
-      const response = await getFeedbacks({ page: pagination.current, limit: pagination.pageSize });
+      const response = await getFeedbacks({
+        page: pagination.current,
+        limit: pagination.pageSize,
+        dateFrom,
+        dateTo,
+      });
       const data = response?.data?.feedbacks ?? response?.data ?? [];
       return {
         feedbacks: Array.isArray(data) ? data : [],
@@ -105,22 +120,9 @@ const Feedback = () => {
     "admin",
   ].includes(user?.role);
 
-  // Employee được thêm hoặc sửa feedback thêm 12 giờ sau mốc 23:59 của ngày hôm sau.
-  // Các role khác vẫn có thể chọn/chỉnh sửa ngày cũ khi cần.
-  const canManageExpiredFeedbackDate = user?.role !== "employee";
-
-  const isExpiredFeedbackDate = (date) =>
-    date
-      ?.endOf("day")
-      .add(1, "day")
-      .add(12, "hour")
-      .isBefore(dayjs());
-
-  const canEditFeedback = (record) =>
-    canManageExpiredFeedbackDate ||
-    !isExpiredFeedbackDate(
-      dayjs(record.dateTime || record.createdAt),
-    );
+  // Mọi vai trò được nhập và chỉnh sửa feedback cho bất kỳ ngày nào.
+  // Ngày trước hôm nay sẽ được máy chủ ghi cờ kín để admin rà soát.
+  const canEditFeedback = () => true;
 
   // =====================================================
   // INSERT PRESET TAG
@@ -188,11 +190,6 @@ const Feedback = () => {
   // =====================================================
 
   const handleEdit = (record) => {
-    if (!canEditFeedback(record)) {
-      message.error("Employee chỉ được sửa feedback đến 11:59 ngày thứ hai sau ngày feedback");
-      return;
-    }
-
     setEditingFeedback(record);
 
     setShowPresetTags(false);
@@ -462,6 +459,23 @@ const Feedback = () => {
           </Button>
         </Space>
       </div>
+
+      <Card className="erp-section-card erp-filter-card mb-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <span className="shrink-0 text-sm font-medium text-slate-600">Ngày feedback</span>
+          <DatePicker.RangePicker
+            value={dateRange}
+            format="DD/MM/YYYY"
+            placeholder={["Từ ngày", "Đến ngày"]}
+            allowClear
+            className="w-full sm:w-[320px]"
+            onChange={(range) => {
+              setDateRange(range);
+              setPagination((previous) => ({ ...previous, current: 1 }));
+            }}
+          />
+        </div>
+      </Card>
 
       {/* =================================================
           TABLE
@@ -940,10 +954,6 @@ const Feedback = () => {
                 placeholder="Chọn ngày feedback"
                 allowClear={false}
                 inputReadOnly
-                disabledDate={(current) =>
-                  !canManageExpiredFeedbackDate &&
-                  isExpiredFeedbackDate(current)
-                }
               />
             </Form.Item>
           </div>

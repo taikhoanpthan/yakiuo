@@ -36,6 +36,31 @@ const getFeedbackById = async (req, res) => {
   }
 };
 
+const getLateEntryFeedbacks = async (req, res) => {
+  try {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Chỉ admin được xem feedback bị gắn cờ",
+      });
+    }
+
+    const result = await feedbackService.getLateEntryFeedbacks(req.query);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Get late-entry feedbacks failed:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Không thể tải danh sách feedback bị gắn cờ",
+    });
+  }
+};
+
 const createFeedback = async (req, res) => {
   try {
     const {
@@ -68,7 +93,6 @@ const createFeedback = async (req, res) => {
         dateTime,
       },
       userId,
-      req.user.role,
     );
 
     return res.status(201).json({
@@ -93,7 +117,6 @@ const updateFeedback = async (req, res) => {
     const feedback = await feedbackService.updateFeedback(
       req.params.id,
       req.body,
-      req.user?.role,
     );
 
     return res.status(200).json({
@@ -134,6 +157,7 @@ const deleteFeedback = async (req, res) => {
 module.exports = {
   getFeedbacks,
   getFeedbackById,
+  getLateEntryFeedbacks,
   createFeedback,
   updateFeedback,
   deleteFeedback,

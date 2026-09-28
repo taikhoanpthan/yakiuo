@@ -279,6 +279,7 @@ const Layout = () => {
 
     if (user?.role === "admin") {
       items.push({ key: "/admin/user-activity", label: "Lịch sử người dùng", shortLabel: "Lịch sử", icon: <HistoryOutlined /> });
+      items.push({ key: "/admin/late-feedbacks", label: "Feedback cần rà soát", shortLabel: "Rà soát", icon: <WarningOutlined /> });
     }
 
     return items;
@@ -867,7 +868,10 @@ const Layout = () => {
       label: "Nhân viên",
     },
 
-    ...(user?.role === "admin" ? [{ key: "user-activity", icon: <HistoryOutlined />, label: "Lịch sử người dùng" }] : []),
+    ...(user?.role === "admin" ? [
+      { key: "user-activity", icon: <HistoryOutlined />, label: "Lịch sử người dùng" },
+      { key: "late-feedbacks", icon: <WarningOutlined />, label: "Feedback cần rà soát" },
+    ] : []),
 
     {
       type: "divider",
@@ -1120,6 +1124,8 @@ const Layout = () => {
                     }
 
                     if (key === "user-activity") navigate("/admin/user-activity");
+
+                    if (key === "late-feedbacks") navigate("/admin/late-feedbacks");
 
                     if (key === "logout") {
                       handleLogout();

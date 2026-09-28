@@ -5,7 +5,13 @@ const cfsStorySchema = new mongoose.Schema(
     content: { type: String, default: "", trim: true, maxlength: 300 },
     imageUrl: { type: String, default: "", trim: true, maxlength: 1000 },
     videoUrl: { type: String, default: "", trim: true, maxlength: 1000 },
+    videoPosterUrl: { type: String, default: "", trim: true, maxlength: 1000 },
     videoDuration: { type: Number, default: 0, min: 0, max: 60 },
+    reactions: [{
+      user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+      type: { type: String, enum: ["like", "love", "care", "haha", "wow", "sad", "angry"], required: true },
+      createdAt: { type: Date, default: Date.now },
+    }],
     background: { type: String, default: "#334155", trim: true, maxlength: 40 },
     music: {
       provider: { type: String, enum: ["audius", "spotify", "youtube", "tiktok"], default: undefined },

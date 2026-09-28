@@ -9,6 +9,7 @@ export const getCfsStories = () => api.get("/cfs/stories");
 export const getAudiusTracks = (q) => api.get("/cfs/audius/tracks", { params: { q } });
 export const resolveCfsMusicLink = (url) => api.post("/cfs/music/resolve", { url });
 export const createCfsStory = (data) => api.post("/cfs/stories", data);
+export const toggleCfsStoryReaction = (id, type) => api.post(`/cfs/stories/${id}/reactions`, { type });
 export const deleteCfsStory = (id) => api.delete(`/cfs/stories/${id}`);
 export const getCfsIdentity = () => api.get("/cfs/identity");
 export const setCfsIdentity = (alias) => api.post("/cfs/identity", { alias });

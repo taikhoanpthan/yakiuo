@@ -130,7 +130,18 @@ const uploadCfsVideo = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      data: { url: result.secure_url, duration: result.duration || 0, format: result.format },
+      data: {
+        url: result.secure_url,
+        // Cloudinary tạo ảnh từ frame đầu để điện thoại có thumbnail thay vì nền đen.
+        posterUrl: cloudinary.url(result.public_id, {
+          resource_type: "video",
+          format: "jpg",
+          secure: true,
+          transformation: [{ start_offset: 0, width: 720, crop: "fill", gravity: "auto" }],
+        }),
+        duration: result.duration || 0,
+        format: result.format,
+      },
     });
   } catch (error) {
     console.error("Upload CFS video failed:", error);

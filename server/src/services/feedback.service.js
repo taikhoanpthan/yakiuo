@@ -1,25 +1,51 @@
 const Feedback = require("../models/Feedback");
 
-const canManageExpiredFeedbackDate = (role) => role !== "employee";
+const BUSINESS_TIME_ZONE = process.env.FEEDBACK_TIME_ZONE || "Asia/Ho_Chi_Minh";
 
-const assertFeedbackDateCanBeUsed = (dateTime, role) => {
-  const feedbackDate = new Date(dateTime);
+const getDateKeyInBusinessTimeZone = (value) => {
+  const date = new Date(value);
 
-  if (Number.isNaN(feedbackDate.getTime())) {
+  if (Number.isNaN(date.getTime())) {
     throw new Error("Ngày feedback không hợp lệ");
   }
 
-  if (canManageExpiredFeedbackDate(role)) return;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: BUSINESS_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
 
-  const expiresAt = new Date(feedbackDate);
-  expiresAt.setHours(23, 59, 59, 999);
-  expiresAt.setDate(expiresAt.getDate() + 1);
-  expiresAt.setHours(expiresAt.getHours() + 12);
+  const values = Object.fromEntries(
+    parts
+      .filter(({ type }) => type !== "literal")
+      .map(({ type, value: partValue }) => [type, partValue]),
+  );
 
-  if (expiresAt < new Date()) {
-    throw new Error(
-      "Employee chỉ được nhập/chỉnh feedback đến 11:59 ngày thứ hai sau ngày feedback",
-    );
+  return `${values.year}-${values.month}-${values.day}`;
+};
+
+const getLateEntryDays = (dateTime, now = new Date()) => {
+  const feedbackDateKey = getDateKeyInBusinessTimeZone(dateTime);
+  const todayKey = getDateKeyInBusinessTimeZone(now);
+
+  if (feedbackDateKey >= todayKey) return 0;
+
+  const [feedbackYear, feedbackMonth, feedbackDay] = feedbackDateKey.split("-").map(Number);
+  const [todayYear, todayMonth, todayDay] = todayKey.split("-").map(Number);
+  const feedbackUtc = Date.UTC(feedbackYear, feedbackMonth - 1, feedbackDay);
+  const todayUtc = Date.UTC(todayYear, todayMonth - 1, todayDay);
+
+  return Math.round((todayUtc - feedbackUtc) / 86_400_000);
+};
+
+const flagLateEntryIfNeeded = (feedback, dateTime) => {
+  const lateEntryDays = getLateEntryDays(dateTime);
+
+  if (lateEntryDays > 0 && !feedback.isLateEntry) {
+    feedback.isLateEntry = true;
+    feedback.lateEntryFlaggedAt = new Date();
+    feedback.lateEntryDays = lateEntryDays;
   }
 };
 
@@ -27,6 +53,8 @@ const getFeedbacks = async ({
   page = 1,
   limit = 20,
   search = "",
+  dateFrom,
+  dateTo,
 }) => {
   const currentPage = Math.max(
     Number(page) || 1,
@@ -42,6 +70,26 @@ const getFeedbacks = async ({
     (currentPage - 1) * currentLimit;
 
   const filter = {};
+
+  if (dateFrom || dateTo) {
+    filter.dateTime = {};
+
+    if (dateFrom) {
+      const startDate = new Date(dateFrom);
+      if (Number.isNaN(startDate.getTime())) {
+        throw new Error("Ngày bắt đầu lọc không hợp lệ");
+      }
+      filter.dateTime.$gte = startDate;
+    }
+
+    if (dateTo) {
+      const endDate = new Date(dateTo);
+      if (Number.isNaN(endDate.getTime())) {
+        throw new Error("Ngày kết thúc lọc không hợp lệ");
+      }
+      filter.dateTime.$lte = endDate;
+    }
+  }
 
   if (search?.trim()) {
     const keyword = search.trim();
@@ -133,61 +181,58 @@ const getFeedbackById = async (
 
 const createFeedback = async (
   data,
-  userId,
-  userRole
+  userId
 ) => {
   const dateTime = data.dateTime || new Date();
-  assertFeedbackDateCanBeUsed(dateTime, userRole);
+  // Mọi vai trò đều có thể nhập ngày cũ. Nếu ngày được chọn trước hôm nay,
+  // bản ghi được gắn cờ kín để admin rà soát.
+  getDateKeyInBusinessTimeZone(dateTime);
 
-  const feedback =
-    await Feedback.create({
-      customerName:
-        data.customerName?.trim() || "",
+  const feedback = new Feedback({
+    customerName:
+      data.customerName?.trim() || "",
 
-      customerPhone:
-        data.customerPhone?.trim() || "",
+    customerPhone:
+      data.customerPhone?.trim() || "",
 
-      tableNumber:
-        data.tableNumber?.trim() || "",
+    tableNumber:
+      data.tableNumber?.trim() || "",
 
-      meal:
-        data.meal?.trim() || "",
+    meal:
+      data.meal?.trim() || "",
 
-      tags: Array.isArray(data.tags)
-        ? data.tags
-        : [],
+    tags: Array.isArray(data.tags)
+      ? data.tags
+      : [],
 
-      content:
-        data.content?.trim() || "",
+    content:
+      data.content?.trim() || "",
 
-      dateTime:
-        dateTime,
+    dateTime,
 
-      createdBy: userId,
-    });
+    createdBy: userId,
+  });
 
-  return feedback;
+  flagLateEntryIfNeeded(feedback, dateTime);
+  await feedback.save();
+
+  // Đọc lại theo projection mặc định để thông tin gắn cờ không trả về người nhập.
+  return Feedback.findById(feedback._id);
 };
 
 const updateFeedback = async (
   feedbackId,
-  data,
-  userRole
+  data
 ) => {
   const feedback =
-    await Feedback.findById(
-      feedbackId
-    );
+    await Feedback.findById(feedbackId)
+      .select("+isLateEntry +lateEntryFlaggedAt +lateEntryDays");
 
   if (!feedback) {
     throw new Error(
       "Feedback not found"
     );
   }
-
-  // Kiểm tra ngày đang lưu cho mọi lần sửa, kể cả khi request không đổi dateTime.
-  // Điều này ngăn employee sửa nội dung của feedback đã quá thời hạn cho phép.
-  assertFeedbackDateCanBeUsed(feedback.dateTime, userRole);
 
   if (
     data.customerName !==
@@ -245,15 +290,53 @@ const updateFeedback = async (
       throw new Error("Ngày feedback không hợp lệ");
     }
 
-    assertFeedbackDateCanBeUsed(updatedDate, userRole);
-
     feedback.dateTime =
       updatedDate;
+
+    flagLateEntryIfNeeded(feedback, updatedDate);
   }
 
   await feedback.save();
 
-  return feedback;
+  // Projection mặc định không cho người dùng biết feedback có bị gắn cờ hay không.
+  return Feedback.findById(feedback._id);
+};
+
+const getLateEntryFeedbacks = async ({ page = 1, limit = 20, search = "" }) => {
+  const currentPage = Math.max(Number(page) || 1, 1);
+  const currentLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const filter = { isLateEntry: true };
+
+  if (search?.trim()) {
+    const keyword = search.trim();
+    filter.$or = [
+      { customerName: { $regex: keyword, $options: "i" } },
+      { tableNumber: { $regex: keyword, $options: "i" } },
+      { meal: { $regex: keyword, $options: "i" } },
+      { content: { $regex: keyword, $options: "i" } },
+    ];
+  }
+
+  const [feedbacks, total] = await Promise.all([
+    Feedback.find(filter)
+      .select("+isLateEntry +lateEntryFlaggedAt +lateEntryDays")
+      .populate("createdBy", "username fullName role avatar")
+      .sort({ lateEntryFlaggedAt: -1 })
+      .skip((currentPage - 1) * currentLimit)
+      .limit(currentLimit)
+      .lean(),
+    Feedback.countDocuments(filter),
+  ]);
+
+  return {
+    feedbacks,
+    pagination: {
+      page: currentPage,
+      limit: currentLimit,
+      total,
+      totalPages: Math.ceil(total / currentLimit),
+    },
+  };
 };
 
 const deleteFeedback = async (
@@ -280,6 +363,7 @@ const deleteFeedback = async (
 module.exports = {
   getFeedbacks,
   getFeedbackById,
+  getLateEntryFeedbacks,
   createFeedback,
   updateFeedback,
   deleteFeedback,

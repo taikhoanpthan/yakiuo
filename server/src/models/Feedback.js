@@ -43,6 +43,27 @@ const feedbackSchema = new mongoose.Schema(
       default: Date.now,
     },
 
+    // Thông tin kiểm toán: không trả về trong danh sách feedback thông thường.
+    // Chỉ endpoint quản trị mới chủ động chọn các trường này.
+    isLateEntry: {
+      type: Boolean,
+      default: false,
+      select: false,
+    },
+
+    lateEntryFlaggedAt: {
+      type: Date,
+      default: null,
+      select: false,
+    },
+
+    lateEntryDays: {
+      type: Number,
+      default: 0,
+      min: 0,
+      select: false,
+    },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -53,6 +74,8 @@ const feedbackSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+feedbackSchema.index({ isLateEntry: 1, lateEntryFlaggedAt: -1 });
 
 module.exports = mongoose.model(
   "Feedback",

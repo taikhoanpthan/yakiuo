@@ -240,6 +240,12 @@ const Layout = () => {
         shortLabel: "Todo",
         icon: <CheckSquareOutlined />,
       },
+      {
+        key: "/restaurant-simulator",
+        label: "Yakiuo Restaurant Simulator",
+        shortLabel: "Nhà hàng Nhật",
+        icon: <TrophyOutlined />,
+      },
 
     ];
 
@@ -285,7 +291,7 @@ const Layout = () => {
   const mobileMenuItems = useMemo(() => {
     // Các trang quản trị (như Nhân viên) nằm trong menu tài khoản trên header
     // để taskbar điện thoại luôn gọn và dễ bấm.
-    const keys = ["/dashboard", "/feedback", ...(features.cfs ? ["/cfs"] : []), "/todos"];
+    const keys = ["/dashboard", "/feedback", ...(features.cfs ? ["/cfs"] : []), "/todos", "/restaurant-simulator"];
 
     if (features.caro && ["admin", "employee", "premium"].includes(user?.role)) keys.push("/caro");
 

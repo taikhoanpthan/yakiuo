@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Button, Card, Descriptions, Input, Modal, Popconfirm, Space, Table, Tag, Tooltip, message } from "antd";
-import { DeleteOutlined, EyeOutlined, ReloadOutlined, SearchOutlined, WarningOutlined } from "@ant-design/icons";
+import { CheckOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, SearchOutlined, WarningOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import UserAvatar from "../../components/common/UserAvatar";
-import { deleteFeedback, getLateEntryFeedbacks } from "../../services/feedbackService";
+import { deleteFeedback, getLateEntryFeedbacks, resolveLateEntryFeedback } from "../../services/feedbackService";
 
 const LateFeedbackEntries = () => {
   const [feedbacks, setFeedbacks] = useState([]);
@@ -12,6 +12,7 @@ const LateFeedbackEntries = () => {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 });
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [resolvingId, setResolvingId] = useState(null);
 
   const loadFeedbacks = async (nextPage = pagination.current, nextSearch = search) => {
     try {
@@ -90,6 +91,11 @@ const LateFeedbackEntries = () => {
           <Tooltip title="Xem chi tiết">
             <Button type="text" icon={<EyeOutlined />} onClick={() => setSelectedFeedback(record)} aria-label="Xem chi tiết feedback" />
           </Tooltip>
+          <Popconfirm title="Xác nhận có lý do?" description="Mục này sẽ được gỡ khỏi danh sách cần rà soát. Feedback gốc vẫn được giữ nguyên." okText="Xác nhận" cancelText="Hủy" onConfirm={() => handleResolve(record._id)}>
+            <Tooltip title="Xác nhận có lý do nhập trễ">
+              <Button type="text" className="text-emerald-600 hover:!text-emerald-700" icon={<CheckOutlined />} loading={resolvingId === record._id} aria-label="Xác nhận có lý do nhập trễ" />
+            </Tooltip>
+          </Popconfirm>
           <Popconfirm title="Xóa feedback?" description="Feedback sẽ bị xóa vĩnh viễn." okText="Xóa" cancelText="Hủy" okButtonProps={{ danger: true }} onConfirm={() => handleDelete(record._id)}>
             <Button danger type="text" icon={<DeleteOutlined />} loading={deletingId === record._id} aria-label="Xóa feedback" />
           </Popconfirm>
@@ -99,6 +105,23 @@ const LateFeedbackEntries = () => {
   ];
 
   const handleSearch = () => { void loadFeedbacks(1, search.trim()); };
+
+  const handleResolve = async (id) => {
+    try {
+      setResolvingId(id);
+      await resolveLateEntryFeedback(id);
+      message.success("Đã xác nhận nhân viên có lý do nhập trễ");
+      const pageAfterResolve = feedbacks.length === 1 && pagination.current > 1
+        ? pagination.current - 1
+        : pagination.current;
+      await loadFeedbacks(pageAfterResolve);
+      setSelectedFeedback((current) => current?._id === id ? null : current);
+    } catch (error) {
+      message.error(error?.response?.data?.message || "Không thể xác nhận feedback nhập trễ");
+    } finally {
+      setResolvingId(null);
+    }
+  };
 
   const handleDelete = async (id) => {
     try {

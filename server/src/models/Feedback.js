@@ -64,6 +64,21 @@ const feedbackSchema = new mongoose.Schema(
       select: false,
     },
 
+    // Admin đã xác nhận nhân viên có lý do nhập trễ. Vẫn giữ cờ gốc để lưu
+    // lịch sử kiểm toán, nhưng không hiện lại trong danh sách cần rà soát.
+    lateEntryResolvedAt: {
+      type: Date,
+      default: null,
+      select: false,
+    },
+
+    lateEntryResolvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      select: false,
+    },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -75,7 +90,7 @@ const feedbackSchema = new mongoose.Schema(
   }
 );
 
-feedbackSchema.index({ isLateEntry: 1, lateEntryFlaggedAt: -1 });
+feedbackSchema.index({ isLateEntry: 1, lateEntryResolvedAt: 1, lateEntryFlaggedAt: -1 });
 
 module.exports = mongoose.model(
   "Feedback",

@@ -20,6 +20,12 @@ export const getLateEntryFeedbacks = async (params = {}) => {
   return response.data;
 };
 
+export const resolveLateEntryFeedback = async (id) => {
+  const response = await api.patch(`/feedback/admin/late-entries/${id}/resolve`);
+
+  return response.data;
+};
+
 export const createFeedback = async (data) => {
   const response = await api.post("/feedback", data);
 

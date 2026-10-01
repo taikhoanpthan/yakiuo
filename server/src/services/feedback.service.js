@@ -305,7 +305,7 @@ const updateFeedback = async (
 const getLateEntryFeedbacks = async ({ page = 1, limit = 20, search = "" }) => {
   const currentPage = Math.max(Number(page) || 1, 1);
   const currentLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
-  const filter = { isLateEntry: true };
+  const filter = { isLateEntry: true, lateEntryResolvedAt: null };
 
   if (search?.trim()) {
     const keyword = search.trim();
@@ -339,6 +339,25 @@ const getLateEntryFeedbacks = async ({ page = 1, limit = 20, search = "" }) => {
   };
 };
 
+const resolveLateEntryFeedback = async (feedbackId, adminId) => {
+  const feedback = await Feedback.findById(feedbackId)
+    .select("+isLateEntry +lateEntryResolvedAt +lateEntryResolvedBy");
+
+  if (!feedback) {
+    throw new Error("Feedback not found");
+  }
+
+  if (!feedback.isLateEntry) {
+    throw new Error("Feedback này không thuộc danh sách cần rà soát");
+  }
+
+  if (!feedback.lateEntryResolvedAt) {
+    feedback.lateEntryResolvedAt = new Date();
+    feedback.lateEntryResolvedBy = adminId;
+    await feedback.save();
+  }
+};
+
 const deleteFeedback = async (
   feedbackId
 ) => {
@@ -364,6 +383,7 @@ module.exports = {
   getFeedbacks,
   getFeedbackById,
   getLateEntryFeedbacks,
+  resolveLateEntryFeedback,
   createFeedback,
   updateFeedback,
   deleteFeedback,

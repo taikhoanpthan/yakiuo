@@ -25,6 +25,11 @@ router.get(
   feedbackController.getLateEntryFeedbacks
 );
 
+router.patch(
+  "/admin/late-entries/:id/resolve",
+  feedbackController.resolveLateEntryFeedback
+);
+
 router.get(
   "/:id",
   requirePermission("feedback.read"),

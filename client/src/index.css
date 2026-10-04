@@ -15,6 +15,12 @@
   50% { transform: translateY(66%) scale(0.65); opacity: 0.8; }
 }
 
+@keyframes erp-avatar-gradient-flow {
+  0% { background-position: 0 0, 0% 50%; }
+  50% { background-position: 0 0, 100% 50%; }
+  100% { background-position: 0 0, 0% 50%; }
+}
+
 /* =========================================================
    GLOBAL
 ========================================================= */
@@ -48,7 +54,7 @@
   --erp-muted: #64748b;
   --erp-accent: #7c3aed;
   --erp-success: #16a34a;
-  --erp-mobile-taskbar-height: 60px;
+  --erp-mobile-taskbar-height: 54px;
 }
 
 :root[data-theme="dark"] {
@@ -103,6 +109,26 @@ select {
 
 button {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Shared user-avatar ring: keeps every people avatar visually consistent. */
+.erp-user-avatar {
+  border: 2px solid transparent !important;
+  background-image:
+    linear-gradient(var(--erp-card), var(--erp-card)),
+    linear-gradient(120deg, #f9ce34, #ee2a7b, #6228d7, #4f5bd5, #f9ce34) !important;
+  background-origin: border-box !important;
+  background-clip: padding-box, border-box !important;
+  background-size: 100% 100%, 260% 260% !important;
+  animation: erp-avatar-gradient-flow 3.2s ease-in-out infinite !important;
+}
+
+.erp-user-avatar > img {
+  border-radius: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .erp-user-avatar { animation: none !important; }
 }
 
 /* Ngăn Safari iOS tự phóng khi focus ô nhập. */
@@ -194,6 +220,17 @@ button:focus-visible,
 :root[data-theme="dark"] .yakiuo-avatar-remove { border-color: #263956; }
 :root[data-theme="dark"] .yakiuo-profile-header { background: #151f33; border-color: #2a3955; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24); }
 :root[data-theme="dark"] .yakiuo-profile-name-row h1 { color: #edf3ff; }
+:root[data-theme="dark"] .yakiuo-image-adjust-modal .ant-modal-content,
+:root[data-theme="dark"] .yakiuo-image-adjust-modal .ant-modal-header,
+:root[data-theme="dark"] .yakiuo-image-adjust-modal .ant-modal-footer { background: #151f33 !important; border-color: #2a3955 !important; }
+:root[data-theme="dark"] .yakiuo-image-adjust-modal .ant-modal-title,
+:root[data-theme="dark"] .yakiuo-image-adjust-modal .text-slate-700,
+:root[data-theme="dark"] .yakiuo-image-adjust-heading { color: #edf3ff !important; }
+:root[data-theme="dark"] .yakiuo-image-adjust-modal .ant-modal-close { color: #c7d3e7 !important; }
+:root[data-theme="dark"] .yakiuo-image-adjust-modal .ant-btn-default { background: #253752; border-color: #405474; color: #edf3ff; }
+:root[data-theme="dark"] .yakiuo-image-adjust-modal .ant-slider-rail { background: #405474 !important; }
+:root[data-theme="dark"] .yakiuo-image-adjust-modal .ant-slider-track { background: #5b8cff !important; }
+:root[data-theme="dark"] .yakiuo-image-adjust-modal .ant-slider-handle::after { box-shadow: 0 0 0 2px #5b8cff inset !important; }
 :root[data-theme="dark"] .yakiuo-cover-camera,
 :root[data-theme="dark"] .yakiuo-cover-adjust { background: rgba(20, 31, 51, 0.9) !important; color: #e6edf8 !important; border: 1px solid rgba(174, 189, 211, 0.28) !important; }
 :root[data-theme="dark"] .yakiuo-cover-camera:hover,
@@ -213,6 +250,209 @@ button:focus-visible,
 :root[data-theme="dark"] .erp-dashboard-hero .text-slate-500 { color: #b9c8df !important; }
 :root[data-theme="dark"] .erp-dashboard-hero .bg-slate-900\/5 { background-color: rgba(255, 255, 255, 0.1); }
 :root[data-theme="dark"] .erp-dashboard-hero .text-emerald-700 { color: #bbf7d0 !important; }
+
+/* Dashboard schedule uses light Tailwind utility colors inside the Ant card. */
+:root[data-theme="dark"] .erp-schedule-card {
+  background: #151f33 !important;
+  border-color: #2a3955 !important;
+}
+:root[data-theme="dark"] .erp-schedule-card .bg-slate-50,
+:root[data-theme="dark"] .erp-schedule-card .bg-white { background: #18243a !important; }
+:root[data-theme="dark"] .erp-schedule-card .border-slate-100,
+:root[data-theme="dark"] .erp-schedule-card .border-slate-200 { border-color: #2a3955 !important; }
+:root[data-theme="dark"] .erp-schedule-card .text-slate-800,
+:root[data-theme="dark"] .erp-schedule-card .text-slate-700,
+:root[data-theme="dark"] .erp-schedule-card .text-slate-600 { color: #edf3ff !important; }
+:root[data-theme="dark"] .erp-schedule-card .text-slate-400 { color: #b9c8df !important; }
+:root[data-theme="dark"] .erp-schedule-card .bg-purple-50 { background: #2d254b !important; }
+:root[data-theme="dark"] .erp-schedule-card .text-purple-600 { color: #c4b5fd !important; }
+:root[data-theme="dark"] .erp-dashboard-hero .text-slate-800 { color: #edf3ff !important; }
+:root[data-theme="dark"] .erp-dashboard-hero .text-xs { color: #d9e4f3; }
+
+/* System notification administration has many fixed Tailwind light utilities. */
+:root[data-theme="dark"] .notifications-page .text-slate-800,
+:root[data-theme="dark"] .notifications-page .text-slate-700,
+:root[data-theme="dark"] .notifications-page .text-slate-600 { color: #edf3ff !important; }
+:root[data-theme="dark"] .notifications-page .text-slate-500,
+:root[data-theme="dark"] .notifications-page .text-slate-400 { color: #b9c8df !important; }
+:root[data-theme="dark"] .notifications-page .border-slate-100,
+:root[data-theme="dark"] .notifications-page .border-slate-200 { border-color: #2a3955 !important; }
+:root[data-theme="dark"] .notifications-page .bg-slate-50,
+:root[data-theme="dark"] .notifications-page .bg-white { background: #18243a !important; }
+:root[data-theme="dark"] .notifications-page .bg-blue-50 { background: #1d3155 !important; }
+:root[data-theme="dark"] .notifications-page .bg-purple-50 { background: #2d254b !important; }
+:root[data-theme="dark"] .notifications-page .bg-amber-50\/60 { background: #382d1b !important; border-color: #6b5525 !important; }
+:root[data-theme="dark"] .notifications-page .text-blue-600 { color: #93b4ff !important; }
+:root[data-theme="dark"] .notifications-page .text-purple-600 { color: #c4b5fd !important; }
+:root[data-theme="dark"] .notifications-page .ant-form-item-label > label { color: #d9e4f3 !important; }
+:root[data-theme="dark"] .notifications-page .ant-table,
+:root[data-theme="dark"] .notifications-page .ant-table-container { background: #151f33 !important; color: #e6edf8 !important; }
+:root[data-theme="dark"] .notifications-page .ant-table-thead > tr > th { background: #1d2a42 !important; color: #c7d3e7 !important; border-bottom-color: #2a3955 !important; }
+:root[data-theme="dark"] .notifications-page .ant-table-tbody > tr > td { background: #151f33 !important; color: #e6edf8 !important; border-bottom-color: #293952 !important; }
+:root[data-theme="dark"] .notifications-page .ant-table-tbody > tr:hover > td { background: #1b2940 !important; }
+:root[data-theme="dark"] .notifications-page .ant-table-placeholder > td { background: #151f33 !important; }
+:root[data-theme="dark"] .notifications-page .ant-empty-description,
+:root[data-theme="dark"] .notifications-page .ant-pagination-total-text { color: #b9c8df !important; }
+:root[data-theme="dark"] .notifications-editor-modal .ant-modal-content,
+:root[data-theme="dark"] .notifications-editor-modal .ant-modal-header { background: #151f33 !important; }
+:root[data-theme="dark"] .notifications-editor-modal .ant-modal-title { color: #edf3ff !important; }
+
+/* Employee management page: table and modal have their own light surfaces. */
+:root[data-theme="dark"] .users-page .text-slate-800,
+:root[data-theme="dark"] .users-page .text-slate-700,
+:root[data-theme="dark"] .users-page .text-slate-600 { color: #edf3ff !important; }
+:root[data-theme="dark"] .users-page .text-slate-500,
+:root[data-theme="dark"] .users-page .text-slate-400 { color: #b9c8df !important; }
+:root[data-theme="dark"] .users-page .border-white { border-color: #263956 !important; }
+:root[data-theme="dark"] .users-page .ant-table,
+:root[data-theme="dark"] .users-page .ant-table-container { background: #151f33 !important; color: #e6edf8 !important; }
+:root[data-theme="dark"] .users-page .ant-table-thead > tr > th { background: #1d2a42 !important; color: #c7d3e7 !important; border-bottom-color: #2a3955 !important; }
+:root[data-theme="dark"] .users-page .ant-table-tbody > tr > td { background: #151f33 !important; color: #e6edf8 !important; border-bottom-color: #293952 !important; }
+:root[data-theme="dark"] .users-page .ant-table-tbody > tr:hover > td { background: #1b2940 !important; }
+:root[data-theme="dark"] .users-page .ant-pagination-total-text { color: #b9c8df !important; }
+:root[data-theme="dark"] .user-modal .ant-modal-content,
+:root[data-theme="dark"] .user-modal .ant-modal-header { background: #151f33 !important; }
+:root[data-theme="dark"] .user-modal .ant-modal-title,
+:root[data-theme="dark"] .user-modal .ant-form-item-label > label { color: #edf3ff !important; }
+
+/* Employee detail opened from /users has a separate profile header and cards. */
+:root[data-theme="dark"] .employee-detail-page .employee-detail-header,
+:root[data-theme="dark"] .employee-detail-page .bg-white { background: #151f33 !important; }
+:root[data-theme="dark"] .employee-detail-page .border-slate-200,
+:root[data-theme="dark"] .employee-detail-page .border-slate-100 { border-color: #2a3955 !important; }
+:root[data-theme="dark"] .employee-detail-page .text-slate-900,
+:root[data-theme="dark"] .employee-detail-page .text-slate-800,
+:root[data-theme="dark"] .employee-detail-page .text-slate-700,
+:root[data-theme="dark"] .employee-detail-page .text-slate-600 { color: #edf3ff !important; }
+:root[data-theme="dark"] .employee-detail-page .text-slate-500,
+:root[data-theme="dark"] .employee-detail-page .text-slate-400 { color: #b9c8df !important; }
+:root[data-theme="dark"] .employee-detail-page .bg-slate-50,
+:root[data-theme="dark"] .employee-detail-page .bg-slate-100 { background: #1c2940 !important; }
+:root[data-theme="dark"] .employee-detail-page .bg-slate-200 { background: #30415e !important; }
+
+/* Todo cards use Tailwind light utility classes, so they need explicit dark surfaces. */
+:root[data-theme="dark"] .todo-item--pending {
+  background: #151f33 !important;
+  border-color: #2a3955 !important;
+}
+:root[data-theme="dark"] .todo-item--pending:hover {
+  border-color: #426390 !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2) !important;
+}
+:root[data-theme="dark"] .todo-item--completed {
+  background: #14241f !important;
+  border-color: #285646 !important;
+}
+:root[data-theme="dark"] .todo-item .todo-item-title,
+:root[data-theme="dark"] .todo-item--pending .todo-item-creator { color: #edf3ff !important; }
+:root[data-theme="dark"] .todo-item--completed .todo-item-title,
+:root[data-theme="dark"] .todo-item--completed .todo-item-creator,
+:root[data-theme="dark"] .todo-item .todo-item-meta { color: #aebdd3 !important; }
+:root[data-theme="dark"] .todo-item .todo-item-completed-by { color: #86efac !important; }
+:root[data-theme="dark"] .todo-item--pending button[type="button"]:not(.ant-btn) { border-color: #72829a; }
+:root[data-theme="dark"] .todo-status-filter .ant-select-selector { background: #1c2940 !important; border-color: #344763 !important; }
+:root[data-theme="dark"] .todo-status-filter .ant-select-selection-item { color: #e6edf8 !important; }
+
+/* Bottom navigation is not an Ant component, so give it its own dark palette. */
+:root[data-theme="dark"] .erp-mobile-taskbar {
+  background: rgba(21, 31, 51, 0.97) !important;
+  border-color: #344763 !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42) !important;
+}
+:root[data-theme="dark"] .erp-mobile-task-item { color: #aebbd0 !important; }
+:root[data-theme="dark"] .erp-mobile-task-item.is-active { color: #ffffff !important; }
+:root[data-theme="dark"] .erp-mobile-task-active { background: #2563eb !important; }
+:root[data-theme="dark"] .erp-mobile-task-avatar .ant-avatar { border-color: #425b85; }
+
+/* The notification sheet uses inline light colors; override them for the mobile dark theme. */
+:root[data-theme="dark"] .erp-mobile-notification-drawer .ant-drawer-content,
+:root[data-theme="dark"] .erp-mobile-notification-drawer .ant-drawer-header {
+  background: #151f33 !important;
+  border-color: #2a3955 !important;
+}
+:root[data-theme="dark"] .erp-mobile-notification-drawer .ant-drawer-title,
+:root[data-theme="dark"] .erp-notification-panel-title,
+:root[data-theme="dark"] .erp-notification-panel-item-title { color: #edf3ff !important; }
+:root[data-theme="dark"] .erp-mobile-notification-drawer .ant-drawer-close,
+:root[data-theme="dark"] .erp-notification-panel-icon { color: #b9c8df !important; }
+:root[data-theme="dark"] .erp-notification-panel-header { border-bottom-color: #2a3955 !important; }
+:root[data-theme="dark"] .erp-notification-panel-subtitle,
+:root[data-theme="dark"] .erp-notification-panel-item-content,
+:root[data-theme="dark"] .erp-notification-panel-item-sender,
+:root[data-theme="dark"] .erp-notification-panel-item-time { color: #b9c8df !important; }
+:root[data-theme="dark"] .erp-notification-panel-item:hover { background: #1c2940; }
+
+/* Notification cards are separated so the mobile drawer is easier to scan. */
+.erp-notification-list {
+  display: grid;
+  gap: 8px;
+  padding: 10px 2px 2px;
+}
+.erp-notification-panel-item {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.erp-notification-panel-item:hover {
+  border-color: #bfdbfe;
+  background: #f8fbff;
+  transform: translateY(-1px);
+}
+.erp-notification-panel-item-sender strong {
+  color: #1e3a5f;
+  font-weight: 800;
+}
+:root[data-theme="dark"] .erp-notification-panel-item {
+  border-color: #2a3955;
+  background: #18243a;
+  box-shadow: none;
+}
+:root[data-theme="dark"] .erp-notification-panel-item:hover {
+  border-color: #426390;
+  background: #1c2940;
+}
+:root[data-theme="dark"] .erp-notification-panel-item-sender strong { color: #e6edf8; }
+
+/* Commission lives inside the mobile profile tabs and contains several light utility surfaces. */
+:root[data-theme="dark"] .commission-panel .bg-slate-100 {
+  background: #263956 !important;
+}
+:root[data-theme="dark"] .commission-panel .text-slate-800,
+:root[data-theme="dark"] .commission-panel .text-slate-700 { color: #edf3ff !important; }
+:root[data-theme="dark"] .commission-panel .text-slate-600 { color: #c7d3e7 !important; }
+:root[data-theme="dark"] .commission-panel .text-slate-500,
+:root[data-theme="dark"] .commission-panel .text-slate-400 { color: #aebdd3 !important; }
+:root[data-theme="dark"] .commission-entry-form {
+  background: #18243a !important;
+  border-color: #2a3955 !important;
+}
+:root[data-theme="dark"] .commission-stat-card,
+:root[data-theme="dark"] .commission-total-card,
+:root[data-theme="dark"] .commission-toolbar {
+  background: #151f33 !important;
+  border-color: #2a3955 !important;
+}
+:root[data-theme="dark"] .commission-history-item--pending {
+  background: #18243a !important;
+  border-color: #2a3955 !important;
+}
+:root[data-theme="dark"] .commission-history-item--collected {
+  background: #142b25 !important;
+  border-color: #28604c !important;
+}
+:root[data-theme="dark"] .commission-history-item .text-slate-800 { color: #edf3ff !important; }
+:root[data-theme="dark"] .commission-history-item .text-slate-500,
+:root[data-theme="dark"] .commission-history-item .text-slate-400 { color: #b9c8df !important; }
+:root[data-theme="dark"] .commission-gg-card { background: #151f33 !important; border-color: #2a3955 !important; }
+:root[data-theme="dark"] .commission-gg-card .yakiuo-card-title { color: #edf3ff; }
+:root[data-theme="dark"] .commission-gg-card .yakiuo-small-icon { background: #263956; color: #b9c8df; }
+:root[data-theme="dark"] .commission-gg-count { color: #b9c8df !important; }
+
+/* Thùng rác trong hồ sơ dùng các utility màu sáng cố định. */
+:root[data-theme="dark"] .yakiuo-social-card .yakiuo-card-title { color: #edf3ff; }
+:root[data-theme="dark"] .yakiuo-social-card .text-slate-500 { color: #b9c8df !important; }
+:root[data-theme="dark"] .yakiuo-social-card .bg-slate-50 { background: #1c2940 !important; }
 
 @media (max-width: 640px) {
   .dashboard-greeting {
@@ -1361,6 +1601,107 @@ button:focus-visible,
   transform: scale(1.06);
 }
 
+/* Avatar preview deliberately replaces Ant Design's padded white frame. */
+.yakiuo-avatar-preview-modal .ant-modal-content {
+  overflow: visible !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 20px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.yakiuo-avatar-preview-modal .ant-modal-body {
+  padding: 0 !important;
+}
+
+.yakiuo-avatar-preview-modal .ant-modal-close {
+  z-index: 2;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.72);
+  color: #fff;
+}
+
+.yakiuo-avatar-preview-modal .ant-modal-close:hover {
+  background: rgba(15, 23, 42, 0.92);
+  color: #fff;
+}
+
+.yakiuo-avatar-preview-frame {
+  display: flex;
+  min-height: 200px;
+  max-height: 76vh;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #070b14;
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.42);
+}
+
+.yakiuo-avatar-preview-image {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 76vh;
+  object-fit: contain;
+}
+
+.yakiuo-avatar-preview-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 0 0;
+}
+
+.yakiuo-avatar-preview-actions .ant-btn {
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.88);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.yakiuo-avatar-preview-actions .ant-btn-dangerous {
+  color: #fecaca;
+}
+
+/* Compact custom header keeps the image editor aligned on every screen size. */
+.yakiuo-image-adjust-modal .ant-modal-content {
+  overflow: hidden;
+  padding: 0 !important;
+}
+
+.yakiuo-image-adjust-modal .ant-modal-body {
+  padding: 0 !important;
+}
+
+.yakiuo-image-adjust-modal .ant-modal-footer {
+  margin: 0 !important;
+  padding: 12px 20px 16px !important;
+}
+
+.yakiuo-image-adjust-modal .ant-modal-close {
+  top: 13px;
+  right: 14px;
+}
+
+.yakiuo-image-adjust-heading {
+  padding: 18px 52px 16px 22px;
+  border-bottom: 1px solid var(--erp-border);
+  color: var(--erp-text);
+  font-size: 16px;
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+.yakiuo-image-adjust-content {
+  padding: 20px 22px 8px;
+}
+
 .yakiuo-profile-identity {
   flex: 1;
 
@@ -1846,29 +2187,29 @@ button:focus-visible,
   .erp-mobile-taskbar {
     position: fixed;
 
-    left: 0;
-    right: 0;
+    left: 12px;
+    right: 12px;
 
-    bottom: 0;
+    bottom: max(8px, env(safe-area-inset-bottom));
 
     z-index: 9999;
 
     width: auto;
-    height: calc(var(--erp-mobile-taskbar-height) + env(safe-area-inset-bottom));
+    height: 54px;
 
     display: flex;
     align-items: center;
     justify-content: space-around;
 
-    padding: 4px 6px max(4px, env(safe-area-inset-bottom));
+    padding: 4px 6px;
 
     border: 1px solid #e2e8f0;
 
-    border-radius: 0;
+    border-radius: 999px;
 
     background: #ffffff;
 
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.2);
 
     overflow: hidden;
     isolation: isolate;
@@ -1880,14 +2221,14 @@ button:focus-visible,
     width: auto;
     min-width: 0;
     flex: 1 1 0;
-    height: 50px;
+    height: 46px;
 
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
 
-    gap: 3px;
+    gap: 0;
 
     padding: 0;
 
@@ -1914,14 +2255,14 @@ button:focus-visible,
     position: relative;
     z-index: 1;
 
-    width: 34px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    border-radius: 10px;
+    border-radius: 50%;
   }
 
   .erp-mobile-task-icon {
@@ -1941,33 +2282,17 @@ button:focus-visible,
 
   .erp-mobile-task-active {
     position: absolute;
-    top: 2px;
-    left: calc(50% - 25px);
-    width: 50px;
-    height: 32px;
+    top: 5px;
+    left: calc(50% - 18px);
+    width: 36px;
+    height: 36px;
     z-index: 0;
-    border-radius: 11px;
-    background: #eff6ff;
+    border-radius: 50%;
+    background: #2563eb;
   }
 
   .erp-mobile-task-label {
-    position: relative;
-    z-index: 1;
-
-    max-width: 100%;
-
-    color: inherit;
-
-    font-size: 10px;
-    font-weight: 650;
-
-    line-height: 1;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
+    display: none;
   }
 }
 
@@ -2168,18 +2493,14 @@ button:focus-visible,
 
 @media (max-width: 420px) {
   :root {
-    --erp-mobile-taskbar-height: 54px;
+    --erp-mobile-taskbar-height: 62px;
   }
 
   .erp-mobile-taskbar {
-    left: 0;
-    right: 0;
-
-    bottom: 0;
-
-    height: calc(var(--erp-mobile-taskbar-height) + env(safe-area-inset-bottom));
-
-    border-radius: 0;
+    left: 8px;
+    right: 8px;
+    height: 50px;
+    padding: 3px 4px;
   }
 
   .erp-mobile-task-item {
@@ -2188,16 +2509,19 @@ button:focus-visible,
 
   .erp-mobile-task-icon,
   .erp-mobile-task-avatar {
-    width: 36px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
   }
 
   .erp-mobile-task-icon {
-    font-size: 20px;
+    font-size: 19px;
   }
 
-  .erp-mobile-task-label {
-    font-size: 8px;
+  .erp-mobile-task-active {
+    top: 5px;
+    left: calc(50% - 17px);
+    width: 34px;
+    height: 34px;
   }
 
   .yakiuo-cover {

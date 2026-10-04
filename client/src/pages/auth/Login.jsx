@@ -78,7 +78,11 @@ const Login = () => {
       } else {
         localStorage.removeItem("rememberedLogin");
       }
-      message.success("Đăng nhập thành công. Chào mừng bạn trở lại!");
+      // Trên điện thoại, ưu tiên popup thông báo quan trọng vừa tải sau đăng nhập.
+      // Không hiện thêm toast thành công để hai thông báo không chồng lên nhau.
+      if (!window.matchMedia("(max-width: 991px)").matches) {
+        message.success("Đăng nhập thành công. Chào mừng bạn trở lại!");
+      }
       navigate("/dashboard");
     } catch (error) {
       setLoginError(getLoginError(error));

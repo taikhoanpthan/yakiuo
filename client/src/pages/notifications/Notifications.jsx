@@ -29,6 +29,8 @@ import {
   DeleteOutlined,
   EditOutlined,
   ExclamationCircleOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
   InfoCircleOutlined,
   PlusOutlined,
   ReloadOutlined,
@@ -62,6 +64,7 @@ const Notifications = () => {
 
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [visibilitySavingId, setVisibilitySavingId] = useState(null);
 
   const [workSchedule, setWorkSchedule] = useState(null);
   const [scheduleLoading, setScheduleLoading] = useState(false);
@@ -74,6 +77,7 @@ const Notifications = () => {
   const [maintenanceSaving, setMaintenanceSaving] = useState(false);
   const [features, setFeatures] = useState({ cfs: true, caro: true });
   const [featureSaving, setFeatureSaving] = useState(null);
+  const [notificationScope, setNotificationScope] = useState("priority");
   // =========================
   // LOAD DATA
   // =========================
@@ -82,13 +86,17 @@ const Notifications = () => {
   const notificationsQuery = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
-      const response = await getNotifications();
+      const response = await getNotifications({ includeInactive: true });
       const data = response.data?.data?.notifications ?? response.data?.notifications ?? [];
       return Array.isArray(data) ? data : [];
     },
     placeholderData: (previous) => previous,
   });
   const notifications = notificationsQuery.data || [];
+  const isNotificationManager = ["admin", "manager"].includes(user?.role);
+  const displayedNotifications = isNotificationManager && notificationScope === "priority"
+    ? notifications.filter((item) => ["warning", "error"].includes(item.type))
+    : notifications;
   const loading = notificationsQuery.isFetching;
   const setNotifications = (updater) => queryClient.setQueryData(["notifications"], (current = []) => typeof updater === "function" ? updater(current) : updater);
   const loadNotifications = notificationsQuery.refetch;
@@ -390,6 +398,22 @@ const Notifications = () => {
     }
   };
 
+  const handleToggleVisibility = async (notification) => {
+    const nextIsActive = notification.isActive === false;
+    try {
+      setVisibilitySavingId(notification._id);
+      await updateNotification(notification._id, { isActive: nextIsActive });
+      setNotifications((current) => current.map((item) => (
+        item._id === notification._id ? { ...item, isActive: nextIsActive } : item
+      )));
+      message.success(nextIsActive ? "Đã hiện thông báo cho mọi người" : "Đã ẩn thông báo khỏi mọi người");
+    } catch (error) {
+      message.error(error.response?.data?.message || "Không thể cập nhật hiển thị thông báo");
+    } finally {
+      setVisibilitySavingId(null);
+    }
+  };
+
   // =========================
   // TYPE CONFIG
   // =========================
@@ -566,7 +590,7 @@ const Notifications = () => {
       title: "Thao tác",
       key: "actions",
       fixed: "right",
-      width: 120,
+      width: 158,
       align: "center",
       render: (_, record) => (
         <Space size={4}>
@@ -576,6 +600,16 @@ const Notifications = () => {
               className="text-slate-500 hover:text-blue-600"
               icon={<EditOutlined />}
               onClick={() => openEditModal(record)}
+            />
+          </Tooltip>
+
+          <Tooltip title={record.isActive === false ? "Hiện lại cho mọi người" : "Ẩn khỏi mọi người"}>
+            <Button
+              type="text"
+              className={record.isActive === false ? "text-emerald-600 hover:text-emerald-500" : "text-slate-500 hover:text-amber-600"}
+              icon={record.isActive === false ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+              loading={visibilitySavingId === record._id}
+              onClick={() => handleToggleVisibility(record)}
             />
           </Tooltip>
 
@@ -606,7 +640,7 @@ const Notifications = () => {
   // =========================
 
   return (
-    <div className="space-y-5">
+    <div className="notifications-page space-y-5">
       {/* ================= HEADER ================= */}
 
       <div className="erp-page-header">
@@ -843,7 +877,7 @@ const Notifications = () => {
         }}
       >
         <div className="border-b border-slate-100 px-5 py-4">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-base font-semibold text-slate-800">
                 Danh sách thông báo
@@ -854,16 +888,30 @@ const Notifications = () => {
               </p>
             </div>
 
-            <Tag className="rounded-full px-3 py-1">
-              {notifications.length} thông báo
-            </Tag>
+            <div className="flex items-center gap-2">
+              {isNotificationManager && (
+                <Select
+                  size="small"
+                  value={notificationScope}
+                  onChange={setNotificationScope}
+                  className="min-w-36"
+                  options={[
+                    { value: "priority", label: "Ưu tiên" },
+                    { value: "all", label: "Tất cả" },
+                  ]}
+                />
+              )}
+              <Tag className="w-fit rounded-full px-3 py-1">
+                {displayedNotifications.length} thông báo
+              </Tag>
+            </div>
           </div>
         </div>
 
         <Table
           rowKey="_id"
           loading={loading}
-          dataSource={notifications}
+          dataSource={displayedNotifications}
           columns={columns}
           scroll={{
             x: 1300,
@@ -877,7 +925,7 @@ const Notifications = () => {
             emptyText: (
               <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="Chưa có thông báo nào"
+                description={notificationScope === "priority" ? "Chưa có thông báo ưu tiên" : "Chưa có thông báo nào"}
               />
             ),
           }}
@@ -887,6 +935,7 @@ const Notifications = () => {
       {/* ================= MODAL ================= */}
 
       <Modal
+        className="notifications-editor-modal"
         open={modalOpen}
         onCancel={handleCancel}
         footer={null}

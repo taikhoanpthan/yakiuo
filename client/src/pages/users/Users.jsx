@@ -275,7 +275,7 @@ const Users = () => {
     );
   }
   return (
-    <div>
+    <div className="users-page">
       <div className="erp-page-header">
         <div>
           <div className="erp-page-eyebrow">Quản trị nhân sự</div>

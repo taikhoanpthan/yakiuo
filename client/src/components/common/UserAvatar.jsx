@@ -35,7 +35,7 @@ const UserAvatar = ({ user, src, avatarPosition, avatarZoom, alt = "", children,
     <Avatar
       {...avatarProps}
       alt={alt}
-      className={`${className || ""} ${openDetail && userId ? "cursor-pointer" : ""}`.trim()}
+      className={`erp-user-avatar ${className || ""} ${openDetail && userId ? "cursor-pointer" : ""}`.trim()}
       onClick={openDetail ? handleClick : onClick}
       src={imageSrc ? (
         <img

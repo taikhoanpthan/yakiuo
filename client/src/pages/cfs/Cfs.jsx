@@ -535,7 +535,7 @@ const PostActions = ({ post, onLike, onOpenReplies, onShowLikes }) => {
                 title={post.likeUsers.map((user) => user.name).join(", ")}
               >
                 {post.likeUsers.slice(0, 2).map((user) => (
-                  <UserAvatar key={String(user._id)} size={18} user={user} openDetail={false}>
+                  <UserAvatar key={String(user._id)} size={18} user={user}>
                     {user.name.slice(0, 1)}
                   </UserAvatar>
                 ))}
@@ -620,7 +620,7 @@ const StoryTray = ({ stories, user, onCreate, onOpen }) => (
       >
         {story.imageUrl && <img className="cfs-story-card-image" src={optimizedCfsImage(story.imageUrl, 320)} alt="" loading="lazy" decoding="async" />}
         {story.videoUrl && <video className="cfs-story-card-image" src={story.videoUrl} poster={story.videoPosterUrl || undefined} muted playsInline preload="none" aria-label="Story video" />}
-        <UserAvatar size={38} user={story.author} className="cfs-story-avatar" openDetail={false}>
+        <UserAvatar size={38} user={story.author} className="cfs-story-avatar">
           {story.author.name?.slice(0, 1)}
         </UserAvatar>
         {story.content && <span className="cfs-story-card-content">{story.content}</span>}

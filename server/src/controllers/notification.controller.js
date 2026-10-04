@@ -8,6 +8,10 @@ const getNotifications = async (req, res) => {
     const { notifications, total } =
       await notificationService.getNotifications({
         limit: req.query.limit,
+        // Chỉ người quản lý mới được xem lại các thông báo đã ẩn để bật lại.
+        includeInactive:
+          req.query.includeInactive === "true" &&
+          ["admin", "manager"].includes(req.user?.role),
       });
 
     return res.status(200).json({

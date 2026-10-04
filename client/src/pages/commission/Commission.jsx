@@ -402,7 +402,7 @@ const Commission = () => {
   // =========================
 
   return (
-    <div className="space-y-4">
+    <div className="commission-panel space-y-4">
       {/* =====================================================
           COMMISSION HEADER / FORM
       ===================================================== */}
@@ -547,7 +547,7 @@ const Commission = () => {
               ================================================= */}
 
               {type === "wine" && (
-                <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                <div className="commission-entry-form rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                   <div className="mb-4">
                     <div className="font-semibold text-slate-800">
                       Thông tin rượu
@@ -637,7 +637,7 @@ const Commission = () => {
                   {/* WINE INFO */}
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-white p-4">
+                    <div className="commission-stat-card rounded-xl bg-white p-4">
                       <div className="text-xs text-slate-400">
                         Commission / chai
                       </div>
@@ -647,7 +647,7 @@ const Commission = () => {
                       </div>
                     </div>
 
-                    <div className="rounded-xl bg-white p-4">
+                    <div className="commission-stat-card rounded-xl bg-white p-4">
                       <div className="text-xs text-slate-400">Số lượng</div>
 
                       <div className="mt-1 text-lg font-semibold text-slate-700">
@@ -663,7 +663,7 @@ const Commission = () => {
               ================================================= */}
 
               {type === "abalone" && (
-                <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                <div className="commission-entry-form rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                   <div className="mb-4">
                     <div className="font-semibold text-slate-800">
                       Thông tin bào ngư
@@ -725,7 +725,7 @@ const Commission = () => {
                   {/* INFO */}
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-white p-4">
+                    <div className="commission-stat-card rounded-xl bg-white p-4">
                       <div className="text-xs text-slate-400">
                         Commission / con
                       </div>
@@ -735,7 +735,7 @@ const Commission = () => {
                       </div>
                     </div>
 
-                    <div className="rounded-xl bg-white p-4">
+                    <div className="commission-stat-card rounded-xl bg-white p-4">
                       <div className="text-xs text-slate-400">Số lượng</div>
 
                       <div className="mt-1 text-lg font-semibold text-slate-700">
@@ -750,7 +750,7 @@ const Commission = () => {
                   TOTAL
               ================================================= */}
 
-              <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-white p-5">
+              <div className="commission-total-card mt-5 rounded-2xl border border-dashed border-slate-200 bg-white p-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
@@ -801,7 +801,7 @@ const Commission = () => {
         {/* TOOLBAR */}
 
         {commissions.length > 0 && (
-          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="commission-toolbar flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="font-semibold text-slate-800">
                 Lịch sử commission

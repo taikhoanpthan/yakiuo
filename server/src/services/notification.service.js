@@ -11,8 +11,8 @@ const createNotification = async (data, userId) => {
   return notification;
 };
 
-const getNotifications = async ({ limit } = {}) => {
-  const filter = { isActive: true };
+const getNotifications = async ({ limit, includeInactive = false } = {}) => {
+  const filter = includeInactive ? {} : { isActive: true };
   const parsedLimit = Number(limit);
   const query = Notification.find(filter)
     .populate(

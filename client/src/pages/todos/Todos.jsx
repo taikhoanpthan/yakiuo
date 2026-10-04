@@ -270,7 +270,7 @@ const Todos = () => {
             size="large"
             value={status}
             onChange={setStatus}
-            className="w-full lg:w-44"
+            className="todo-status-filter w-full lg:w-44"
             options={[
               {
                 value: "all",
@@ -339,10 +339,10 @@ const Todos = () => {
               return (
                 <div
                   key={todo._id}
-                  className={`group rounded-2xl border p-4 transition ${
+                  className={`todo-item group rounded-2xl border p-4 transition ${
                     completed
-                      ? "border-slate-100 bg-slate-50"
-                      : "border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm"
+                      ? "todo-item--completed border-slate-100 bg-slate-50"
+                      : "todo-item--pending border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm"
                   }`}
                 >
                   <div className="flex items-start gap-4">
@@ -381,10 +381,10 @@ const Todos = () => {
                         />
 
                         <div>
-                          <div className="text-xs text-slate-400">Giao bởi</div>
+                          <div className="todo-item-meta text-xs text-slate-400">Giao bởi</div>
 
                           <div
-                            className={`text-sm font-semibold ${
+                            className={`todo-item-creator text-sm font-semibold ${
                               completed ? "text-slate-400" : "text-slate-700"
                             }`}
                           >
@@ -396,7 +396,7 @@ const Todos = () => {
                       {/* TITLE */}
 
                       <div
-                        className={`text-base font-semibold ${
+                        className={`todo-item-title text-base font-semibold ${
                           completed
                             ? "text-slate-400 line-through"
                             : "text-slate-800"
@@ -434,7 +434,7 @@ const Todos = () => {
                         </Tag>
 
                         {todo.dueDate && (
-                          <span className="text-xs text-slate-400">
+                          <span className="todo-item-meta text-xs text-slate-400">
                             {dayjs(todo.dueDate).format("DD/MM/YYYY")}
                           </span>
                         )}
@@ -443,7 +443,7 @@ const Todos = () => {
                       {/* COMPLETED INFO */}
 
                       {completed && todo.completedBy?.fullName && (
-                        <div className="mt-2 text-xs text-green-600">
+                        <div className="todo-item-completed-by mt-2 text-xs text-green-600">
                           Hoàn thành bởi {todo.completedBy.fullName}
                           {todo.completedAt &&
                             ` • ${dayjs(todo.completedAt).format(

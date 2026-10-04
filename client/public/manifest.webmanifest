@@ -2,6 +2,7 @@
   "name": "Yakiuo ERP",
   "short_name": "Yakiuo",
   "description": "Hệ thống quản trị nội bộ Yakiuo",
+  "id": "/",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",

@@ -391,3 +391,21 @@
 :root[data-theme="dark"] .cfs-activity-item .cfs-activity-post { color: #aebdd3; }
 :root[data-theme="dark"] .cfs-activity-item.is-unread,
 :root[data-theme="dark"] .cfs-activity-item:hover { background: #203252; }
+
+/* Thẻ tạo Story có hai mảng nền riêng nên không được để trắng trong dark mode. */
+:root[data-theme="dark"] .cfs-stories { border-bottom-color: #2b3b57; }
+:root[data-theme="dark"] .cfs-create-story {
+  background: #1c2940;
+  color: #e6edf8;
+}
+:root[data-theme="dark"] .cfs-create-story::after {
+  background: #151f33;
+  border-top-color: #2b3b57;
+}
+:root[data-theme="dark"] .cfs-story-plus { border-color: #151f33; }
+
+/* Các hành động xóa/thùng rác cần giữ sắc đỏ đủ sáng trên nền CFS tối. */
+:root[data-theme="dark"] .cfs-activity-delete,
+:root[data-theme="dark"] .cfs-delete-action { color: #fca5a5 !important; }
+:root[data-theme="dark"] .cfs-activity-delete:hover { background: #4a1d2a; color: #fecaca !important; }
+:root[data-theme="dark"] .cfs-story-delete-menu { background: #3b1c27; color: #fecaca; }

@@ -75,7 +75,7 @@ const CommissionHistory = ({
           <Tag>{total}</Tag>
         </div>
       }
-      className="erp-section-card"
+      className="commission-history-card erp-section-card"
     >
       {/* LOADING */}
 
@@ -97,7 +97,7 @@ const CommissionHistory = ({
           {commissions.map((item) => (
             <div
               key={item._id}
-              className={`rounded-2xl border p-4 transition ${item.billCollected ? "border-emerald-200 bg-emerald-50/50" : "border-slate-100 bg-slate-50/50 hover:border-slate-200"}`}
+              className={`commission-history-item rounded-2xl border p-4 transition ${item.billCollected ? "commission-history-item--collected border-emerald-200 bg-emerald-50/50" : "commission-history-item--pending border-slate-100 bg-slate-50/50 hover:border-slate-200"}`}
               role="button"
               tabIndex={0}
               onClick={() => onToggleBillCollected?.(item)}

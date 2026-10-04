@@ -537,33 +537,6 @@ const Profile = () => {
                   </button>
                 </Upload>
 
-                {user?.avatar && (
-                  <button
-                    type="button"
-                    className="yakiuo-avatar-adjust"
-                    title="Căn chỉnh ảnh đại diện"
-                    onClick={() => openImageAdjuster("avatar")}
-                  >
-                    <DragOutlined />
-                  </button>
-                )}
-                {user?.avatar && (
-                  <button
-                    type="button"
-                    className="yakiuo-avatar-remove"
-                    title="Xóa ảnh đại diện"
-                    onClick={() => Modal.confirm({
-                      title: "Xóa ảnh đại diện?",
-                      content: "Ảnh đại diện sẽ trở về biểu tượng mặc định.",
-                      okText: "Xóa ảnh",
-                      okButtonProps: { danger: true },
-                      cancelText: "Hủy",
-                      onOk: handleRemoveAvatar,
-                    })}
-                  >
-                    <CloseOutlined />
-                  </button>
-                )}
               </div>
 
               {/* =================================================
@@ -930,35 +903,48 @@ const Profile = () => {
       ===================================================== */}
 
       <Modal
+        className="yakiuo-avatar-preview-modal"
         open={showAvatarModal}
         onCancel={() => setShowAvatarModal(false)}
         footer={null}
         centered
         destroyOnHidden
         width="min(700px, calc(100vw - 32px))"
-        styles={{
-          content: {
-            padding: 8,
-            background: "#000",
-          },
-          body: {
-            padding: 0,
-          },
-        }}
       >
-        <div className="flex max-h-[80vh] min-h-[200px] items-center justify-center overflow-hidden rounded-lg bg-black">
+        <div className="yakiuo-avatar-preview-frame">
           {user?.avatar && (
             <img
               src={user.avatar}
               alt={user?.fullName || "Avatar"}
-              className="max-h-[80vh] w-auto max-w-full object-contain"
+              className="yakiuo-avatar-preview-image"
             />
           )}
+        </div>
+        <div className="yakiuo-avatar-preview-actions">
+          <Button icon={<DragOutlined />} onClick={() => openImageAdjuster("avatar")}>
+            Căn chỉnh
+          </Button>
+          <Button
+            danger
+            icon={<CloseOutlined />}
+            loading={uploading}
+            onClick={() => Modal.confirm({
+              title: "Xóa ảnh đại diện?",
+              content: "Ảnh đại diện sẽ trở về biểu tượng mặc định.",
+              okText: "Xóa ảnh",
+              okButtonProps: { danger: true },
+              cancelText: "Hủy",
+              onOk: handleRemoveAvatar,
+            })}
+          >
+            Xóa ảnh
+          </Button>
         </div>
       </Modal>
 
       <Modal
-        title={`Căn chỉnh ${imageAdjustTarget === "cover" ? "ảnh bìa" : "ảnh đại diện"}`}
+        className="yakiuo-image-adjust-modal"
+        title={null}
         open={Boolean(imageAdjustTarget)}
         onCancel={() => setImageAdjustTarget(null)}
         onOk={handleSaveImagePosition}
@@ -967,7 +953,10 @@ const Profile = () => {
         confirmLoading={savingImagePosition}
         centered
       >
-        <div className="py-3">
+        <div className="yakiuo-image-adjust-heading">
+          Căn chỉnh {imageAdjustTarget === "cover" ? "ảnh bìa" : "ảnh đại diện"}
+        </div>
+        <div className="yakiuo-image-adjust-content">
           {imageAdjustTarget === "cover" ? (
             <div className="relative h-40 overflow-hidden rounded-xl bg-slate-200">
               <img

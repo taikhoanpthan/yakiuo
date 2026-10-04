@@ -20,6 +20,7 @@ import {
   CheckSquareOutlined,
   CommentOutlined,
   CoffeeOutlined,
+  DownloadOutlined,
   TrophyOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
@@ -106,6 +107,7 @@ const Layout = () => {
   // ===================================================
 
   const [collapsed, setCollapsed] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState(() => window.__yakiuoInstallPrompt || null);
 
   const [isMobile, setIsMobile] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
@@ -130,6 +132,33 @@ const Layout = () => {
     window.addEventListener("user:open-detail", openUserDetail);
     return () => window.removeEventListener("user:open-detail", openUserDetail);
   }, []);
+
+  useEffect(() => {
+    const showInstall = () => setInstallPrompt(window.__yakiuoInstallPrompt || null);
+    const clearInstall = () => {
+      window.__yakiuoInstallPrompt = null;
+      setInstallPrompt(null);
+    };
+
+    window.addEventListener("yakiuo:install-available", showInstall);
+    window.addEventListener("appinstalled", clearInstall);
+    return () => {
+      window.removeEventListener("yakiuo:install-available", showInstall);
+      window.removeEventListener("appinstalled", clearInstall);
+    };
+  }, []);
+
+  const installApplication = async () => {
+    if (!installPrompt) return;
+
+    await installPrompt.prompt();
+    const choice = await installPrompt.userChoice;
+    if (choice.outcome === "accepted") {
+      message.success("Đang cài Yakiuo ERP vào thiết bị của bạn.");
+    }
+    window.__yakiuoInstallPrompt = null;
+    setInstallPrompt(null);
+  };
 
   useEffect(() => {
     let active = true;
@@ -424,6 +453,7 @@ const Layout = () => {
       const title = notificationItem.title || "Thông báo mới";
 
       const content = notificationItem.content || "";
+      const senderName = notificationItem.createdBy?.fullName || notificationItem.createdBy?.username || "Hệ thống Yakiuo";
       const typeConfig = getNotificationTypeConfig(notificationItem.type);
 
       notificationApi.open({
@@ -499,6 +529,9 @@ const Layout = () => {
             }}
           >
             {content}
+            <div style={{ marginTop: 6, color: "#475467", fontSize: 11, fontWeight: 600 }}>
+              Gửi bởi: {senderName}
+            </div>
           </div>
         ),
 
@@ -676,11 +709,13 @@ const Layout = () => {
 
   const notificationContent = (
     <div
+      className="erp-notification-panel"
       style={{
         width: "min(360px, calc(100vw - 56px))",
       }}
     >
       <div
+        className="erp-notification-panel-header"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -691,6 +726,7 @@ const Layout = () => {
       >
         <div>
           <div
+            className="erp-notification-panel-title"
             style={{
               fontSize: 15,
               fontWeight: 600,
@@ -701,6 +737,7 @@ const Layout = () => {
           </div>
 
           <div
+            className="erp-notification-panel-subtitle"
             style={{
               fontSize: 12,
               color: "#94a3b8",
@@ -714,6 +751,7 @@ const Layout = () => {
         </div>
 
         <BellOutlined
+          className="erp-notification-panel-icon"
           style={{
             fontSize: 18,
             color: "#64748b",
@@ -753,10 +791,12 @@ const Layout = () => {
         >
           {recentNotifications.map((item) => {
             const typeConfig = getNotificationTypeConfig(item.type);
+            const senderName = item.createdBy?.fullName || item.createdBy?.username || "Hệ thống Yakiuo";
 
             return (
                 <div
                   key={item._id}
+                  className="erp-notification-panel-item"
                   style={{
                     display: "flex",
                     gap: 12,
@@ -792,6 +832,7 @@ const Layout = () => {
                 }}
               >
                 <div
+                  className="erp-notification-panel-item-title"
                   style={{
                     fontSize: 14,
                     fontWeight: 600,
@@ -805,6 +846,7 @@ const Layout = () => {
                 </div>
 
                 <div
+                  className="erp-notification-panel-item-content"
                   style={{
                     fontSize: 12,
                     color: "#64748b",
@@ -816,6 +858,10 @@ const Layout = () => {
                   }}
                 >
                   {item.content || ""}
+                </div>
+
+                <div className="erp-notification-panel-item-sender" style={{ marginTop: 6, color: "#475467", fontSize: 11 }}>
+                  Gửi bởi: <strong>{senderName}</strong>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 6 }}>
@@ -832,7 +878,7 @@ const Layout = () => {
                   >
                     {typeConfig.label}
                   </span>
-                  <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                  <span className="erp-notification-panel-item-time" style={{ fontSize: 11, color: "#94a3b8" }}>
                   {item.createdAt
                     ? dayjs(item.createdAt).format("DD/MM/YYYY HH:mm")
                     : ""}
@@ -1022,6 +1068,18 @@ const Layout = () => {
             ========================================= */}
 
             <Space size={16}>
+              {installPrompt && (
+                <Tooltip title="Cài Yakiuo ERP như ứng dụng">
+                  <Button
+                    type="text"
+                    className="erp-menu-button"
+                    aria-label="Cài Yakiuo ERP"
+                    icon={<DownloadOutlined />}
+                    onClick={installApplication}
+                  />
+                </Tooltip>
+              )}
+
               <Tooltip title={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}>
                 <Button
                   type="text"

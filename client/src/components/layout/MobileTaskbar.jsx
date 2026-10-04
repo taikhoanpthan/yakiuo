@@ -8,7 +8,7 @@ const MobileTaskbar = ({ items, pathname, onNavigate }) => (
       const active = pathname === item.key || pathname.startsWith(`${item.key}/`);
       const icon = item.key === "/profile" ? (
         <UserAvatar
-          size={24}
+          size={30}
           user={item.user}
           openDetail={false}
           icon={!item.user?.avatar && <UserOutlined />}

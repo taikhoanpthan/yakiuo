@@ -347,7 +347,7 @@ const EmployeeDetail = ({ user, onBack }) => {
   // =====================================================
 
   return (
-    <div className="mx-auto w-full max-w-6xl pb-28 lg:pb-8">
+    <div className="employee-detail-page mx-auto w-full max-w-6xl pb-28 lg:pb-8">
       {/* =================================================
           BACK
       ================================================= */}
@@ -365,7 +365,7 @@ const EmployeeDetail = ({ user, onBack }) => {
           PROFILE HEADER
       ================================================= */}
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="employee-detail-header overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         {/* =================================================
             COVER
         ================================================= */}

@@ -106,7 +106,7 @@ const CommissionGG = () => {
   };
 
   return (
-    <Card bordered={false} className="yakiuo-social-card">
+    <Card bordered={false} className="commission-gg-card yakiuo-social-card">
       <div className="yakiuo-card-heading">
         <div className="flex items-center gap-3">
           <div className="yakiuo-small-icon"><FolderOpenOutlined /></div>
@@ -138,7 +138,7 @@ const CommissionGG = () => {
         </div>
       </div>
 
-      <div className="mt-4 text-sm text-slate-500">{images.length} ảnh trong tháng {month.format("MM/YYYY")}</div>
+      <div className="commission-gg-count mt-4 text-sm text-slate-500">{images.length} ảnh trong tháng {month.format("MM/YYYY")}</div>
 
       {loading ? (
         <div className="flex h-40 items-center justify-center"><HamsterLoader size="sm" /></div>

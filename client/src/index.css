@@ -2273,6 +2273,14 @@ button:focus-visible,
     color: #2563eb;
   }
 
+  /* The active chip is blue, so its icon must not inherit the blue text color. */
+  .erp-mobile-task-item.is-active .erp-mobile-task-icon,
+  .erp-mobile-task-item.is-active .erp-mobile-task-icon .anticon,
+  .erp-mobile-task-item.is-active .erp-mobile-task-icon svg {
+    color: #fff !important;
+    fill: currentColor;
+  }
+
   .erp-mobile-task-item.is-active .erp-mobile-task-icon,
   .erp-mobile-task-item.is-active .erp-mobile-task-avatar {
     background: transparent;

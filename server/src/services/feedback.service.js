@@ -358,6 +358,11 @@ const resolveLateEntryFeedback = async (feedbackId, adminId) => {
   }
 };
 
+const resolveAllLateEntryFeedbacks = async (adminId) => Feedback.updateMany(
+  { isLateEntry: true, lateEntryResolvedAt: null },
+  { $set: { lateEntryResolvedAt: new Date(), lateEntryResolvedBy: adminId } }
+);
+
 const deleteFeedback = async (
   feedbackId
 ) => {
@@ -384,6 +389,7 @@ module.exports = {
   getFeedbackById,
   getLateEntryFeedbacks,
   resolveLateEntryFeedback,
+  resolveAllLateEntryFeedbacks,
   createFeedback,
   updateFeedback,
   deleteFeedback,

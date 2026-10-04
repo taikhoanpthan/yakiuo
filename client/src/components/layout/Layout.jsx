@@ -28,6 +28,8 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  MoonOutlined,
+  SunOutlined,
   TeamOutlined,
   UserOutlined,
   WarningOutlined,
@@ -40,6 +42,7 @@ import { motion } from "framer-motion";
 import dayjs from "dayjs";
 
 import { useAuth } from "../../store/AuthContext";
+import { useTheme } from "../../store/ThemeContext";
 
 import { getNotifications } from "../../services/notificationService";
 
@@ -96,6 +99,7 @@ const Layout = () => {
   const location = useLocation();
 
   const { logout, user } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   // ===================================================
   // STATE
@@ -1018,6 +1022,16 @@ const Layout = () => {
             ========================================= */}
 
             <Space size={16}>
+              <Tooltip title={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}>
+                <Button
+                  type="text"
+                  className="erp-menu-button"
+                  aria-label={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+                  icon={isDark ? <SunOutlined /> : <MoonOutlined />}
+                  onClick={toggleTheme}
+                />
+              </Tooltip>
+
               {/* =======================================
                   REALTIME ONLINE
               ======================================= */}

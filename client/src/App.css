@@ -99,6 +99,17 @@
 .feedback-mobile-date {
   display: none;
 }
+.feedback-current-date {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid #dbe4f0;
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
 .feedback-date-range .ant-picker-input {
   min-width: 0;
 }
@@ -123,6 +134,10 @@
     display: flex;
     width: 100%;
     min-width: 0;
+  }
+  .feedback-current-date {
+    width: fit-content;
+    margin-top: 2px;
   }
   .feedback-date-range.ant-picker {
     display: flex;

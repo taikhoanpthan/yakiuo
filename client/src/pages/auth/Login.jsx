@@ -121,6 +121,7 @@ const Login = () => {
             <Form.Item label="Chọn tài khoản" name="username" rules={[{ required: true, message: "Hãy chọn tên của bạn." }]}>
               <Select
                 showSearch
+                virtual={false}
                 loading={loadingUsers}
                 disabled={Boolean(usersError)}
                 placeholder="Chọn tên của bạn"

@@ -485,6 +485,7 @@ const Feedback = () => {
               setPagination((previous) => ({ ...previous, current: 1 }));
             }}
           />
+          <span className="feedback-current-date">Hôm nay: {dayjs().format("DD/MM/YYYY")}</span>
         </div>
       </Card>
 

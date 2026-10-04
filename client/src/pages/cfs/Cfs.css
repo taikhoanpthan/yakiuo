@@ -334,3 +334,60 @@
 @media (max-width: 600px) { .cfs-story-overlay { padding: 0; }.cfs-story-shell { width: min(100%, 420px); height: 100dvh; border-radius: 0; }.cfs-story-shell .cfs-story-full { border-radius: 0; } }
 @media (max-width: 600px) { .cfs-story-overlay { padding: 82px 8px calc(78px + env(safe-area-inset-bottom)); place-items: center; }.cfs-story-shell { width: min(100%, 420px); height: min(610px, calc(100dvh - 170px)); border-radius: 14px; }.cfs-story-shell .cfs-story-full { border-radius: 14px; } }
 .cfs-story-music-summary { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 1px dashed #cbd5e1; border-radius: 12px; background: #f8fafc; color: #334155; cursor: pointer; text-align: left; }.cfs-story-music-summary:hover { border-color: #60a5fa; background: #eff6ff; }.cfs-story-music-summary.has-music { border-style: solid; border-color: #bfdbfe; background: #eff6ff; }.cfs-story-music-summary > svg { color: #2563eb; font-size: 20px; }.cfs-story-music-summary img { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; }.cfs-story-music-summary > span { display: grid; flex: 1; min-width: 0; gap: 2px; }.cfs-story-music-summary b, .cfs-story-music-summary small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.cfs-story-music-summary small { color: #64748b; font-size: 11px; }.cfs-story-music-summary em { color: #2563eb; font-size: 12px; font-style: normal; font-weight: 800; }.cfs-music-source-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border-radius: 10px; background: #f1f5f9; }.cfs-music-source-tabs button { padding: 8px; border: 0; border-radius: 7px; background: transparent; color: #64748b; cursor: pointer; font-size: 12px; font-weight: 700; }.cfs-music-source-tabs button.is-active { background: #fff; color: #2563eb; box-shadow: 0 1px 3px rgba(15,23,42,.12); }.cfs-music-picker-modal .ant-modal-body { max-height: min(62dvh, 540px); overflow-y: auto; }
+
+/* Dark mode: CFS có CSS riêng nên cần thay thế toàn bộ nền và chữ cố định của feed. */
+:root[data-theme="dark"] .cfs-page,
+:root[data-theme="dark"] .cfs-feed,
+:root[data-theme="dark"] .cfs-detail,
+:root[data-theme="dark"] .cfs-detail-replies,
+:root[data-theme="dark"] .cfs-detail-composer,
+:root[data-theme="dark"] .cfs-aside > div,
+:root[data-theme="dark"] .cfs-create-editor { background: #151f33; color: #e6edf8; }
+:root[data-theme="dark"] .cfs-feed,
+:root[data-theme="dark"] .cfs-post,
+:root[data-theme="dark"] .cfs-composer,
+:root[data-theme="dark"] .cfs-replies,
+:root[data-theme="dark"] .cfs-detail-header,
+:root[data-theme="dark"] .cfs-detail-post,
+:root[data-theme="dark"] .cfs-detail-sort,
+:root[data-theme="dark"] .cfs-detail-composer,
+:root[data-theme="dark"] .cfs-aside > div { border-color: #2b3b57; }
+:root[data-theme="dark"] .cfs-hero span,
+:root[data-theme="dark"] .cfs-anon-control,
+:root[data-theme="dark"] .cfs-author time,
+:root[data-theme="dark"] .cfs-author b,
+:root[data-theme="dark"] .cfs-actions button,
+:root[data-theme="dark"] .cfs-reply-actions button,
+:root[data-theme="dark"] .cfs-pagination span,
+:root[data-theme="dark"] .cfs-alias-note,
+:root[data-theme="dark"] .cfs-aside p,
+:root[data-theme="dark"] .cfs-rules span { color: #aebdd3; }
+:root[data-theme="dark"] .cfs-hero,
+:root[data-theme="dark"] .cfs-author,
+:root[data-theme="dark"] .cfs-post-body > p,
+:root[data-theme="dark"] .cfs-reply p,
+:root[data-theme="dark"] .cfs-detail-sort strong,
+:root[data-theme="dark"] .cfs-publish-preview p { color: #e6edf8; }
+:root[data-theme="dark"] .cfs-composer .ant-input,
+:root[data-theme="dark"] .cfs-reply-box .ant-input,
+:root[data-theme="dark"] .cfs-detail-composer .ant-input,
+:root[data-theme="dark"] .cfs-create-editor .ant-input { color: #e6edf8; }
+:root[data-theme="dark"] .cfs-composer .ant-input::placeholder,
+:root[data-theme="dark"] .cfs-reply-box .ant-input::placeholder,
+:root[data-theme="dark"] .cfs-detail-composer .ant-input::placeholder { color: #8798b2; }
+:root[data-theme="dark"] .cfs-composer .ant-input,
+:root[data-theme="dark"] .cfs-reply-box { background: #1c2940; border-color: #344763; }
+:root[data-theme="dark"] .cfs-pagination .ant-btn { background: #1c2940; border-color: #344763; color: #dce7f7; }
+:root[data-theme="dark"] .cfs-like-avatars .ant-avatar { border-color: #151f33; background: #30415e; color: #e6edf8; }
+:root[data-theme="dark"] .cfs-post:hover,
+:root[data-theme="dark"] .cfs-detail-replies .cfs-reply-branch:hover { background: #1b2940; }
+:root[data-theme="dark"] .cfs-activity-modal .ant-modal-content,
+:root[data-theme="dark"] .cfs-activity-list { background: #111a2b; }
+:root[data-theme="dark"] .cfs-activity-modal .ant-modal-header,
+:root[data-theme="dark"] .cfs-activity-item { background: #18243a; border-color: #2b3b57; }
+:root[data-theme="dark"] .cfs-activity-modal .ant-modal-title,
+:root[data-theme="dark"] .cfs-activity-item b { color: #e6edf8; }
+:root[data-theme="dark"] .cfs-activity-item small,
+:root[data-theme="dark"] .cfs-activity-item .cfs-activity-post { color: #aebdd3; }
+:root[data-theme="dark"] .cfs-activity-item.is-unread,
+:root[data-theme="dark"] .cfs-activity-item:hover { background: #203252; }

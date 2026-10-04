@@ -3,16 +3,17 @@ import { Button, Card, Descriptions, Input, Modal, Popconfirm, Space, Table, Tag
 import { CheckOutlined, DeleteOutlined, EyeOutlined, ReloadOutlined, SearchOutlined, WarningOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import UserAvatar from "../../components/common/UserAvatar";
-import { deleteFeedback, getLateEntryFeedbacks, resolveLateEntryFeedback } from "../../services/feedbackService";
+import { deleteFeedback, getLateEntryFeedbacks, resolveAllLateEntryFeedbacks, resolveLateEntryFeedback } from "../../services/feedbackService";
 
 const LateFeedbackEntries = () => {
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 });
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [resolvingId, setResolvingId] = useState(null);
+  const [resolvingAll, setResolvingAll] = useState(false);
 
   const loadFeedbacks = async (nextPage = pagination.current, nextSearch = search) => {
     try {
@@ -42,6 +43,13 @@ const LateFeedbackEntries = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const columns = [
+    {
+      title: "STT",
+      key: "index",
+      width: 70,
+      align: "center",
+      render: (_, __, index) => ((pagination.current - 1) * pagination.pageSize) + index + 1,
+    },
     {
       title: "Nhân viên",
       key: "employee",
@@ -91,11 +99,9 @@ const LateFeedbackEntries = () => {
           <Tooltip title="Xem chi tiết">
             <Button type="text" icon={<EyeOutlined />} onClick={() => setSelectedFeedback(record)} aria-label="Xem chi tiết feedback" />
           </Tooltip>
-          <Popconfirm title="Xác nhận có lý do?" description="Mục này sẽ được gỡ khỏi danh sách cần rà soát. Feedback gốc vẫn được giữ nguyên." okText="Xác nhận" cancelText="Hủy" onConfirm={() => handleResolve(record._id)}>
-            <Tooltip title="Xác nhận có lý do nhập trễ">
-              <Button type="text" className="text-emerald-600 hover:!text-emerald-700" icon={<CheckOutlined />} loading={resolvingId === record._id} aria-label="Xác nhận có lý do nhập trễ" />
-            </Tooltip>
-          </Popconfirm>
+          <Tooltip title="Xác nhận có lý do nhập trễ">
+            <Button type="text" className="text-emerald-600 hover:!text-emerald-700" icon={<CheckOutlined />} loading={resolvingId === record._id} onClick={() => handleResolve(record._id)} aria-label="Xác nhận có lý do nhập trễ" />
+          </Tooltip>
           <Popconfirm title="Xóa feedback?" description="Feedback sẽ bị xóa vĩnh viễn." okText="Xóa" cancelText="Hủy" okButtonProps={{ danger: true }} onConfirm={() => handleDelete(record._id)}>
             <Button danger type="text" icon={<DeleteOutlined />} loading={deletingId === record._id} aria-label="Xóa feedback" />
           </Popconfirm>
@@ -123,6 +129,21 @@ const LateFeedbackEntries = () => {
     }
   };
 
+  const handleResolveAll = async () => {
+    try {
+      setResolvingAll(true);
+      const response = await resolveAllLateEntryFeedbacks();
+      const resolvedCount = response?.data?.resolvedCount || 0;
+      message.success(resolvedCount ? `Đã xác nhận ${resolvedCount} feedback nhập trễ` : "Không còn feedback nào cần xác nhận");
+      setSelectedFeedback(null);
+      await loadFeedbacks(1, search.trim());
+    } catch (error) {
+      message.error(error?.response?.data?.message || "Không thể xác nhận toàn bộ feedback nhập trễ");
+    } finally {
+      setResolvingAll(false);
+    }
+  };
+
   const handleDelete = async (id) => {
     try {
       setDeletingId(id);
@@ -145,7 +166,7 @@ const LateFeedbackEntries = () => {
         <div><div className="erp-page-eyebrow">Quản trị hệ thống</div><h1 className="erp-page-title">Feedback Trễ</h1><p className="erp-page-description">Chỉ admin thấy các feedback được nhập với ngày trước ngày nhập.</p></div>
       </div>
       <Card className="erp-section-card erp-filter-card mb-4">
-        <div className="flex flex-col gap-3 sm:flex-row"><Input value={search} onChange={(event) => setSearch(event.target.value)} onPressEnter={handleSearch} placeholder="Tìm nội dung, khách hàng, bàn hoặc meal" prefix={<SearchOutlined className="text-slate-400" />} allowClear /><Button type="primary" icon={<SearchOutlined />} onClick={handleSearch} loading={loading}>Tìm</Button><Button icon={<ReloadOutlined />} onClick={() => { setSearch(""); void loadFeedbacks(1, ""); }} loading={loading}>Làm mới</Button></div>
+        <div className="flex flex-col gap-3 sm:flex-row"><Input value={search} onChange={(event) => setSearch(event.target.value)} onPressEnter={handleSearch} placeholder="Tìm nội dung, khách hàng, bàn hoặc meal" prefix={<SearchOutlined className="text-slate-400" />} allowClear /><Button type="primary" icon={<SearchOutlined />} onClick={handleSearch} loading={loading}>Tìm</Button><Button type="primary" className="!border-emerald-600 !bg-emerald-600 !text-white hover:!border-emerald-700 hover:!bg-emerald-700 hover:!text-white" icon={<CheckOutlined />} onClick={handleResolveAll} loading={resolvingAll} disabled={!pagination.total || loading}>Chấp nhận tất cả</Button><Button icon={<ReloadOutlined />} onClick={() => { setSearch(""); void loadFeedbacks(1, ""); }} loading={loading}>Làm mới</Button></div>
       </Card>
       <Card className="erp-section-card erp-table-card" styles={{ body: { padding: 0 } }}>
         <Table rowKey="_id" columns={columns} dataSource={feedbacks} loading={loading} scroll={{ x: 1230 }} pagination={{ current: pagination.current, pageSize: pagination.pageSize, total: pagination.total, showSizeChanger: false, showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`, onChange: (page) => { void loadFeedbacks(page); } }} locale={{ emptyText: "Chưa có feedback nào bị gắn cờ" }} />

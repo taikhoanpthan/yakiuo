@@ -101,17 +101,17 @@ const Dashboard = () => {
           HERO
       ================================================== */}
 
-      <div className="erp-dashboard-hero relative mb-6 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#172554] via-[#1d4ed8] to-[#3977f6] px-6 py-7 text-white shadow-[0_20px_50px_rgba(37,99,235,0.18)] md:px-8 md:py-8">
+      <div className="erp-dashboard-hero relative mb-6 overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-50 via-white to-slate-100 px-6 py-7 text-slate-800 shadow-[0_20px_50px_rgba(15,23,42,0.08)] md:px-8 md:py-8">
         {/* DECORATION */}
 
-        <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-slate-900/5 blur-2xl" />
 
-        <div className="pointer-events-none absolute -bottom-24 right-24 h-48 w-48 rounded-full bg-cyan-300/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 right-24 h-48 w-48 rounded-full bg-slate-400/10 blur-3xl" />
 
         <div className="relative z-10">
           {/* BREADCRUMB */}
 
-          <div className="mb-3 flex items-center gap-2 text-sm text-blue-100">
+          <div className="mb-3 flex items-center gap-2 text-sm text-slate-500">
             <ShopOutlined />
 
             <span>Yakiuo ERP</span>
@@ -123,7 +123,7 @@ const Dashboard = () => {
 
           {/* TITLE */}
 
-          <h1 className="dashboard-greeting m-0 text-2xl font-bold tracking-tight md:text-3xl">
+          <h1 className="dashboard-greeting m-0 text-2xl font-bold tracking-tight text-slate-800 md:text-3xl">
             Xin chào, {userName} 👋
           </h1>
 
@@ -131,13 +131,13 @@ const Dashboard = () => {
           {/* META */}
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs backdrop-blur-md">
+            <div className="flex items-center gap-2 rounded-full bg-slate-900/5 px-3 py-2 text-xs backdrop-blur-md">
               <CalendarOutlined />
 
               {dayjs().format("DD/MM/YYYY")}
             </div>
 
-            <div className="flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-2 text-xs text-emerald-100 backdrop-blur-md">
+            <div className="flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-2 text-xs text-emerald-700 backdrop-blur-md">
               <span className="h-2 w-2 rounded-full bg-emerald-300" />
               Hệ thống đang hoạt động
             </div>

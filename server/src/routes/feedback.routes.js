@@ -26,6 +26,11 @@ router.get(
 );
 
 router.patch(
+  "/admin/late-entries/resolve-all",
+  feedbackController.resolveAllLateEntryFeedbacks
+);
+
+router.patch(
   "/admin/late-entries/:id/resolve",
   feedbackController.resolveLateEntryFeedback
 );

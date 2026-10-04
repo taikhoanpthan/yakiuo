@@ -26,6 +26,12 @@ export const resolveLateEntryFeedback = async (id) => {
   return response.data;
 };
 
+export const resolveAllLateEntryFeedbacks = async () => {
+  const response = await api.patch("/feedback/admin/late-entries/resolve-all");
+
+  return response.data;
+};
+
 export const createFeedback = async (data) => {
   const response = await api.post("/feedback", data);
 

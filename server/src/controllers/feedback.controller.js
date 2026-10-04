@@ -86,6 +86,32 @@ const resolveLateEntryFeedback = async (req, res) => {
   }
 };
 
+const resolveAllLateEntryFeedbacks = async (req, res) => {
+  try {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Chỉ admin được xác nhận feedback nhập trễ",
+      });
+    }
+
+    const result = await feedbackService.resolveAllLateEntryFeedbacks(req.user._id);
+
+    return res.status(200).json({
+      success: true,
+      data: { resolvedCount: result.modifiedCount },
+      message: "Đã xác nhận toàn bộ feedback nhập trễ",
+    });
+  } catch (error) {
+    console.error("Resolve all late-entry feedbacks failed:", error);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Không thể xác nhận toàn bộ feedback nhập trễ",
+    });
+  }
+};
+
 const createFeedback = async (req, res) => {
   try {
     const {
@@ -184,6 +210,7 @@ module.exports = {
   getFeedbackById,
   getLateEntryFeedbacks,
   resolveLateEntryFeedback,
+  resolveAllLateEntryFeedbacks,
   createFeedback,
   updateFeedback,
   deleteFeedback,

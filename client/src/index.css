@@ -213,7 +213,7 @@ button:focus-visible,
 :root[data-theme="dark"] .erp-online-avatars .ant-avatar { border-color: #102b25; }
 :root[data-theme="dark"] .erp-online-label,
 :root[data-theme="dark"] .erp-online-popover-user span { color: #c7d3e7; }
-:root[data-theme="dark"] .yakiuo-profile-avatar { border-color: #263956; background: #1c2940; color: #aebdd3; box-shadow: 0 3px 14px rgba(0, 0, 0, 0.38); }
+:root[data-theme="dark"] .yakiuo-profile-avatar { border-color: transparent !important; background-color: #1c2940; color: #aebdd3; box-shadow: 0 3px 14px rgba(0, 0, 0, 0.38); }
 :root[data-theme="dark"] .yakiuo-avatar-camera,
 :root[data-theme="dark"] .yakiuo-avatar-adjust { border-color: #263956; background: #283954; color: #e6edf8; }
 :root[data-theme="dark"] .yakiuo-avatar-camera:hover { background: #344a6c; }
@@ -231,6 +231,21 @@ button:focus-visible,
 :root[data-theme="dark"] .yakiuo-image-adjust-modal .ant-slider-rail { background: #405474 !important; }
 :root[data-theme="dark"] .yakiuo-image-adjust-modal .ant-slider-track { background: #5b8cff !important; }
 :root[data-theme="dark"] .yakiuo-image-adjust-modal .ant-slider-handle::after { box-shadow: 0 0 0 2px #5b8cff inset !important; }
+:root[data-theme="dark"] .erp-feedback-form-modal .ant-modal-content,
+:root[data-theme="dark"] .erp-feedback-form-modal .ant-modal-header,
+:root[data-theme="dark"] .erp-feedback-form-modal .ant-modal-footer { background: #151f33 !important; border-color: #2a3955 !important; }
+:root[data-theme="dark"] .erp-feedback-form-modal .ant-modal-title,
+:root[data-theme="dark"] .erp-feedback-form-modal .ant-form-item-label > label { color: #edf3ff !important; }
+:root[data-theme="dark"] .erp-feedback-form-modal .ant-modal-footer { box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.2) !important; }
+:root[data-theme="dark"] .todo-detail-modal .ant-modal-content,
+:root[data-theme="dark"] .todo-detail-modal .ant-modal-header,
+:root[data-theme="dark"] .todo-detail-modal .ant-modal-footer { background: #151f33 !important; border-color: #2a3955 !important; }
+:root[data-theme="dark"] .todo-detail-modal .ant-modal-title,
+:root[data-theme="dark"] .todo-detail-modal .text-slate-800 { color: #edf3ff !important; }
+:root[data-theme="dark"] .todo-detail-modal .text-slate-700 { color: #c7d3e7 !important; }
+:root[data-theme="dark"] .todo-detail-modal .text-slate-400 { color: #9baac0 !important; }
+:root[data-theme="dark"] .todo-detail-modal .bg-slate-50 { background: #1c2940 !important; }
+:root[data-theme="dark"] .todo-detail-modal .bg-green-50 { background: #123228 !important; border-color: #1d5e4c !important; color: #9ce5c3 !important; }
 :root[data-theme="dark"] .yakiuo-cover-camera,
 :root[data-theme="dark"] .yakiuo-cover-adjust { background: rgba(20, 31, 51, 0.9) !important; color: #e6edf8 !important; border: 1px solid rgba(174, 189, 211, 0.28) !important; }
 :root[data-theme="dark"] .yakiuo-cover-camera:hover,
@@ -413,6 +428,13 @@ button:focus-visible,
   background: #1c2940;
 }
 :root[data-theme="dark"] .erp-notification-panel-item-sender strong { color: #e6edf8; }
+:root[data-theme="dark"] .erp-notification-popover .ant-popover-inner {
+  background: #151f33 !important;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42) !important;
+}
+:root[data-theme="dark"] .erp-notification-popover .ant-popover-inner-content {
+  color: #e6edf8 !important;
+}
 
 /* Commission lives inside the mobile profile tabs and contains several light utility surfaces. */
 :root[data-theme="dark"] .commission-panel .bg-slate-100 {
@@ -1504,9 +1526,14 @@ button:focus-visible,
   align-items: center;
   justify-content: center;
 
-  border: 5px solid #fff;
+  border: 5px solid transparent;
 
-  background: #e2e8f0;
+  background-image:
+    linear-gradient(var(--erp-card), var(--erp-card)),
+    linear-gradient(120deg, #f9ce34, #ee2a7b, #6228d7, #4f5bd5, #f9ce34);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  background-size: 100% 100%, 260% 260%;
 
   color: #64748b;
 
@@ -1514,6 +1541,7 @@ button:focus-visible,
 
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.15);
+  animation: erp-avatar-gradient-flow 3.2s ease-in-out infinite;
   overflow: hidden;
   border-radius: 50%;
 }
@@ -2190,7 +2218,7 @@ button:focus-visible,
     left: 12px;
     right: 12px;
 
-    bottom: max(8px, env(safe-area-inset-bottom));
+    bottom: max(4px, env(safe-area-inset-bottom));
 
     z-index: 9999;
 

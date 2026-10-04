@@ -34,7 +34,6 @@ import {
 } from "../../services/todo.service";
 
 import TodoModal from "./TodoModal";
-import EmployeeDetail from "../users/EmployeeDetail";
 import HamsterLoader from "../../components/common/HamsterLoader";
 import UserAvatar from "../../components/common/UserAvatar";
 
@@ -72,7 +71,6 @@ const Todos = () => {
   // Modal xem chi tiết
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedTodo, setSelectedTodo] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
 
   // =====================================================
   // GET TODOS
@@ -207,15 +205,6 @@ const Todos = () => {
     setSelectedTodo(todo);
     setDetailOpen(true);
   };
-
-  if (selectedUser) {
-    return (
-      <EmployeeDetail
-        user={selectedUser}
-        onBack={() => setSelectedUser(null)}
-      />
-    );
-  }
 
   // =====================================================
   // RENDER
@@ -374,10 +363,6 @@ const Todos = () => {
                           size={30}
                           user={todo.createdBy}
                           icon={<UserOutlined />}
-                          className={todo.createdBy?._id ? "cursor-pointer" : ""}
-                          onClick={() => {
-                            if (todo.createdBy?._id) setSelectedUser(todo.createdBy);
-                          }}
                         />
 
                         <div>
@@ -513,6 +498,7 @@ const Todos = () => {
       {/* ================================================= */}
 
       <Modal
+        className="todo-detail-modal"
         open={detailOpen}
         title="Chi tiết công việc"
         footer={
@@ -540,12 +526,6 @@ const Todos = () => {
                 size={44}
                 user={selectedTodo.createdBy}
                 icon={<UserOutlined />}
-                className={selectedTodo.createdBy?._id ? "cursor-pointer" : ""}
-                onClick={() => {
-                  if (selectedTodo.createdBy?._id) {
-                    setSelectedUser(selectedTodo.createdBy);
-                  }
-                }}
               />
 
               <div>

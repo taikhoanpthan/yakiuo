@@ -1080,15 +1080,13 @@ const Layout = () => {
                 </Tooltip>
               )}
 
-              <Tooltip title={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}>
-                <Button
-                  type="text"
-                  className="erp-menu-button"
-                  aria-label={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
-                  icon={isDark ? <SunOutlined /> : <MoonOutlined />}
-                  onClick={toggleTheme}
-                />
-              </Tooltip>
+              <Button
+                type="text"
+                className="erp-menu-button"
+                aria-label={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+                icon={isDark ? <SunOutlined /> : <MoonOutlined />}
+                onClick={toggleTheme}
+              />
 
               {/* =======================================
                   REALTIME ONLINE
@@ -1131,16 +1129,15 @@ const Layout = () => {
 
               {isMobile ? (
                 <>
-                  <Tooltip title="Thông báo">
-                    <Badge count={notificationCount} overflowCount={99} size="small" offset={[-4, 4]}>
-                      <Button
-                        type="text"
-                        className="erp-menu-button"
-                        icon={<BellOutlined />}
-                        onClick={() => setNotificationDrawerOpen(true)}
-                      />
-                    </Badge>
-                  </Tooltip>
+                  <Badge count={notificationCount} overflowCount={99} size="small" offset={[-4, 4]}>
+                    <Button
+                      type="text"
+                      className="erp-menu-button"
+                      aria-label="Mở thông báo"
+                      icon={<BellOutlined />}
+                      onClick={() => setNotificationDrawerOpen(true)}
+                    />
+                  </Badge>
 
                   <Drawer
                     title="Thông báo"
@@ -1159,13 +1156,12 @@ const Layout = () => {
                   placement="bottomRight"
                   arrow={false}
                   content={notificationContent}
+                  classNames={{ root: "erp-notification-popover" }}
                   styles={{ root: { maxWidth: "calc(100vw - 24px)" } }}
                 >
-                  <Tooltip title="Thông báo">
-                    <Badge count={notificationCount} overflowCount={99} size="small" offset={[-4, 4]}>
-                      <Button type="text" className="erp-menu-button" icon={<BellOutlined />} />
-                    </Badge>
-                  </Tooltip>
+                  <Badge count={notificationCount} overflowCount={99} size="small" offset={[-4, 4]}>
+                    <Button type="text" className="erp-menu-button" aria-label="Mở thông báo" icon={<BellOutlined />} />
+                  </Badge>
                 </Popover>
               )}
 

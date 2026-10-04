@@ -8,7 +8,7 @@ const getTodos = async ({ page = 1, limit = 5, priority, completed } = {}) => {
     Todo.find(filter)
     .populate(
       "createdBy",
-      "username fullName avatar avatarPosition avatarZoom coverImage coverPosition coverZoom",
+      "username fullName avatar avatarPosition avatarZoom coverImage coverPosition coverZoom role status",
     )
     .sort({
       createdAt: -1,

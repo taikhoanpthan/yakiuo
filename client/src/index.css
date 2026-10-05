@@ -312,6 +312,80 @@ button:focus-visible,
 :root[data-theme="dark"] .notifications-editor-modal .ant-modal-header { background: #151f33 !important; }
 :root[data-theme="dark"] .notifications-editor-modal .ant-modal-title { color: #edf3ff !important; }
 
+/* Artistic switches used only for the admin operation controls. */
+.admin-art-toggle {
+  --toggle-size: 15px;
+  position: relative;
+  display: inline-block;
+  width: 3.5em;
+  height: 2em;
+  flex: 0 0 auto;
+  font-size: var(--toggle-size);
+  cursor: pointer;
+  transform-style: preserve-3d;
+  perspective: 500px;
+  animation: admin-toggle-float 3s ease-in-out infinite;
+}
+.admin-art-toggle::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 999px;
+  background-color: #d8ff99;
+  background-image: radial-gradient(at 21% 46%, hsl(183 65% 60%) 0, transparent 50%), radial-gradient(at 23% 25%, hsl(359 74% 70%) 0, transparent 50%), radial-gradient(at 20% 1%, hsl(267 83% 75%) 0, transparent 50%), radial-gradient(at 86% 87%, hsl(204 69% 68%) 0, transparent 50%), radial-gradient(at 99% 41%, hsl(171 72% 77%) 0, transparent 50%), radial-gradient(at 55% 24%, hsl(138 60% 62%) 0, transparent 50%);
+  content: "";
+  filter: blur(14px);
+}
+.admin-art-toggle__input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.admin-art-toggle__slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 30px;
+  background: #fdfefedc;
+  box-shadow: inset 0 0 0 1px rgb(15 23 42 / 8%);
+  transition: background-color .4s ease, box-shadow .4s ease;
+}
+.admin-art-toggle__slider::before {
+  position: absolute;
+  bottom: .3em;
+  left: .3em;
+  width: 1.4em;
+  height: 1.4em;
+  border-radius: 50%;
+  background-color: #ff99fd;
+  background-image: radial-gradient(at 81% 39%, hsl(327 79% 79%) 0, transparent 50%), radial-gradient(at 11% 72%, hsl(264 64% 79%) 0, transparent 50%), radial-gradient(at 23% 20%, hsl(75 98% 71%) 0, transparent 50%);
+  box-shadow: rgb(0 0 0 / 17%) 0 -10px 10px 0 inset, rgb(0 0 0 / 9%) 0 -1px 15px -8px;
+  content: "";
+  transition: transform .4s ease;
+}
+.admin-art-toggle__input:checked + .admin-art-toggle__slider { background-color: #17202a; }
+.admin-art-toggle__input:checked + .admin-art-toggle__slider::before { transform: translateX(1.5em); }
+.admin-art-toggle:has(.admin-art-toggle__input:focus-visible) .admin-art-toggle__slider { outline: 3px solid rgb(37 99 235 / 38%); outline-offset: 3px; }
+.admin-art-toggle:has(.admin-art-toggle__input:disabled) { cursor: wait; opacity: .58; animation-play-state: paused; }
+@keyframes admin-toggle-float {
+  0%, 100% { transform: translateY(-5px) rotateX(15deg) rotateY(-20deg); }
+  50% { transform: translateY(0) rotateX(15deg) rotateY(-20deg); }
+}
+@media (prefers-reduced-motion: reduce) { .admin-art-toggle { animation: none; } }
+
+/* Header day/night control, converted from the supplied component without a styled-components dependency. */
+.erp-theme-switch { --theme-size: 13px; position: relative; display: inline-block; width: 5.625em; height: 2.5em; font-size: var(--theme-size); cursor: pointer; }
+.erp-theme-switch *, .erp-theme-switch *::before, .erp-theme-switch *::after { box-sizing: border-box; }
+.erp-theme-switch__checkbox { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.erp-theme-switch__container { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; border-radius: 6.25em; background: linear-gradient(#3d7eae, #5490c0); box-shadow: 0 -.062em .062em rgb(0 0 0 / 25%), 0 .062em .125em rgb(255 255 255 / 94%), inset 0 .05em .187em rgb(0 0 0 / 25%); transition: .5s cubic-bezier(0, -.02, .4, 1.25); }
+.erp-theme-switch__circle { position: absolute; z-index: 2; top: -.4375em; left: -.4375em; display: flex; width: 3.375em; height: 3.375em; border-radius: 50%; background: rgb(255 255 255 / 10%); box-shadow: inset 0 0 0 3.375em rgb(255 255 255 / 10%), 0 0 0 .625em rgb(255 255 255 / 10%), 0 0 0 1.25em rgb(255 255 255 / 10%); transition: .3s cubic-bezier(0, -.02, .35, 1.17); }
+.erp-theme-switch__sun-moon { position: relative; z-index: 2; width: 2.125em; height: 2.125em; margin: auto; overflow: hidden; border-radius: 50%; background: #ecca2f; box-shadow: .062em .062em .062em rgb(254 255 239 / 61%) inset, 0 -.062em .062em #a1872a inset; filter: drop-shadow(.062em .125em .125em rgb(0 0 0 / 25%)); transition: .5s cubic-bezier(0, -.02, .4, 1.25); }
+.erp-theme-switch__moon { position: relative; display: block; width: 100%; height: 100%; border-radius: inherit; background: #c4c9d1; box-shadow: .062em .062em .062em rgb(254 255 239 / 61%) inset, 0 -.062em .062em #969696 inset; transform: translateX(100%); transition: .5s cubic-bezier(0, -.02, .4, 1.25); }
+.erp-theme-switch__moon i { position: absolute; width: .75em; height: .75em; border-radius: 50%; background: #959db1; box-shadow: 0 .031em .062em rgb(0 0 0 / 25%) inset; top: .75em; left: .312em; }
+.erp-theme-switch__moon i:nth-child(2) { top: .937em; left: 1.375em; width: .375em; height: .375em; }.erp-theme-switch__moon i:nth-child(3) { top: .312em; left: .812em; width: .25em; height: .25em; }
+.erp-theme-switch__clouds { position: absolute; bottom: -.625em; left: .312em; width: 1.25em; height: 1.25em; border-radius: 50%; background: #f3fdff; box-shadow: .937em .312em #f3fdff, -.312em -.312em #aacadf, 1.437em .375em #f3fdff, .5em -.125em #aacadf, 2.187em 0 #f3fdff, 1.25em -.062em #aacadf, 2.937em .312em #f3fdff, 2em -.312em #aacadf, 3.625em -.062em #f3fdff, 2.625em 0 #aacadf, 4.5em -.312em #f3fdff; transition: .5s cubic-bezier(0, -.02, .4, 1.25); }
+.erp-theme-switch__stars { position: absolute; top: -100%; left: .312em; width: 2.75em; color: white; transition: .5s cubic-bezier(0, -.02, .4, 1.25); }.erp-theme-switch__stars svg { display: block; width: 100%; }
+.erp-theme-switch__shooting-star, .erp-theme-switch__meteor { position: absolute; top: 20%; left: -10%; width: 2px; height: 2px; background: white; opacity: 0; }.erp-theme-switch__meteor { top: -10%; left: 50%; width: 3px; height: 3px; border-radius: 50%; background: #ffd700; }
+.erp-theme-switch__cluster { position: absolute; inset: 0; opacity: 0; transition: opacity .3s ease; }.erp-theme-switch__cluster i { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: white; box-shadow: 0 0 4px white; animation: erp-theme-twinkle 1s infinite ease-in-out; }.erp-theme-switch__cluster i:nth-child(1) { top:20%;left:20%; }.erp-theme-switch__cluster i:nth-child(2) { top:30%;left:55%;animation-delay:.2s; }.erp-theme-switch__cluster i:nth-child(3) { top:40%;left:80%;animation-delay:.4s; }.erp-theme-switch__cluster i:nth-child(4) { top:60%;left:30%;animation-delay:.6s; }.erp-theme-switch__cluster i:nth-child(5) { top:70%;left:65%;animation-delay:.8s; }
+.erp-theme-switch__checkbox:checked + .erp-theme-switch__container { background: linear-gradient(#1d1f2c, #2d3142); }.erp-theme-switch__checkbox:checked + .erp-theme-switch__container .erp-theme-switch__circle { left: calc(100% - 2.9375em); }.erp-theme-switch__checkbox:checked + .erp-theme-switch__container .erp-theme-switch__moon { transform: translateX(0); }.erp-theme-switch__checkbox:checked + .erp-theme-switch__container .erp-theme-switch__clouds { bottom: -4.062em; }.erp-theme-switch__checkbox:checked + .erp-theme-switch__container .erp-theme-switch__stars { top: 50%; transform: translateY(-50%); }.erp-theme-switch__checkbox:checked + .erp-theme-switch__container .erp-theme-switch__cluster { opacity: 1; }.erp-theme-switch__checkbox:checked + .erp-theme-switch__container .erp-theme-switch__shooting-star { opacity: 1; animation: erp-theme-shooting-star 2s linear infinite; }.erp-theme-switch__checkbox:checked + .erp-theme-switch__container .erp-theme-switch__meteor { opacity: 1; animation: erp-theme-meteor 4s linear infinite 1s; }
+.erp-theme-switch:hover .erp-theme-switch__sun-moon { transform: scale(1.08) rotate(5deg); }.erp-theme-switch:hover .erp-theme-switch__clouds { transform: translateX(.7em); }.erp-theme-switch:has(.erp-theme-switch__checkbox:focus-visible) .erp-theme-switch__container { outline: 3px solid rgb(37 99 235 / 42%); outline-offset: 3px; }
+@keyframes erp-theme-twinkle { 0%,100% { opacity:.3; transform:scale(1); } 50% { opacity:1; transform:scale(1.2); } } @keyframes erp-theme-shooting-star { to { transform:translate(9em, 9em) rotate(45deg); opacity:0; } } @keyframes erp-theme-meteor { to { transform:translateY(9em) scale(.3); opacity:0; } } @media (prefers-reduced-motion: reduce) { .erp-theme-switch *, .erp-theme-switch *::before, .erp-theme-switch *::after { animation: none !important; transition: none !important; } }
+
 /* Employee management page: table and modal have their own light surfaces. */
 :root[data-theme="dark"] .users-page .text-slate-800,
 :root[data-theme="dark"] .users-page .text-slate-700,
@@ -829,6 +903,80 @@ button:focus-visible,
   color: #ff9ca8;
 }
 
+/* Radio-style desktop navigation: retain the application icons and routes,
+   while giving every destination the focused rail and sibling treatment from
+   the supplied menu design. */
+@media (min-width: 992px) {
+  .erp-sider {
+    background: #0d1117 !important;
+    box-shadow: 5px 0 28px rgb(0 0 0 / 20%), 1px 0 0 rgb(255 255 255 / 3%);
+  }
+
+  .erp-brand { border-bottom-color: #21262c; }
+  .erp-brand span, .erp-nav-label, .erp-side-help { color: #7d8590; }
+  .erp-nav-label { padding: 22px 22px 10px; letter-spacing: .13em; }
+  .erp-nav { padding: 0 14px 14px 22px; }
+
+  .erp-nav-item,
+  .erp-logout {
+    position: relative;
+    min-height: 44px;
+    gap: 10px;
+    padding: 0 12px;
+    border-radius: 5px;
+    color: #c9d1d9;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color .22s ease, color .22s ease, filter .3s ease, transform .3s ease;
+  }
+
+  .erp-nav-item + .erp-nav-item { margin-top: 4px; }
+  .erp-nav-item::before,
+  .erp-logout::before {
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    left: -10px;
+    width: 5px;
+    border-radius: 5px;
+    background: #2f81f7;
+    content: "";
+    opacity: 0;
+    transition: opacity .2s ease;
+  }
+
+  .erp-nav-item:hover,
+  .erp-nav-item:focus-visible,
+  .erp-nav-item.is-active,
+  .erp-logout:hover,
+  .erp-logout:focus-visible {
+    background: #21262c;
+    color: #fff;
+    outline: none;
+    transform: none;
+  }
+
+  .erp-nav-item:focus-visible::before,
+  .erp-nav-item.is-active::before,
+  .erp-logout:focus-visible::before { opacity: 1; }
+  .erp-nav:hover > .erp-nav-item:not(:hover) { filter: blur(1px); transform: scale(.965); }
+  .erp-nav:hover > .erp-nav-item.is-active:not(:hover) { filter: blur(.65px); }
+  .erp-nav-icon { width: 20px; min-width: 20px; font-size: 17px; color: #7d8590; transition: color .22s ease; }
+  .erp-nav-item:hover .erp-nav-icon, .erp-nav-item:focus-visible .erp-nav-icon, .erp-nav-item.is-active .erp-nav-icon { color: #2f81f7; }
+
+  .erp-side-bottom { padding: 14px 14px 16px 22px; border-top-color: #21262c; }
+  .erp-side-help { padding: 0 12px 12px; }
+  .erp-logout { color: #ffb3bd; }
+  .erp-logout:hover, .erp-logout:focus-visible { background: rgb(248 81 73 / 14%); color: #ffb3bd; }
+
+  .erp-sider.ant-layout-sider-collapsed .erp-nav { padding: 0 12px 14px; }
+  .erp-sider.ant-layout-sider-collapsed .erp-nav-item,
+  .erp-sider.ant-layout-sider-collapsed .erp-logout { justify-content: center; padding: 0; }
+  .erp-sider.ant-layout-sider-collapsed .erp-nav-item::before,
+  .erp-sider.ant-layout-sider-collapsed .erp-logout::before { left: -6px; }
+  .erp-sider.ant-layout-sider-collapsed .erp-side-bottom { padding: 14px 12px 16px; }
+}
+
 .erp-logout:hover {
   background: rgba(255, 104, 119, 0.1);
 
@@ -1128,16 +1276,109 @@ button:focus-visible,
   font-weight: 600;
 }
 
+/* Shared data loader. Its color follows the application theme instead of
+   relying on the white-only color from the supplied standalone component. */
+.erp-honeycomb-loader {
+  --honey-color: #111827;
+  display: grid;
+  width: calc(var(--honey-size) * 6.7);
+  height: calc(var(--honey-size) * 5.7);
+  place-items: center;
+}
+.erp-honeycomb {
+  position: relative;
+  width: 2em;
+  height: 2em;
+  font-size: var(--honey-size);
+}
+.erp-honeycomb i {
+  position: absolute;
+  width: 2em;
+  height: 1em;
+  margin-top: .5em;
+  background: var(--honey-color);
+  animation: erp-honeycomb 2.1s infinite backwards;
+}
+.erp-honeycomb i::before,
+.erp-honeycomb i::after {
+  position: absolute;
+  right: 0;
+  left: 0;
+  border-right: 1em solid transparent;
+  border-left: 1em solid transparent;
+  content: "";
+}
+.erp-honeycomb i::before { bottom: 100%; border-bottom: .5em solid var(--honey-color); }
+.erp-honeycomb i::after { top: 100%; border-top: .5em solid var(--honey-color); }
+.erp-honeycomb i:nth-child(1) { top: 0; left: -2.333em; animation-delay: 0s; }
+.erp-honeycomb i:nth-child(2) { top: 1.833em; left: -1.167em; animation-delay: .1s; }
+.erp-honeycomb i:nth-child(3) { top: 1.833em; left: 1.167em; animation-delay: .2s; }
+.erp-honeycomb i:nth-child(4) { top: 0; left: 2.333em; animation-delay: .3s; }
+.erp-honeycomb i:nth-child(5) { top: -1.833em; left: 1.167em; animation-delay: .4s; }
+.erp-honeycomb i:nth-child(6) { top: -1.833em; left: -1.167em; animation-delay: .5s; }
+.erp-honeycomb i:nth-child(7) { top: 0; left: 0; animation-delay: .6s; }
+@keyframes erp-honeycomb {
+  0%, 20%, 80%, 100% { opacity: 0; transform: scale(0); }
+  30%, 70% { opacity: 1; transform: scale(1); }
+}
+:root[data-theme="dark"] .erp-honeycomb-loader { --honey-color: #f8fafc; }
+@media (prefers-reduced-motion: reduce) { .erp-honeycomb i { animation: none; opacity: .9; transform: scale(.78); } }
+
 .ant-btn-primary {
-  background: linear-gradient(135deg, #2563eb, #4f46e5) !important;
-  border-color: #2563eb !important;
-  box-shadow:
-    0 6px 16px rgba(37, 99, 235, 0.22);
+  background: #111827 !important;
+  border-color: #111827 !important;
+  color: #fff !important;
+  box-shadow: inset 0 0 1.6em -.6em #000, 0 6px 16px rgb(15 23 42 / 18%);
 }
 
 .ant-btn-primary:hover {
-  background: linear-gradient(135deg, #1d4ed8, #4338ca) !important;
+  background: #262f3d !important;
 }
+
+/* Primary CTAs use the supplied expanding-arrow treatment. Small, icon-only,
+   loading, and danger controls stay compact so table/tool actions remain clear. */
+.ant-btn-primary:not(.ant-btn-sm):not(.ant-btn-icon-only):not(.ant-btn-loading) {
+  position: relative;
+  min-height: 2.8em;
+  padding: .35em 3.3em .35em 1.2em !important;
+  overflow: hidden;
+  border: 0 !important;
+  border-radius: .9em !important;
+  letter-spacing: .035em;
+}
+.ant-btn-primary:not(.ant-btn-sm):not(.ant-btn-icon-only):not(.ant-btn-loading)::after {
+  position: absolute;
+  top: 50%;
+  right: .3em;
+  display: block;
+  width: 2.2em;
+  height: 2.2em;
+  border-radius: .7em;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M0 0h24v24H0z' fill='none'/%3E%3Cpath d='m16.172 11-5.364-5.364 1.414-1.414L20 12l-7.778 7.778-1.414-1.414L16.172 13H4v-2z' fill='%23111827'/%3E%3C/svg%3E") center / 1.1em no-repeat;
+  box-shadow: .1em .1em .6em .2em rgb(0 0 0 / 28%);
+  content: "";
+  transform: translateY(-50%);
+  transition: width .3s ease, transform .3s ease;
+}
+.ant-btn-primary:not(.ant-btn-sm):not(.ant-btn-icon-only):not(.ant-btn-loading):hover::after { width: calc(100% - .6em); }
+.ant-btn-primary:not(.ant-btn-sm):not(.ant-btn-icon-only):not(.ant-btn-loading):active::after { transform: translateY(-50%) scale(.95); }
+.ant-btn-primary:not(.ant-btn-sm):not(.ant-btn-icon-only):not(.ant-btn-loading):focus-visible { outline: 3px solid rgb(17 24 39 / 30%); outline-offset: 3px; }
+
+/* Keep the CTA black in dark mode too; add a light edge so it remains distinct
+   from the surrounding dark surface without inverting the intended design. */
+:root[data-theme="dark"] .ant-btn-primary {
+  background: #080b10 !important;
+  border-color: #526176 !important;
+  color: #fff !important;
+  box-shadow: inset 0 0 1.6em -.6em #000, 0 6px 16px rgb(0 0 0 / 35%);
+}
+:root[data-theme="dark"] .ant-btn-primary:hover { background: #1a2029 !important; }
+:root[data-theme="dark"] .ant-btn-primary:not(.ant-btn-sm):not(.ant-btn-icon-only):not(.ant-btn-loading)::after {
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M0 0h24v24H0z' fill='none'/%3E%3Cpath d='m16.172 11-5.364-5.364 1.414-1.414L20 12l-7.778 7.778-1.414-1.414L16.172 13H4v-2z' fill='%23080b10'/%3E%3C/svg%3E");
+  box-shadow: .1em .1em .6em .2em rgb(0 0 0 / 45%);
+}
+:root[data-theme="dark"] .ant-btn-primary:not(.ant-btn-sm):not(.ant-btn-icon-only):not(.ant-btn-loading):focus-visible { outline-color: rgb(255 255 255 / 38%); }
 
 .erp-section-card,
 .yakiuo-social-card {

@@ -19,6 +19,7 @@ const DesktopSidebar = ({ collapsed, items, pathname, onNavigate, onLogout }) =>
               type="button"
               className={`erp-nav-item ${active ? "is-active" : ""}`}
               onClick={() => onNavigate(item.key)}
+              aria-current={active ? "page" : undefined}
             >
               <span className="erp-nav-icon">{item.icon}</span>
               {!collapsed && <span>{item.label}</span>}

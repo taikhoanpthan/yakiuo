@@ -29,8 +29,6 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  MoonOutlined,
-  SunOutlined,
   TeamOutlined,
   UserOutlined,
   WarningOutlined,
@@ -47,7 +45,7 @@ import { useTheme } from "../../store/ThemeContext";
 
 import { getNotifications } from "../../services/notificationService";
 
-import { onOnlineProfileUpdated, onOnlineUsers, onSystemFeaturesChanged, onSystemNotificationChanged, setSocketUser } from "../../services/socket";
+import { onOnlineProfileUpdated, onOnlineUsers, onSocketConnected, onSystemFeaturesChanged, onSystemNotificationChanged, setSocketUser } from "../../services/socket";
 import { getSystemStatus } from "../../services/system.service";
 import { queryClient } from "../../lib/queryClient";
 import MobileTaskbar from "./MobileTaskbar";
@@ -90,6 +88,31 @@ const getNotificationTypeConfig = (type) => {
       };
   }
 };
+
+const ThemeToggle = ({ isDark, onChange }) => (
+  <label
+    className="erp-theme-switch"
+    aria-label={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+  >
+    <input
+      className="erp-theme-switch__checkbox"
+      type="checkbox"
+      checked={isDark}
+      onChange={onChange}
+    />
+    <span className="erp-theme-switch__container" aria-hidden="true">
+      <span className="erp-theme-switch__clouds" />
+      <span className="erp-theme-switch__stars">
+        <svg fill="none" viewBox="0 0 144 55" xmlns="http://www.w3.org/2000/svg">
+          <path fill="currentColor" d="M135.831 3.007C135.055 3.85 134.111 4.299 133 4.354c1.111.055 2.055.504 2.831 1.357.776.843 1.165 1.852 1.165 3.016 0-.77.176-1.476.529-2.136.361-.66.847-1.192 1.455-1.586.618-.403 1.288-.614 2.02-.651-1.12-.064-2.064-.504-2.84-1.347C137.384 2.163 136.996 1.164 136.996 0c0 1.164-.389 2.163-1.165 3.007ZM31 23.354c1.111-.055 2.055-.504 2.831-1.347.776-.844 1.165-1.843 1.165-3.007 0 1.164.389 2.163 1.165 3.007.776.843 1.72 1.283 2.84 1.347-.732.037-1.402.248-2.02.651-.609.394-1.094.926-1.456 1.586-.353.66-.529 1.366-.529 2.136 0-1.164-.388-2.173-1.165-3.016-.776-.853-1.72-1.302-2.831-1.357ZM0 36.354c1.111-.055 2.055-.504 2.831-1.347C3.608 34.163 3.996 33.164 3.996 32c0 1.164.388 2.163 1.164 3.007.776.843 1.72 1.283 2.84 1.347-.732.037-1.402.248-2.02.651-.608.394-1.094.926-1.455 1.586-.353.66-.529 1.366-.529 2.136 0-1.164-.388-2.173-1.165-3.016C2.055 36.858 1.111 36.409 0 36.354ZM56.831 24.007c-.776.843-1.72 1.292-2.831 1.347 1.111.055 2.055.504 2.831 1.357.776.843 1.165 1.852 1.165 3.016 0-.77.176-1.476.529-2.136.362-.66.847-1.192 1.456-1.586.617-.403 1.288-.614 2.02-.651-1.12-.064-2.064-.504-2.84-1.347C58.384 23.163 57.996 22.164 57.996 21c0 1.164-.389 2.163-1.165 3.007ZM81 25.354c1.111-.055 2.055-.504 2.831-1.347C84.608 23.163 84.996 22.164 84.996 21c0 1.164.388 2.163 1.164 3.007.776.843 1.72 1.283 2.84 1.347-.732.037-1.402.248-2.02.651-.609.394-1.094.926-1.456 1.586-.353.66-.529 1.366-.529 2.136 0-1.164-.388-2.173-1.164-3.016-.776-.853-1.72-1.302-2.831-1.357ZM136 36.354c1.111-.055 2.055-.504 2.831-1.347.776-.844 1.165-1.843 1.165-3.007 0 1.164.388 2.163 1.164 3.007.776.843 1.72 1.283 2.84 1.347-.732.037-1.402.248-2.02.651-.608.394-1.094.926-1.455 1.586-.353.66-.529 1.366-.529 2.136 0-1.164-.388-2.173-1.165-3.016-.776-.853-1.72-1.302-2.831-1.357Z" />
+        </svg>
+      </span>
+      <span className="erp-theme-switch__circle"><span className="erp-theme-switch__sun-moon"><span className="erp-theme-switch__moon"><i /><i /><i /></span></span></span>
+      <span className="erp-theme-switch__shooting-star" /><span className="erp-theme-switch__meteor" />
+      <span className="erp-theme-switch__cluster"><i /><i /><i /><i /><i /></span>
+    </span>
+  </label>
+);
 
 // =====================================================
 // LAYOUT
@@ -671,7 +694,22 @@ const Layout = () => {
       document.removeEventListener("visibilitychange", refreshNotifications);
     };
   }, [user?._id, loadNotifications]);
-  useEffect(() => onSystemNotificationChanged(({ action } = {}) => loadNotifications(action === "created")), [loadNotifications]);
+  useEffect(() => {
+    const unsubscribeChanged = onSystemNotificationChanged(({ action } = {}) => {
+      loadNotifications(action === "created");
+    });
+
+    // If a notification was posted during a temporary disconnect, reload only
+    // the notification panel as soon as this socket reconnects.
+    const unsubscribeConnected = onSocketConnected(() => {
+      if (user?._id) loadNotifications(false);
+    });
+
+    return () => {
+      unsubscribeChanged();
+      unsubscribeConnected();
+    };
+  }, [loadNotifications, user?._id]);
 
   // ===================================================
   // RESPONSIVE
@@ -1080,13 +1118,7 @@ const Layout = () => {
                 </Tooltip>
               )}
 
-              <Button
-                type="text"
-                className="erp-menu-button"
-                aria-label={isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
-                icon={isDark ? <SunOutlined /> : <MoonOutlined />}
-                onClick={toggleTheme}
-              />
+              <ThemeToggle isDark={isDark} onChange={toggleTheme} />
 
               {/* =======================================
                   REALTIME ONLINE

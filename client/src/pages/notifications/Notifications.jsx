@@ -11,7 +11,6 @@ import {
   Popconfirm,
   Select,
   Space,
-  Switch,
   Table,
   Tag,
   Tooltip,
@@ -55,6 +54,24 @@ import { createFeedbackTag, deleteFeedbackTag, getFeedbackTags } from "../../ser
 import { useAuth } from "../../store/AuthContext";
 import { getSystemStatus, setFeatureVisibility, setMaintenanceMode } from "../../services/system.service";
 import { onSystemNotificationChanged } from "../../services/socket";
+
+const AdminToggle = ({ checked, loading = false, onChange, label }) => (
+  <label
+    className={`admin-art-toggle${loading ? " is-loading" : ""}`}
+    aria-label={label}
+    aria-busy={loading}
+  >
+    <input
+      type="checkbox"
+      className="admin-art-toggle__input"
+      checked={Boolean(checked)}
+      disabled={loading}
+      onChange={(event) => onChange(event.target.checked)}
+    />
+    <span className="admin-art-toggle__slider" aria-hidden="true" />
+  </label>
+);
+
 const Notifications = () => {
   const { user } = useAuth();
   const [form] = Form.useForm();
@@ -698,7 +715,12 @@ const Notifications = () => {
           </div>
           <div className="mt-5 flex items-center justify-between gap-4 rounded-xl border border-amber-100 bg-amber-50/60 p-4">
             <div><b className="text-slate-800">Chế độ bảo trì</b><p className="m-0 mt-1 text-sm text-slate-500">Đăng xuất người dùng và hiển thị trang bảo trì. Admin vẫn có thể truy cập để tắt.</p></div>
-            <Switch checked={maintenanceMode} loading={maintenanceSaving} onChange={changeMaintenance} checkedChildren="Bật" unCheckedChildren="Tắt" />
+            <AdminToggle
+              checked={maintenanceMode}
+              loading={maintenanceSaving}
+              onChange={changeMaintenance}
+              label="Bật hoặc tắt chế độ bảo trì"
+            />
           </div>
           <div className="mt-3 grid gap-3 md:grid-cols-4">
             {[
@@ -707,7 +729,12 @@ const Notifications = () => {
             ].map((feature) => (
               <div key={feature.key} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-4">
                 <div className="flex items-center gap-3"><span className="text-lg text-blue-600">{feature.icon}</span><div><b className="text-sm text-slate-800">{feature.title}</b><p className="m-0 mt-1 text-xs text-slate-400">{feature.description}</p></div></div>
-                <Switch checked={features[feature.key]} loading={featureSaving === feature.key} onChange={(checked) => changeFeature(feature.key, checked)} checkedChildren="Bật" unCheckedChildren="Tắt" />
+                <AdminToggle
+                  checked={features[feature.key]}
+                  loading={featureSaving === feature.key}
+                  onChange={(checked) => changeFeature(feature.key, checked)}
+                  label={`Bật hoặc tắt ${feature.title}`}
+                />
               </div>
             ))}
           </div>

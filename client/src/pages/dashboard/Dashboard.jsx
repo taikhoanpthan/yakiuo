@@ -12,7 +12,7 @@ import {
 import dayjs from "dayjs";
 
 import { getPreviousWorkSchedule, getWorkSchedule } from "../../services/workSchedule.service";
-import { connectSocket } from "../../services/socket";
+import { connectSocket, onSocketConnected } from "../../services/socket";
 import weeklyCleaningMonThuImage from "../../assets/dashboard/weekly-cleaning-mon-thu.jpg";
 import weeklyCleaningFriSunImage from "../../assets/dashboard/weekly-cleaning-fri-sun.jpg";
 import HamsterLoader from "../../components/common/HamsterLoader";
@@ -63,8 +63,19 @@ const Dashboard = () => {
 
     socket.on("work-schedule:updated", handleWorkScheduleUpdated);
 
+    // A broadcast may be missed while the browser reconnects. Revalidate only
+    // this active query when the socket is back, rather than refetching the
+    // whole dashboard or waiting for the cache's stale timeout.
+    const unsubscribeConnected = onSocketConnected(() => {
+      queryClient.invalidateQueries({
+        queryKey: ["work-schedule", "current"],
+        refetchType: "active",
+      });
+    });
+
     return () => {
       socket.off("work-schedule:updated", handleWorkScheduleUpdated);
+      unsubscribeConnected();
     };
   }, [queryClient]);
 

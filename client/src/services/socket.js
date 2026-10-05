@@ -157,6 +157,22 @@ export const connectSocket = () => {
   return currentSocket;
 };
 
+// Subscribe to a successful Socket.IO connection. This also runs immediately
+// when the shared socket is already connected, so screens mounted after login
+// do not have to wait for another reconnect to synchronize their cached data.
+export const onSocketConnected = (callback) => {
+  const currentSocket = connectSocket();
+  const handler = () => callback();
+
+  currentSocket.on("connect", handler);
+
+  if (currentSocket.connected) {
+    queueMicrotask(handler);
+  }
+
+  return () => currentSocket.off("connect", handler);
+};
+
 // =====================================================
 // SET SOCKET USER
 // =====================================================
@@ -436,6 +452,7 @@ export const disconnectSocket = () => {
 
 export default {
   connectSocket,
+  onSocketConnected,
   getSocket,
   getSocketUser,
   setSocketUser,

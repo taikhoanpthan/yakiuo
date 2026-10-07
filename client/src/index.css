@@ -312,61 +312,55 @@ button:focus-visible,
 :root[data-theme="dark"] .notifications-editor-modal .ant-modal-header { background: #151f33 !important; }
 :root[data-theme="dark"] .notifications-editor-modal .ant-modal-title { color: #edf3ff !important; }
 
-/* Artistic switches used only for the admin operation controls. */
-.admin-art-toggle {
+/* Airplane switches used only for Notifications administration controls. */
+.admin-plane-toggle {
   --toggle-size: 15px;
-  position: relative;
   display: inline-block;
-  width: 3.5em;
-  height: 2em;
+  width: 3.34em;
+  height: 1.67em;
   flex: 0 0 auto;
   font-size: var(--toggle-size);
   cursor: pointer;
-  transform-style: preserve-3d;
-  perspective: 500px;
-  animation: admin-toggle-float 3s ease-in-out infinite;
+  -webkit-tap-highlight-color: transparent;
 }
-.admin-art-toggle::before {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
+.admin-plane-toggle__input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.admin-plane-toggle__track {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 1px;
   border-radius: 999px;
-  background-color: #d8ff99;
-  background-image: radial-gradient(at 21% 46%, hsl(183 65% 60%) 0, transparent 50%), radial-gradient(at 23% 25%, hsl(359 74% 70%) 0, transparent 50%), radial-gradient(at 20% 1%, hsl(267 83% 75%) 0, transparent 50%), radial-gradient(at 86% 87%, hsl(204 69% 68%) 0, transparent 50%), radial-gradient(at 99% 41%, hsl(171 72% 77%) 0, transparent 50%), radial-gradient(at 55% 24%, hsl(138 60% 62%) 0, transparent 50%);
-  content: "";
-  filter: blur(14px);
+  background: linear-gradient(90deg, #6b6d76 0%, #6b6d76 25%, #60a7fa 75%, #2f8efc 100%) left var(--plane-position, 0%) top 0 / 400% auto;
+  box-shadow: inset 0 0 0 1px rgb(15 23 42 / 12%);
+  transition: background-position .6s ease;
+  -webkit-mask-image: -webkit-radial-gradient(#fff, #000);
 }
-.admin-art-toggle__input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.admin-art-toggle__slider {
-  position: absolute;
-  inset: 0;
-  border-radius: 30px;
-  background: #fdfefedc;
-  box-shadow: inset 0 0 0 1px rgb(15 23 42 / 8%);
-  transition: background-color .4s ease, box-shadow .4s ease;
-}
-.admin-art-toggle__slider::before {
-  position: absolute;
-  bottom: .3em;
-  left: .3em;
-  width: 1.4em;
-  height: 1.4em;
-  border-radius: 50%;
-  background-color: #ff99fd;
-  background-image: radial-gradient(at 81% 39%, hsl(327 79% 79%) 0, transparent 50%), radial-gradient(at 11% 72%, hsl(264 64% 79%) 0, transparent 50%), radial-gradient(at 23% 20%, hsl(75 98% 71%) 0, transparent 50%);
-  box-shadow: rgb(0 0 0 / 17%) 0 -10px 10px 0 inset, rgb(0 0 0 / 9%) 0 -1px 15px -8px;
-  content: "";
-  transition: transform .4s ease;
-}
-.admin-art-toggle__input:checked + .admin-art-toggle__slider { background-color: #17202a; }
-.admin-art-toggle__input:checked + .admin-art-toggle__slider::before { transform: translateX(1.5em); }
-.admin-art-toggle:has(.admin-art-toggle__input:focus-visible) .admin-art-toggle__slider { outline: 3px solid rgb(37 99 235 / 38%); outline-offset: 3px; }
-.admin-art-toggle:has(.admin-art-toggle__input:disabled) { cursor: wait; opacity: .58; animation-play-state: paused; }
-@keyframes admin-toggle-float {
-  0%, 100% { transform: translateY(-5px) rotateX(15deg) rotateY(-20deg); }
-  50% { transform: translateY(0) rotateX(15deg) rotateY(-20deg); }
-}
-@media (prefers-reduced-motion: reduce) { .admin-art-toggle { animation: none; } }
+.admin-plane-toggle__track::before,
+.admin-plane-toggle__track::after { position: absolute; display: block; content: ""; transform: translateX(var(--street-shift, 0)); transition: transform .3s ease; }
+.admin-plane-toggle__track::before { top: 4px; right: 2px; width: 42px; height: 1px; background: #a8aab4; box-shadow: 0 16px 0 #a8aab4; }
+.admin-plane-toggle__track::after { top: 1px; left: 23px; width: 2px; height: 2px; border-radius: 50%; box-shadow: inset 0 0 0 2px #ffe900, 0 21px 0 #ffe900, 8px 0 0 rgb(255 233 0 / 30%), 8px 21px 0 rgb(255 233 0 / 30%), 16px 0 0 rgb(255 233 0 / 30%), 16px 21px 0 rgb(255 233 0 / 30%); animation: admin-plane-toggle-lights 2s linear infinite; }
+.admin-plane-toggle__plane { position: relative; z-index: 1; display: table; padding: 5px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(15 23 42 / 28%); transform: translateX(var(--plane-shift, 0)); transition: transform .6s cubic-bezier(.2, .8, .35, 1.2); }
+.admin-plane-toggle__plane svg { display: block; width: 13px; height: 13px; color: #6b6d76; fill: currentColor; transition: color .6s ease; }
+.admin-plane-toggle__street-middle { position: absolute; top: 12px; left: 21px; width: 3px; height: 1px; background: #c0c2c8; box-shadow: 5px 0 0 #c0c2c8, 10px 0 0 #c0c2c8, 15px 0 0 #c0c2c8, 20px 0 0 #c0c2c8, 25px 0 0 #c0c2c8; transform: translateX(var(--street-shift, 0)); transition: transform .3s ease; }
+.admin-plane-toggle__cloud { position: absolute; top: var(--cloud-top, 8px); left: 100%; width: 12px; height: 4px; border-radius: 2px; background: #fff; opacity: var(--cloud-opacity, 0); animation: admin-plane-toggle-clouds 2s linear infinite var(--cloud-delay, 0s); transition: opacity .3s ease; }
+.admin-plane-toggle__cloud::before,
+.admin-plane-toggle__cloud::after { position: absolute; bottom: 1px; left: 1px; width: 5px; height: 5px; border-radius: 50%; background: #fff; content: ""; }
+.admin-plane-toggle__cloud::after { width: 6px; height: 6px; transform: translateX(4px); }
+.admin-plane-toggle__cloud--two { --cloud-top: 20px; --cloud-delay: 1s; opacity: var(--cloud-opacity-second, 0); }
+.admin-plane-toggle__input:checked + .admin-plane-toggle__track { --plane-position: 100%; --plane-shift: 25px; --street-shift: -50px; --cloud-opacity: .82; --cloud-opacity-second: .62; }
+.admin-plane-toggle__input:checked + .admin-plane-toggle__track .admin-plane-toggle__plane svg { color: #2f8efc; }
+.admin-plane-toggle:has(.admin-plane-toggle__input:focus-visible) .admin-plane-toggle__track { outline: 3px solid rgb(37 99 235 / 45%); outline-offset: 3px; }
+.admin-plane-toggle:has(.admin-plane-toggle__input:disabled) { cursor: wait; opacity: .58; }
+@keyframes admin-plane-toggle-lights { 20%, 30% { box-shadow: inset 0 0 0 2px rgb(255 233 0 / 30%), 0 21px 0 rgb(255 233 0 / 30%), 8px 0 0 #ffe900, 8px 21px 0 #ffe900, 16px 0 0 rgb(255 233 0 / 30%), 16px 21px 0 rgb(255 233 0 / 30%); } 55%, 65% { box-shadow: inset 0 0 0 2px rgb(255 233 0 / 30%), 0 21px 0 rgb(255 233 0 / 30%), 8px 0 0 rgb(255 233 0 / 30%), 8px 21px 0 rgb(255 233 0 / 30%), 16px 0 0 #ffe900, 16px 21px 0 #ffe900; } }
+@keyframes admin-plane-toggle-clouds { 97% { visibility: visible; transform: translateX(-72px); } 98%, 100% { visibility: hidden; } 99% { transform: translateX(-72px); } 100% { transform: translateX(0); } }
+:root[data-theme="dark"] .admin-plane-toggle__track { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 22%); }
+:root[data-theme="dark"] .admin-plane-toggle__input:not(:checked) + .admin-plane-toggle__track { background-image: linear-gradient(90deg, #303744 0%, #303744 25%, #447fc1 75%, #246ed0); }
+:root[data-theme="dark"] .admin-plane-toggle__plane { background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 50%); }
+:root[data-theme="dark"] .admin-plane-toggle__track::before { background: #8490a3; box-shadow: 0 16px 0 #8490a3; }
+:root[data-theme="dark"] .admin-plane-toggle__street-middle { background: #aab3c2; box-shadow: 5px 0 0 #aab3c2, 10px 0 0 #aab3c2, 15px 0 0 #aab3c2, 20px 0 0 #aab3c2, 25px 0 0 #aab3c2; }
+@media (prefers-reduced-motion: reduce) { .admin-plane-toggle__track::after, .admin-plane-toggle__cloud { animation: none; } }
 
 /* Header day/night control, converted from the supplied component without a styled-components dependency. */
 .erp-theme-switch { --theme-size: 13px; position: relative; display: inline-block; width: 5.625em; height: 2.5em; font-size: var(--theme-size); cursor: pointer; }
@@ -1272,10 +1266,6 @@ button:focus-visible,
    ANT DESIGN GLOBAL
 ========================================================= */
 
-.ant-btn {
-  font-weight: 600;
-}
-
 /* Shared data loader. Its color follows the application theme instead of
    relying on the white-only color from the supplied standalone component. */
 .erp-honeycomb-loader {
@@ -1324,62 +1314,6 @@ button:focus-visible,
 :root[data-theme="dark"] .erp-honeycomb-loader { --honey-color: #f8fafc; }
 @media (prefers-reduced-motion: reduce) { .erp-honeycomb i { animation: none; opacity: .9; transform: scale(.78); } }
 
-.ant-btn-primary {
-  background: #111827 !important;
-  border-color: #111827 !important;
-  color: #fff !important;
-  box-shadow: inset 0 0 1.6em -.6em #000, 0 6px 16px rgb(15 23 42 / 18%);
-}
-
-.ant-btn-primary:hover {
-  background: #262f3d !important;
-}
-
-/* Primary CTAs use the supplied expanding-arrow treatment. Small, icon-only,
-   loading, and danger controls stay compact so table/tool actions remain clear. */
-.ant-btn-primary:not(.ant-btn-sm):not(.ant-btn-icon-only):not(.ant-btn-loading) {
-  position: relative;
-  min-height: 2.8em;
-  padding: .35em 3.3em .35em 1.2em !important;
-  overflow: hidden;
-  border: 0 !important;
-  border-radius: .9em !important;
-  letter-spacing: .035em;
-}
-.ant-btn-primary:not(.ant-btn-sm):not(.ant-btn-icon-only):not(.ant-btn-loading)::after {
-  position: absolute;
-  top: 50%;
-  right: .3em;
-  display: block;
-  width: 2.2em;
-  height: 2.2em;
-  border-radius: .7em;
-  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M0 0h24v24H0z' fill='none'/%3E%3Cpath d='m16.172 11-5.364-5.364 1.414-1.414L20 12l-7.778 7.778-1.414-1.414L16.172 13H4v-2z' fill='%23111827'/%3E%3C/svg%3E") center / 1.1em no-repeat;
-  box-shadow: .1em .1em .6em .2em rgb(0 0 0 / 28%);
-  content: "";
-  transform: translateY(-50%);
-  transition: width .3s ease, transform .3s ease;
-}
-.ant-btn-primary:not(.ant-btn-sm):not(.ant-btn-icon-only):not(.ant-btn-loading):hover::after { width: calc(100% - .6em); }
-.ant-btn-primary:not(.ant-btn-sm):not(.ant-btn-icon-only):not(.ant-btn-loading):active::after { transform: translateY(-50%) scale(.95); }
-.ant-btn-primary:not(.ant-btn-sm):not(.ant-btn-icon-only):not(.ant-btn-loading):focus-visible { outline: 3px solid rgb(17 24 39 / 30%); outline-offset: 3px; }
-
-/* Keep the CTA black in dark mode too; add a light edge so it remains distinct
-   from the surrounding dark surface without inverting the intended design. */
-:root[data-theme="dark"] .ant-btn-primary {
-  background: #080b10 !important;
-  border-color: #526176 !important;
-  color: #fff !important;
-  box-shadow: inset 0 0 1.6em -.6em #000, 0 6px 16px rgb(0 0 0 / 35%);
-}
-:root[data-theme="dark"] .ant-btn-primary:hover { background: #1a2029 !important; }
-:root[data-theme="dark"] .ant-btn-primary:not(.ant-btn-sm):not(.ant-btn-icon-only):not(.ant-btn-loading)::after {
-  background-color: #fff;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M0 0h24v24H0z' fill='none'/%3E%3Cpath d='m16.172 11-5.364-5.364 1.414-1.414L20 12l-7.778 7.778-1.414-1.414L16.172 13H4v-2z' fill='%23080b10'/%3E%3C/svg%3E");
-  box-shadow: .1em .1em .6em .2em rgb(0 0 0 / 45%);
-}
-:root[data-theme="dark"] .ant-btn-primary:not(.ant-btn-sm):not(.ant-btn-icon-only):not(.ant-btn-loading):focus-visible { outline-color: rgb(255 255 255 / 38%); }
-
 .erp-section-card,
 .yakiuo-social-card {
   transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
@@ -1419,37 +1353,69 @@ button:focus-visible,
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 24px;
-  background: #eef4ff;
+  background: #05050a;
   color: #172033;
   touch-action: pan-y;
 }
 
-.erp-auth-orb {
-  position: fixed;
-  width: 40rem;
-  height: 40rem;
-  border-radius: 50%;
+.erp-auth-matrix {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  grid-auto-rows: 40px;
+  min-height: 100%;
+  overflow: hidden;
+  background: #05050a;
+  color: rgb(0 150 255 / 40%);
+  font-family: "Courier New", Courier, monospace;
+  font-size: 32px;
+  line-height: 1;
+  text-align: center;
   pointer-events: none;
-  filter: blur(74px);
-  opacity: 0.5;
 }
-
-.erp-auth-orb-one { top: -19rem; left: -13rem; background: #93c5fd; }
-.erp-auth-orb-two { right: -16rem; bottom: -23rem; background: #c4b5fd; }
+.erp-auth-matrix > span {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  min-width: 0;
+  overflow: hidden;
+  text-shadow: 0 0 5px rgb(0 150 255 / 50%);
+  user-select: none;
+}
+.erp-auth-matrix > span:nth-child(19n + 2) { animation: erp-matrix-pulse 3.5s ease-in-out infinite .2s; }
+.erp-auth-matrix > span:nth-child(29n + 1) { animation: erp-matrix-pulse 4.1s ease-in-out infinite .7s; }
+.erp-auth-matrix > span:nth-child(11n) { color: rgb(100 200 255 / 70%); animation: erp-matrix-pulse 2.9s ease-in-out infinite 1.1s; }
+.erp-auth-matrix > span:nth-child(37n + 10) { animation: erp-matrix-pulse 5.3s ease-in-out infinite 1.5s; }
+.erp-auth-matrix > span:nth-child(41n + 1) { animation: erp-matrix-pulse 3.9s ease-in-out infinite .4s; }
+.erp-auth-matrix > span:nth-child(17n + 9) { animation: erp-matrix-pulse 2.8s ease-in-out infinite .9s; }
+.erp-auth-matrix > span:nth-child(23n + 18) { animation: erp-matrix-pulse 4.3s ease-in-out infinite 1.3s; }
+.erp-auth-matrix > span:nth-child(31n + 4) { animation: erp-matrix-pulse 5.6s ease-in-out infinite .1s; }
+.erp-auth-matrix > span:nth-child(43n + 20) { animation: erp-matrix-pulse 3.6s ease-in-out infinite 1.8s; }
+.erp-auth-matrix > span:nth-child(13n + 6) { animation: erp-matrix-pulse 3.2s ease-in-out infinite 1.2s; }
+.erp-auth-matrix > span:nth-child(53n + 5) { animation: erp-matrix-pulse 4.9s ease-in-out infinite .5s; }
+.erp-auth-matrix > span:nth-child(47n + 15) { animation: erp-matrix-pulse 5.9s ease-in-out infinite 1s; }
+@keyframes erp-matrix-pulse {
+  0%, 100% { color: rgb(0 150 255 / 40%); text-shadow: 0 0 5px rgb(0 150 255 / 50%); }
+  30% { color: #64c8ff; text-shadow: 0 0 10px #64c8ff, 0 0 15px #64c8ff; }
+  50% { color: #ff69b4; text-shadow: 0 0 10px #ff69b4, 0 0 15px #ff69b4; }
+  70% { color: #fff; text-shadow: 0 0 10px #fff, 0 0 15px #fff, 0 0 20px #fff; }
+}
+@media (prefers-reduced-motion: reduce) { .erp-auth-matrix > span { animation: none !important; } }
 
 .erp-auth-panel {
   position: relative;
   z-index: 1;
   display: grid;
-  width: min(440px, 100%);
+  width: min(456px, 100%);
   min-height: 0;
   grid-template-columns: 1fr;
   overflow: hidden;
-  border: 1px solid rgba(203, 213, 225, 0.75);
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 28px 80px rgba(30, 64, 175, 0.16);
-  backdrop-filter: blur(18px);
+  border: 1px solid rgb(125 211 252 / 42%);
+  border-radius: 30px;
+  background: linear-gradient(145deg, rgb(15 23 42 / 94%), rgb(8 15 30 / 90%));
+  box-shadow: 0 28px 80px rgb(0 0 0 / 52%), 0 0 0 1px rgb(255 255 255 / 5%) inset, 0 0 54px rgb(37 99 235 / 16%);
+  backdrop-filter: blur(22px) saturate(125%);
   touch-action: pan-y;
 }
 
@@ -1496,38 +1462,48 @@ button:focus-visible,
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 42px 32px 30px;
+  padding: 30px 38px 26px;
 }
 
 .erp-auth-mobile-brand {
   flex-direction: column;
   justify-content: center;
-  gap: 8px;
-  margin-bottom: 20px;
-  color: #1e3a8a;
+  gap: 7px;
+  margin-bottom: 0;
+  color: #f8fbff;
   text-align: center;
 }
 
 .erp-auth-mobile-brand .erp-auth-mark {
-  width: 92px;
-  height: 92px;
-  border-radius: 18px;
+  width: 60px;
+  height: 60px;
+  padding: 4px;
+  border: 1px solid rgb(255 255 255 / 60%);
+  border-radius: 22px;
+  box-shadow: 0 10px 32px rgb(37 99 235 / 36%);
 }
 
 .erp-auth-form-heading {
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   text-align: center;
 }
-.erp-auth-form-heading .erp-auth-kicker { color: #2563eb; }
-.erp-auth-form-heading h2 { margin: 8px 0 7px; color: #172033; font-size: 28px; letter-spacing: -0.035em; }
-.erp-auth-form-heading p { margin: 0; color: #64748b; font-size: 14px; }
-.erp-auth-form-section .ant-form-item-label > label { color: #334155; font-size: 13px; font-weight: 700; }
-.erp-auth-form-section .ant-input-affix-wrapper { min-height: 48px; border-radius: 12px; }
-.erp-auth-form-section .ant-input-prefix { color: #64748b; margin-right: 10px; }
-.erp-auth-error { margin-bottom: 18px; border-radius: 12px !important; }
-.erp-auth-submit { height: 50px !important; margin-top: 6px; border-radius: 12px !important; font-size: 15px; }
-.erp-auth-security { margin-top: 24px; color: #94a3b8; font-size: 12px; text-align: center; }
-.erp-auth-security .anticon { color: #16a34a; margin-right: 6px; }
+.erp-auth-form-section .ant-form-item { margin-bottom: 14px; }
+.erp-auth-form-section .ant-form-item-label > label { color: #dce8f8; font-size: 12px; font-weight: 700; }
+.erp-auth-form-section .ant-input-affix-wrapper,
+.erp-auth-form-section .ant-select-selector { min-height: 46px !important; border: 1px solid rgb(148 163 184 / 36%) !important; border-radius: 14px !important; background: rgb(248 250 252 / 96%) !important; box-shadow: none !important; }
+.erp-auth-form-section .ant-select-single { height: 46px; }
+.erp-auth-form-section .ant-select-single .ant-select-selector .ant-select-selection-item,
+.erp-auth-form-section .ant-select-single .ant-select-selector .ant-select-selection-placeholder { line-height: 44px; }
+.erp-auth-form-section .ant-input-affix-wrapper-focused,
+.erp-auth-form-section .ant-select-focused .ant-select-selector { border-color: #7dd3fc !important; box-shadow: 0 0 0 3px rgb(56 189 248 / 18%) !important; }
+.erp-auth-form-section .ant-input-prefix { color: #2563eb; margin-right: 10px; }
+.erp-auth-form-section .ant-checkbox-wrapper { color: #c7d5e8; font-size: 12px; }
+.erp-auth-form-section .ant-checkbox-inner { border-color: #71819a; background: rgb(15 23 42 / 70%); }
+.erp-auth-error { margin-bottom: 18px; border-radius: 14px !important; }
+.erp-auth-submit { height: 48px !important; margin-top: 12px; border: 0 !important; border-radius: 14px !important; background: linear-gradient(100deg, #2563eb, #0ea5e9) !important; box-shadow: 0 12px 24px rgb(14 165 233 / 24%); font-size: 15px; font-weight: 750; }
+.erp-auth-submit:hover { background: linear-gradient(100deg, #3b82f6, #38bdf8) !important; transform: translateY(-1px); }
+.erp-auth-security { margin-top: 18px; color: #91a2ba; font-size: 12px; text-align: center; }
+.erp-auth-security .anticon { color: #5eead4; margin-right: 6px; }
 
 @media (max-width: 760px) {
   /* Luôn giữ chiều cao visual viewport để form còn cuộn được khi bàn phím mở. */
@@ -1540,7 +1516,8 @@ button:focus-visible,
   }
 
   .erp-auth-panel { min-height: 0; grid-template-columns: 1fr; border-radius: 24px; }
-  .erp-auth-form-section { padding: 40px 24px 28px; }
+  .erp-auth-form-section { padding: 28px 24px 24px; }
+  .erp-auth-mobile-brand .erp-auth-mark { width: 56px; height: 56px; }
 }
 
 .ant-modal-content {

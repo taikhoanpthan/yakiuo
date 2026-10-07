@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Button, Checkbox, Form, Input, Select, message } from "antd";
 import {
   ArrowRightOutlined,
@@ -26,6 +26,27 @@ const getLoginError = (error) => {
   if (status >= 500) return "Máy chủ đang gặp sự cố tạm thời. Vui lòng thử lại sau vài phút.";
 
   return serverMessage || "Đăng nhập chưa thành công. Vui lòng thử lại.";
+};
+
+const LOGIN_MATRIX_CHARACTERS = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポ";
+const getLoginMatrixCellCount = () => (
+  Math.ceil(window.innerWidth / 40) * (Math.ceil(window.innerHeight / 40) + 3)
+);
+
+const LoginMatrix = () => {
+  const [cellCount, setCellCount] = useState(getLoginMatrixCellCount);
+  const cells = useMemo(
+    () => Array.from({ length: cellCount }, (_, index) => LOGIN_MATRIX_CHARACTERS[index % LOGIN_MATRIX_CHARACTERS.length]),
+    [cellCount],
+  );
+
+  useEffect(() => {
+    const syncMatrixSize = () => setCellCount(getLoginMatrixCellCount());
+    window.addEventListener("resize", syncMatrixSize);
+    return () => window.removeEventListener("resize", syncMatrixSize);
+  }, []);
+
+  return <div className="erp-auth-matrix" aria-hidden="true">{cells.map((character, index) => <span key={index}>{character}</span>)}</div>;
 };
 
 const Login = () => {
@@ -93,8 +114,7 @@ const Login = () => {
 
   return (
     <div className="erp-auth-page">
-      <div className="erp-auth-orb erp-auth-orb-one" />
-      <div className="erp-auth-orb erp-auth-orb-two" />
+      <LoginMatrix />
 
       <motion.main initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: "easeOut" }} className="erp-auth-panel">
         <section className="erp-auth-showcase">
@@ -114,8 +134,6 @@ const Login = () => {
         <section className="erp-auth-form-section">
           <div className="erp-auth-form-heading">
             <div className="erp-auth-mobile-brand"><img className="erp-auth-mark" src="/brand-logo.png" alt="Yakiuo Ishikawa" /><span>YAKIUO ISHIKAWA SAIGON</span></div>
-            <h2 className="erp-auth-kicker">ĐĂNG NHẬP</h2>
-
           </div>
 
           <Form form={form} layout="vertical" onFinish={handleSubmit} onValuesChange={() => loginError && setLoginError("")} requiredMark={false} size="large">

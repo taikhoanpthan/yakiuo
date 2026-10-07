@@ -57,18 +57,27 @@ import { onSystemNotificationChanged } from "../../services/socket";
 
 const AdminToggle = ({ checked, loading = false, onChange, label }) => (
   <label
-    className={`admin-art-toggle${loading ? " is-loading" : ""}`}
+    className={`admin-plane-toggle${loading ? " is-loading" : ""}`}
     aria-label={label}
     aria-busy={loading}
   >
     <input
       type="checkbox"
-      className="admin-art-toggle__input"
+      className="admin-plane-toggle__input"
       checked={Boolean(checked)}
       disabled={loading}
       onChange={(event) => onChange(event.target.checked)}
     />
-    <span className="admin-art-toggle__slider" aria-hidden="true" />
+    <span className="admin-plane-toggle__track" aria-hidden="true">
+      <span className="admin-plane-toggle__plane">
+        <svg viewBox="0 0 13 13" focusable="false">
+          <path d="M1.56 5.417h3.956L4.47.108A.11.11 0 0 1 4.577 0h.785c.09 0 .174.035.23.098l1.544 2.718h1.16a.434.434 0 0 1 0 .867h-.66l.999 1.734h3.296a1.083 1.083 0 0 1 0 2.166H8.635l-1 1.734h.66a.434.434 0 0 1 0 .867h-1.16l-1.543 2.682a.215.215 0 0 1-.23.134h-.785a.11.11 0 0 1-.107-.13l1.046-5.287H1.56l-.669.968a.262.262 0 0 1-.219.116H.107A.107.107 0 0 1 .006 8.523l.575-1.665a1.08 1.08 0 0 0 0-.716L.006 4.48a.108.108 0 0 1 .1-.144h.566c.083 0 .162.037.219.115l.669.965Z" />
+        </svg>
+      </span>
+      <span className="admin-plane-toggle__street-middle" />
+      <span className="admin-plane-toggle__cloud" />
+      <span className="admin-plane-toggle__cloud admin-plane-toggle__cloud--two" />
+    </span>
   </label>
 );
 

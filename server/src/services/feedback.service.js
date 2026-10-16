@@ -1,6 +1,7 @@
 const Feedback = require("../models/Feedback");
 
 const BUSINESS_TIME_ZONE = process.env.FEEDBACK_TIME_ZONE || "Asia/Ho_Chi_Minh";
+const LATE_ENTRY_REVIEW_MIN_DAYS = 2;
 
 const getDateKeyInBusinessTimeZone = (value) => {
   const date = new Date(value);
@@ -42,7 +43,7 @@ const getLateEntryDays = (dateTime, now = new Date()) => {
 const flagLateEntryIfNeeded = (feedback, dateTime) => {
   const lateEntryDays = getLateEntryDays(dateTime);
 
-  if (lateEntryDays > 0 && !feedback.isLateEntry) {
+  if (lateEntryDays >= LATE_ENTRY_REVIEW_MIN_DAYS && !feedback.isLateEntry) {
     feedback.isLateEntry = true;
     feedback.lateEntryFlaggedAt = new Date();
     feedback.lateEntryDays = lateEntryDays;
@@ -184,8 +185,8 @@ const createFeedback = async (
   userId
 ) => {
   const dateTime = data.dateTime || new Date();
-  // Mọi vai trò đều có thể nhập ngày cũ. Nếu ngày được chọn trước hôm nay,
-  // bản ghi được gắn cờ kín để admin rà soát.
+  // Mọi vai trò đều có thể nhập ngày cũ. Chỉ bản ghi lùi từ 2 ngày trở lên
+  // mới được gắn cờ kín để admin rà soát.
   getDateKeyInBusinessTimeZone(dateTime);
 
   const feedback = new Feedback({
@@ -305,7 +306,11 @@ const updateFeedback = async (
 const getLateEntryFeedbacks = async ({ page = 1, limit = 20, search = "" }) => {
   const currentPage = Math.max(Number(page) || 1, 1);
   const currentLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
-  const filter = { isLateEntry: true, lateEntryResolvedAt: null };
+  const filter = {
+    isLateEntry: true,
+    lateEntryDays: { $gte: LATE_ENTRY_REVIEW_MIN_DAYS },
+    lateEntryResolvedAt: null,
+  };
 
   if (search?.trim()) {
     const keyword = search.trim();

@@ -25,6 +25,7 @@ import {
   CheckCircleOutlined,
   CloudUploadOutlined,
   CoffeeOutlined,
+  CrownOutlined,
   DeleteOutlined,
   EditOutlined,
   ExclamationCircleOutlined,
@@ -101,7 +102,7 @@ const Notifications = () => {
   const [tagSaving, setTagSaving] = useState(false);
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
   const [maintenanceSaving, setMaintenanceSaving] = useState(false);
-  const [features, setFeatures] = useState({ cfs: true, caro: true });
+  const [features, setFeatures] = useState({ cfs: true, caro: true, chess: true });
   const [featureSaving, setFeatureSaving] = useState(null);
   const [notificationScope, setNotificationScope] = useState("priority");
   // =========================
@@ -731,10 +732,11 @@ const Notifications = () => {
               label="Bật hoặc tắt chế độ bảo trì"
             />
           </div>
-          <div className="mt-3 grid gap-3 md:grid-cols-4">
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
             {[
               { key: "cfs", title: "Yakiuo CFS", description: "Hiển thị trang CFS cho người dùng.", icon: <CoffeeOutlined /> },
               { key: "caro", title: "Cờ caro", description: "Hiển thị trang chơi cờ caro.", icon: <TrophyOutlined /> },
+              { key: "chess", title: "Cờ vua", description: "Hiển thị trang chơi cờ vua.", icon: <CrownOutlined /> },
             ].map((feature) => (
               <div key={feature.key} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-4">
                 <div className="flex items-center gap-3"><span className="text-lg text-blue-600">{feature.icon}</span><div><b className="text-sm text-slate-800">{feature.title}</b><p className="m-0 mt-1 text-xs text-slate-400">{feature.description}</p></div></div>

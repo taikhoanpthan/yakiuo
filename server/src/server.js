@@ -41,6 +41,7 @@ const workScheduleRoutes = require("./routes/workSchedule.routes");
 const cfsRoutes = require("./routes/cfs.routes");
 const trashRoutes = require("./routes/trash.routes");
 const caroRoutes = require("./routes/caro.routes");
+const chessRoutes = require("./routes/chess.routes");
 const { startTrashCleanup } = require("./services/trashCleanup.service");
 const { auditMutations } = require("./middleware/audit.middleware");
 // =========================
@@ -49,6 +50,7 @@ const { auditMutations } = require("./middleware/audit.middleware");
 
 const setupPresenceSocket = require("./sockets/presence.socket");
 const setupCaroSocket = require("./sockets/caro.socket");
+const setupChessSocket = require("./sockets/chess.socket");
 
 // =========================
 // APP
@@ -154,6 +156,7 @@ app.set("io", io);
 // Toàn bộ socket event nằm trong:
 setupPresenceSocket(io);
 setupCaroSocket(io);
+setupChessSocket(io);
 
 // =========================
 // BODY PARSER
@@ -195,6 +198,7 @@ app.use("/api/work-schedule", workScheduleRoutes);
 app.use("/api/cfs", cfsRoutes);
 app.use("/api/trash", trashRoutes);
 app.use("/api/caro", caroRoutes);
+app.use("/api/chess", chessRoutes);
 // =========================
 // CLOUDINARY TEST
 // =========================

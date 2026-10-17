@@ -20,6 +20,7 @@ import {
   CheckSquareOutlined,
   CommentOutlined,
   CoffeeOutlined,
+  CrownOutlined,
   DownloadOutlined,
   TrophyOutlined,
   CheckCircleOutlined,
@@ -144,7 +145,7 @@ const Layout = () => {
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [features, setFeatures] = useState({ cfs: true, caro: true });
+  const [features, setFeatures] = useState({ cfs: true, caro: true, chess: true });
   const lastNotificationAccountRef = useRef(null);
 
   useEffect(() => {
@@ -306,6 +307,14 @@ const Layout = () => {
         icon: <TrophyOutlined />,
       });
     }
+    if (features.chess && ["admin", "employee", "premium"].includes(user?.role)) {
+      items.push({
+        key: "/chess",
+        label: "Cờ vua",
+        shortLabel: "Cờ vua",
+        icon: <CrownOutlined />,
+      });
+    }
 
     // Mọi tài khoản đã đăng nhập đều có thể xem hồ sơ nhân viên.
     items.splice(1, 0, {
@@ -331,7 +340,7 @@ const Layout = () => {
     }
 
     return items;
-  }, [features.caro, features.cfs, user?.role]);
+  }, [features.caro, features.chess, features.cfs, user?.role]);
 
   // ===================================================
   // MOBILE MENU
@@ -343,6 +352,7 @@ const Layout = () => {
     const keys = ["/dashboard", "/feedback", ...(features.cfs ? ["/cfs"] : []), "/todos"];
 
     if (features.caro && ["admin", "employee", "premium"].includes(user?.role)) keys.push("/caro");
+    if (features.chess && ["admin", "employee", "premium"].includes(user?.role)) keys.push("/chess");
 
     if (["admin", "manager"].includes(user?.role)) {
       keys.push("/notifications");
@@ -351,7 +361,7 @@ const Layout = () => {
     return keys
       .map((key) => menuItems.find((item) => item.key === key))
       .filter(Boolean);
-  }, [features.caro, features.cfs, menuItems, user?.role]);
+  }, [features.caro, features.chess, features.cfs, menuItems, user?.role]);
 
   const mobileTaskbarItems = useMemo(
     () => [

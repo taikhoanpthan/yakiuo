@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../store/AuthContext";
 
 import {
@@ -65,14 +66,44 @@ const getImageTransform = (position, zoom) => {
 const Profile = () => {
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
-  const { updateUser } = useAuth();
+  const { user: authUser, updateUser } = useAuth();
+  const queryClient = useQueryClient();
 
-  const [user, setUser] = useState(null);
+  const {
+    data: user,
+    isLoading,
+    error: profileError,
+  } = useQuery({
+    queryKey: ["user", "me"],
+    queryFn: async () => {
+      const response = await getMe();
+      const currentUser = response?.data?.user;
+
+      if (!currentUser) {
+        throw new Error("Không tìm thấy thông tin người dùng");
+      }
+
+      return currentUser;
+    },
+    // AuthContext đã tải hồ sơ khi ứng dụng khởi động. Dùng ngay dữ liệu đó
+    // để quay lại Profile không bị thay cả trang bằng màn hình loading.
+    initialData: authUser || undefined,
+  });
+
+  const syncUser = (nextUser) => {
+    if (!nextUser) return;
+    const mergedUser = {
+      ...(queryClient.getQueryData(["user", "me"]) || authUser || {}),
+      ...nextUser,
+    };
+    queryClient.setQueryData(["user", "me"], mergedUser);
+    updateUser(mergedUser);
+  };
+
   const canEditAccountIdentity = ["admin", "manager", "premium"].includes(
     user?.role,
   );
 
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -87,47 +118,26 @@ const Profile = () => {
   const [imageZoom, setImageZoom] = useState(1);
   const [savingImagePosition, setSavingImagePosition] = useState(false);
 
-  // =====================================================
-  // GET CURRENT USER
-  // =====================================================
-
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-
-      const response = await getMe();
-
-      const currentUser = response?.data?.user;
-
-      if (!currentUser) {
-        throw new Error("Không tìm thấy thông tin người dùng");
-      }
-
-      setUser(currentUser);
-      updateUser(currentUser);
-
-      form.setFieldsValue({
-        username: currentUser.username || "",
-        email: currentUser.email || "",
-        fullName: currentUser.fullName || "",
-        phone: currentUser.phone || "",
-      });
-    } catch (error) {
-      console.error("Get profile failed:", error);
-
-      message.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Không thể tải thông tin cá nhân",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    if (!user) return;
+    updateUser(user);
+    form.setFieldsValue({
+      username: user.username || "",
+      email: user.email || "",
+      fullName: user.fullName || "",
+      phone: user.phone || "",
+    });
+  }, [form, updateUser, user]);
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (!profileError) return;
+    console.error("Get profile failed:", profileError);
+    message.error(
+      profileError.response?.data?.message ||
+        profileError.message ||
+        "Không thể tải thông tin cá nhân",
+    );
+  }, [profileError]);
 
   // =====================================================
   // UPLOAD AVATAR
@@ -157,16 +167,7 @@ const Profile = () => {
       }
 
       // Cập nhật Profile
-      setUser((prev) => ({
-        ...prev,
-        avatar,
-      }));
-
-      // Cập nhật AuthContext
-      // => Navbar desktop/mobile đổi ngay
-      updateUser({
-        avatar,
-      });
+      syncUser({ avatar });
 
       // Nếu đang mở avatar modal thì cũng dùng
       // user mới ở lần render tiếp theo
@@ -194,14 +195,12 @@ const Profile = () => {
       setUploading(true);
       const response = await removeMyAvatar();
       const updatedUser = response?.data?.user;
-      setUser((current) => ({
-        ...current,
+      syncUser({
         ...(updatedUser || {}),
         avatar: "",
         avatarPosition: { x: 50, y: 50 },
         avatarZoom: 1,
-      }));
-      updateUser({ avatar: "", avatarPosition: { x: 50, y: 50 }, avatarZoom: 1 });
+      });
       setShowAvatarModal(false);
       setImageAdjustTarget(null);
       message.success("Đã trở về ảnh đại diện mặc định");
@@ -239,8 +238,7 @@ const Profile = () => {
         throw new Error("Không nhận được URL ảnh bìa");
       }
 
-      setUser((prev) => ({ ...prev, coverImage }));
-      updateUser({ coverImage });
+      syncUser({ coverImage });
       message.success("Đã cập nhật ảnh bìa");
       onSuccess?.(response.data);
     } catch (error) {
@@ -286,8 +284,7 @@ const Profile = () => {
         throw new Error("Không nhận được dữ liệu người dùng");
       }
 
-      setUser(updatedUser);
-      updateUser(updatedUser);
+      syncUser(updatedUser);
 
       form.setFieldsValue({
         username: updatedUser.username || "",
@@ -342,8 +339,7 @@ const Profile = () => {
 
       if (!updatedUser) throw new Error("Không thể lưu vị trí ảnh");
 
-      setUser(updatedUser);
-      updateUser(updatedUser);
+      syncUser(updatedUser);
       setImageAdjustTarget(null);
       message.success("Đã lưu vị trí ảnh");
     } catch (error) {
@@ -421,7 +417,7 @@ const Profile = () => {
   // LOADING
   // =====================================================
 
-  if (loading) {
+  if (isLoading && !user) {
     return (
       <div className="flex min-h-[500px] flex-col items-center justify-center gap-3">
         <HamsterLoader size="lg" />

@@ -147,10 +147,12 @@ const Todos = () => {
       setEditingTodo(null);
 
       await fetchTodos();
+      return true;
     } catch (error) {
       console.error("Save todo failed:", error);
 
       message.error(error.response?.data?.message || "Không thể lưu công việc");
+      return false;
     } finally {
       setSaving(false);
     }

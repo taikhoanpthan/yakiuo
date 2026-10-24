@@ -20,6 +20,7 @@ import {
 } from "../services/socket";
 import { getSystemStatus } from "../services/system.service";
 import { setMonitoringUser } from "../lib/monitoring";
+import { queryClient } from "../lib/queryClient";
 
 // =====================================================
 // AUTH CONTEXT
@@ -95,6 +96,10 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("accessToken", accessToken);
 
     localStorage.setItem("refreshToken", refreshToken);
+
+    // Cache hồ sơ và dữ liệu riêng tư được dùng chung cho toàn ứng dụng.
+    // Bỏ cache của phiên trước trước khi render tài khoản vừa đăng nhập.
+    queryClient.clear();
 
     // -------------------------------------------------
     // Set user tạm thời
@@ -209,6 +214,12 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("accessToken");
 
     localStorage.removeItem("refreshToken");
+
+    localStorage.removeItem("user");
+
+    // Tránh Profile và các trang có dữ liệu riêng tư tái sử dụng cache
+    // của tài khoản vừa đăng xuất khi một tài khoản khác đăng nhập.
+    queryClient.clear();
 
     // =================================================
     // 4. CLEAR AUTH

@@ -380,6 +380,24 @@ button:focus-visible,
 .erp-theme-switch:hover .erp-theme-switch__sun-moon { transform: scale(1.08) rotate(5deg); }.erp-theme-switch:hover .erp-theme-switch__clouds { transform: translateX(.7em); }.erp-theme-switch:has(.erp-theme-switch__checkbox:focus-visible) .erp-theme-switch__container { outline: 3px solid rgb(37 99 235 / 42%); outline-offset: 3px; }
 @keyframes erp-theme-twinkle { 0%,100% { opacity:.3; transform:scale(1); } 50% { opacity:1; transform:scale(1.2); } } @keyframes erp-theme-shooting-star { to { transform:translate(9em, 9em) rotate(45deg); opacity:0; } } @keyframes erp-theme-meteor { to { transform:translateY(9em) scale(.3); opacity:0; } } @media (prefers-reduced-motion: reduce) { .erp-theme-switch *, .erp-theme-switch *::before, .erp-theme-switch *::after { animation: none !important; transition: none !important; } }
 
+/* Compact, neutral day/night control: the existing markup remains accessible,
+   while the decorative sky treatment is intentionally suppressed. */
+.erp-theme-switch { width: 58px; height: 30px; font-size: 1px; }
+.erp-theme-switch__container { border: 1px solid #d7dee9; border-radius: 999px; background: #f3f6fa; box-shadow: inset 0 1px 2px rgb(15 23 42 / 6%); transition: background .2s ease, border-color .2s ease; }
+.erp-theme-switch__clouds, .erp-theme-switch__stars, .erp-theme-switch__shooting-star, .erp-theme-switch__meteor, .erp-theme-switch__cluster { display: none; }
+.erp-theme-switch__circle { top: 3px; left: 3px; width: 22px; height: 22px; background: #fff; box-shadow: 0 1px 4px rgb(15 23 42 / 18%); transition: left .2s ease; }
+.erp-theme-switch__sun-moon { width: 22px; height: 22px; background: transparent; box-shadow: none; filter: none; }
+.erp-theme-switch__sun-moon::before { content: "☀"; display: grid; height: 100%; place-items: center; color: #d08a11; font-size: 14px; line-height: 1; }
+.erp-theme-switch__moon { position: absolute; inset: 0; display: grid; place-items: center; background: transparent; box-shadow: none; opacity: 0; transform: none; transition: opacity .15s ease; }
+.erp-theme-switch__moon::before { content: "☾"; color: #cbd5e1; font-size: 17px; line-height: 1; }
+.erp-theme-switch__moon i { display: none; }
+.erp-theme-switch__checkbox:checked + .erp-theme-switch__container { border-color: #3b4e6c; background: #18243a; }
+.erp-theme-switch__checkbox:checked + .erp-theme-switch__container .erp-theme-switch__circle { left: 31px; }
+.erp-theme-switch__checkbox:checked + .erp-theme-switch__container .erp-theme-switch__sun-moon::before { opacity: 0; }
+.erp-theme-switch__checkbox:checked + .erp-theme-switch__container .erp-theme-switch__moon { opacity: 1; }
+.erp-theme-switch:hover .erp-theme-switch__sun-moon { transform: none; }
+.erp-theme-switch:has(.erp-theme-switch__checkbox:focus-visible) .erp-theme-switch__container { outline: 3px solid rgb(37 99 235 / 35%); outline-offset: 2px; }
+
 /* Employee management page: table and modal have their own light surfaces. */
 :root[data-theme="dark"] .users-page .text-slate-800,
 :root[data-theme="dark"] .users-page .text-slate-700,

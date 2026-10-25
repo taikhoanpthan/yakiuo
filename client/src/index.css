@@ -764,10 +764,6 @@ button:focus-visible,
   display: none;
 }
 
-.erp-pull-refresh {
-  display: none;
-}
-
 /* =========================================================
    SIDEBAR LABEL
 ========================================================= */
@@ -2398,17 +2394,6 @@ button:focus-visible,
       ) !important;
 
     overscroll-behavior-y: contain;
-  }
-
-  .erp-pull-refresh {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    color: #64748b;
-    font-size: 12px;
-    font-weight: 600;
-    transition: height 0.16s ease;
   }
 
   /* Chặn Ant Layout giữ lại chiều rộng sidebar khi đã ẩn trên điện thoại. */

@@ -134,10 +134,6 @@ const Layout = () => {
   const [installPrompt, setInstallPrompt] = useState(() => window.__yakiuoInstallPrompt || null);
 
   const [isMobile, setIsMobile] = useState(false);
-  const [pullDistance, setPullDistance] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const pullStartYRef = useRef(null);
-  const pullDistanceRef = useRef(0);
 
   const [notifications, setNotifications] = useState([]);
   const [notificationCount, setNotificationCount] = useState(0);
@@ -226,44 +222,6 @@ const Layout = () => {
 
   const [notificationApi, notificationContextHolder] =
     notification.useNotification();
-
-  const handlePullToRefreshStart = useCallback((event) => {
-    if (!isMobile || isRefreshing || event.currentTarget.scrollTop > 0) {
-      return;
-    }
-
-    pullStartYRef.current = event.touches[0]?.clientY ?? null;
-  }, [isMobile, isRefreshing]);
-
-  const handlePullToRefreshMove = useCallback((event) => {
-    if (pullStartYRef.current === null || isRefreshing) {
-      return;
-    }
-
-    const currentY = event.touches[0]?.clientY;
-
-    if (!Number.isFinite(currentY)) {
-      return;
-    }
-
-    const distance = Math.max(0, Math.min((currentY - pullStartYRef.current) * 0.5, 88));
-
-    pullDistanceRef.current = distance;
-    setPullDistance(distance);
-  }, [isRefreshing]);
-
-  const handlePullToRefreshEnd = useCallback(() => {
-    const shouldRefresh = pullDistanceRef.current >= 64;
-
-    pullStartYRef.current = null;
-    pullDistanceRef.current = 0;
-    setPullDistance(0);
-
-    if (shouldRefresh) {
-      setIsRefreshing(true);
-      window.setTimeout(() => window.location.reload(), 180);
-    }
-  }, []);
 
   // ===================================================
   // MENU
@@ -1268,10 +1226,6 @@ const Layout = () => {
 
           <Content
             className="erp-content"
-            onTouchStart={handlePullToRefreshStart}
-            onTouchMove={handlePullToRefreshMove}
-            onTouchEnd={handlePullToRefreshEnd}
-            onTouchCancel={handlePullToRefreshEnd}
             style={{
               flex: "1 1 auto",
               minHeight: 0,
@@ -1285,14 +1239,6 @@ const Layout = () => {
                   : 0,
             }}
           >
-            <div
-              className="erp-pull-refresh"
-              style={{ height: isRefreshing ? 52 : pullDistance }}
-              aria-live="polite"
-            >
-              <span>{isRefreshing ? "Đang làm mới..." : pullDistance >= 64 ? "Thả để làm mới" : "Kéo xuống để làm mới"}</span>
-            </div>
-
             <motion.main
               className="erp-page"
               initial={{

@@ -163,7 +163,7 @@ const LateFeedbackEntries = () => {
   return (
     <div>
       <div className="erp-page-header">
-        <div><div className="erp-page-eyebrow">Quản trị hệ thống</div><h1 className="erp-page-title">Feedback Trễ</h1><p className="erp-page-description">Chỉ admin thấy các feedback được nhập với ngày trước ngày nhập.</p></div>
+        <div><h1 className="erp-page-title">Feedback Trễ</h1></div>
       </div>
       <Card className="erp-section-card erp-filter-card mb-4">
         <div className="flex flex-col gap-3 sm:flex-row"><Input value={search} onChange={(event) => setSearch(event.target.value)} onPressEnter={handleSearch} placeholder="Tìm nội dung, khách hàng, bàn hoặc meal" prefix={<SearchOutlined className="text-slate-400" />} allowClear /><Button type="primary" icon={<SearchOutlined />} onClick={handleSearch} loading={loading}>Tìm</Button><Button type="primary" className="!border-emerald-600 !bg-emerald-600 !text-white hover:!border-emerald-700 hover:!bg-emerald-700 hover:!text-white" icon={<CheckOutlined />} onClick={handleResolveAll} loading={resolvingAll} disabled={!pagination.total || loading}>Chấp nhận tất cả</Button><Button icon={<ReloadOutlined />} onClick={() => { setSearch(""); void loadFeedbacks(1, ""); }} loading={loading}>Làm mới</Button></div>

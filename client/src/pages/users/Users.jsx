@@ -278,11 +278,7 @@ const Users = () => {
     <div className="users-page">
       <div className="erp-page-header">
         <div>
-          <div className="erp-page-eyebrow">Quản trị nhân sự</div>
           <h1 className="erp-page-title">Nhân viên</h1>
-          <p className="erp-page-description">
-            Quản lý tài khoản, quyền hạn và trạng thái nhân sự.
-          </p>
         </div>
 
         {canManageRoles && (

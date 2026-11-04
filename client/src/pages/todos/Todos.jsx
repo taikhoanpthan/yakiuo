@@ -220,13 +220,7 @@ const Todos = () => {
 
       <div className="erp-page-header">
         <div>
-          <div className="erp-page-eyebrow">Công việc chung</div>
-
           <h1 className="erp-page-title">Todo List</h1>
-
-          <p className="erp-page-description">
-            Ca sáng giao việc và ca chiều thực hiện công việc.
-          </p>
         </div>
 
         <Button

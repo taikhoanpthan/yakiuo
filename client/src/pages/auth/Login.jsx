@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Button, Checkbox, Form, Input, Select, message } from "antd";
 import {
   ArrowRightOutlined,
-  CheckCircleFilled,
   EyeInvisibleOutlined,
   EyeOutlined,
   LockOutlined,
@@ -26,27 +25,6 @@ const getLoginError = (error) => {
   if (status >= 500) return "Máy chủ đang gặp sự cố tạm thời. Vui lòng thử lại sau vài phút.";
 
   return serverMessage || "Đăng nhập chưa thành công. Vui lòng thử lại.";
-};
-
-const LOGIN_MATRIX_CHARACTERS = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポ";
-const getLoginMatrixCellCount = () => (
-  Math.ceil(window.innerWidth / 40) * (Math.ceil(window.innerHeight / 40) + 3)
-);
-
-const LoginMatrix = () => {
-  const [cellCount, setCellCount] = useState(getLoginMatrixCellCount);
-  const cells = useMemo(
-    () => Array.from({ length: cellCount }, (_, index) => LOGIN_MATRIX_CHARACTERS[index % LOGIN_MATRIX_CHARACTERS.length]),
-    [cellCount],
-  );
-
-  useEffect(() => {
-    const syncMatrixSize = () => setCellCount(getLoginMatrixCellCount());
-    window.addEventListener("resize", syncMatrixSize);
-    return () => window.removeEventListener("resize", syncMatrixSize);
-  }, []);
-
-  return <div className="erp-auth-matrix" aria-hidden="true">{cells.map((character, index) => <span key={index}>{character}</span>)}</div>;
 };
 
 const Login = () => {
@@ -114,26 +92,12 @@ const Login = () => {
 
   return (
     <div className="erp-auth-page">
-      <LoginMatrix />
-
       <motion.main initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: "easeOut" }} className="erp-auth-panel">
-        <section className="erp-auth-showcase">
-          <div className="erp-auth-brand"><img className="erp-auth-mark" src="/brand-logo.png" alt="Yakiuo Ishikawa" /><span>YAKIUO ERP</span></div>
-          <div className="erp-auth-showcase-copy">
-            <span className="erp-auth-kicker">WORKSPACE</span>
-            <h1>Quản lý công việc, rõ ràng và liền mạch.</h1>
-            <p>Theo dõi lịch làm, phản hồi và hoa hồng trong một không gian chung.</p>
-          </div>
-          <div className="erp-auth-benefits">
-            <span><CheckCircleFilled /> Cập nhật theo thời gian thực</span>
-            <span><CheckCircleFilled /> Phân quyền theo vai trò</span>
-            <span><CheckCircleFilled /> Tối ưu cho điện thoại</span>
-          </div>
-        </section>
-
         <section className="erp-auth-form-section">
           <div className="erp-auth-form-heading">
             <div className="erp-auth-mobile-brand"><img className="erp-auth-mark" src="/brand-logo.png" alt="Yakiuo Ishikawa" /><span>YAKIUO ISHIKAWA SAIGON</span></div>
+            <h1>Đăng nhập</h1>
+            <p>Chọn tài khoản của bạn để tiếp tục.</p>
           </div>
 
           <Form form={form} layout="vertical" onFinish={handleSubmit} onValuesChange={() => loginError && setLoginError("")} requiredMark={false} size="large">

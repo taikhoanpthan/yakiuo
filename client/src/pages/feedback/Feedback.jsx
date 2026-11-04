@@ -425,18 +425,9 @@ const Feedback = () => {
 
       <div className="erp-page-header">
         <div>
-          <div className="erp-page-eyebrow">
-            Chăm sóc khách hàng
-          </div>
-
           <h1 className="erp-page-title">
             Phản hồi khách hàng
           </h1>
-
-          <p className="erp-page-description">
-            Theo dõi và xử lý các ý kiến
-            khách hàng gửi về nhà hàng.
-          </p>
         </div>
 
         <Space wrap>

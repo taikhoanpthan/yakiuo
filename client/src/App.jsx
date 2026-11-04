@@ -16,12 +16,16 @@ function AppContent() {
       theme={{
         algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
         token: {
-          colorPrimary: "#2563eb",
-          borderRadius: 10,
-          colorText: isDark ? "#e6edf8" : "#26344e",
-          colorBorder: isDark ? "#2a3955" : "#e5eaf2",
-          colorBgBase: isDark ? "#111a2b" : "#ffffff",
-          colorBgContainer: isDark ? "#151f33" : "#ffffff",
+          colorPrimary: isDark ? "#c9965a" : "#875b35",
+          colorInfo: isDark ? "#c9965a" : "#875b35",
+          colorText: isDark ? "#f0e7dc" : "#3f3025",
+          colorTextSecondary: isDark ? "#c8b8a8" : "#76675a",
+          colorBorder: isDark ? "#4f4035" : "#dfd1c1",
+          colorBgBase: isDark ? "#211914" : "#f5f0e9",
+          colorBgContainer: isDark ? "#2b211b" : "#fffdfa",
+          colorBgElevated: isDark ? "#33271f" : "#fffaf5",
+          colorFillAlter: isDark ? "#382b23" : "#f3ebe2",
+          borderRadius: 12,
           fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
         },
 
@@ -31,7 +35,7 @@ function AppContent() {
           },
 
           Table: {
-            headerBg: isDark ? "#1d2a42" : "#f8faff",
+            headerBg: isDark ? "#382b23" : "#f4ede5",
           },
         },
       }}

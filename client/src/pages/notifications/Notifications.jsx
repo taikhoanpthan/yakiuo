@@ -672,21 +672,7 @@ const Notifications = () => {
 
       <div className="erp-page-header">
         <div>
-          <div className="erp-page-eyebrow">Quản trị hệ thống</div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-xl text-blue-600">
-              <BellOutlined />
-            </div>
-
-            <div>
-              <h1 className="erp-page-title">{user?.role === "admin" ? "Quản trị hệ thống" : "Thông báo"}</h1>
-
-              <p className="erp-page-description">
-                {user?.role === "admin" ? "Cấu hình vận hành, tính năng và thông báo trong hệ thống." : "Quản lý các thông báo được gửi đến nhân viên trong hệ thống."}
-              </p>
-            </div>
-          </div>
+          <h1 className="erp-page-title">{user?.role === "admin" ? "Quản trị hệ thống" : "Thông báo"}</h1>
         </div>
 
         <Space wrap>

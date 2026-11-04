@@ -13,9 +13,9 @@
   text-transform: uppercase;
 }
 .erp-page-title {
-  margin: 5px 0 4px;
+  margin: 0;
   color: #172033;
-  font-size: clamp(24px, 3vw, 30px);
+  font-size: clamp(30px, 3vw, 36px);
   font-weight: 750;
   letter-spacing: -0.03em;
 }
@@ -23,6 +23,31 @@
   margin: 0;
   color: #718096;
   font-size: 14px;
+}
+
+@keyframes dashboard-greeting-reveal {
+  from {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+  }
+
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.dashboard-greeting--reveal {
+  animation: dashboard-greeting-reveal 3s
+    cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-greeting--reveal {
+    animation: none;
+    opacity: 1;
+    clip-path: none;
+  }
 }
 .erp-section-card {
   border: 1px solid #e9edf4 !important;

@@ -21,9 +21,6 @@ const Dashboard = () => {
   const [previousSchedule, setPreviousSchedule] = useState(null);
   const [previousScheduleOpen, setPreviousScheduleOpen] = useState(false);
   const [previousScheduleLoading, setPreviousScheduleLoading] = useState(false);
-  // =========================
-  // CURRENT USER
-  // =========================
 
   const getCurrentUser = () => {
     try {
@@ -37,7 +34,6 @@ const Dashboard = () => {
   };
 
   const currentUser = getCurrentUser();
-
   const userName = currentUser?.fullName || currentUser?.username || "bạn";
 
   // =========================
@@ -63,9 +59,6 @@ const Dashboard = () => {
 
     socket.on("work-schedule:updated", handleWorkScheduleUpdated);
 
-    // A broadcast may be missed while the browser reconnects. Revalidate only
-    // this active query when the socket is back, rather than refetching the
-    // whole dashboard or waiting for the cache's stale timeout.
     const unsubscribeConnected = onSocketConnected(() => {
       queryClient.invalidateQueries({
         queryKey: ["work-schedule", "current"],
@@ -134,8 +127,8 @@ const Dashboard = () => {
 
           {/* TITLE */}
 
-          <h1 className="dashboard-greeting m-0 text-2xl font-bold tracking-tight text-slate-800 md:text-3xl">
-            Xin chào, {userName} 👋
+          <h1 className="dashboard-greeting dashboard-greeting--reveal m-0 text-2xl font-bold tracking-tight text-slate-800 md:text-3xl">
+            Xin chào, {userName}
           </h1>
 
 
@@ -148,10 +141,6 @@ const Dashboard = () => {
               {dayjs().format("DD/MM/YYYY")}
             </div>
 
-            <div className="flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-2 text-xs text-emerald-700 backdrop-blur-md">
-              <span className="h-2 w-2 rounded-full bg-emerald-300" />
-              Hệ thống đang hoạt động
-            </div>
           </div>
         </div>
       </div>

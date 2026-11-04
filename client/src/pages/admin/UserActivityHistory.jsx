@@ -111,7 +111,7 @@ const UserActivityHistory = () => {
   return (
     <div>
       <div className="erp-page-header">
-        <div><div className="erp-page-eyebrow">Quản trị hệ thống</div><h1 className="erp-page-title">Lịch sử người dùng</h1><p className="erp-page-description">Theo dõi tài khoản nào đã thêm, sửa, xóa dữ liệu, cùng các hoạt động đăng nhập và bảo mật.</p></div>
+        <div><h1 className="erp-page-title">Lịch sử người dùng</h1></div>
         <Popconfirm title="Xóa toàn bộ lịch sử?" description="Thao tác này không thể hoàn tác." okText="Xóa toàn bộ" cancelText="Hủy" okButtonProps={{ danger: true }} onConfirm={handleDeleteAll}>
           <Button danger icon={<DeleteOutlined />}>Xóa toàn bộ</Button>
         </Popconfirm>

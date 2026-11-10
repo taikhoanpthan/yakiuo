@@ -1,6 +1,15 @@
 const InventoryItem = require("../models/InventoryItem");
 const cloudinary = require("../config/cloudinary");
 
+const getCheckedMonthRange = (checkedMonth) => {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(checkedMonth)) return null;
+
+  const start = new Date(`${checkedMonth}-01T00:00:00+07:00`);
+  const end = new Date(start);
+  end.setUTCMonth(end.getUTCMonth() + 1);
+  return { start, end };
+};
+
 const uploadToCloudinary = async (fileBuffer, folder = "yakiuo-erp/inventory") => {
   if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY) {
     return null;
@@ -39,6 +48,7 @@ const getInventory = async (req, res) => {
       search = "",
       category = "",
       status = "",
+      checkedMonth = "",
       sortBy = "createdAt",
       sortOrder = "desc",
       page = 1,
@@ -51,6 +61,7 @@ const getInventory = async (req, res) => {
       const searchRegex = new RegExp(search.trim(), "i");
       query.$or = [
         { name: searchRegex },
+        { unit: searchRegex },
         { location: searchRegex },
         { notes: searchRegex },
       ];
@@ -64,8 +75,19 @@ const getInventory = async (req, res) => {
       query.status = status;
     }
 
+    if (checkedMonth) {
+      const monthRange = getCheckedMonthRange(checkedMonth);
+      if (!monthRange) {
+        return res.status(400).json({
+          success: false,
+          message: "Tháng kiểm kê không hợp lệ",
+        });
+      }
+      query.lastCheckedAt = { $gte: monthRange.start, $lt: monthRange.end };
+    }
+
     const pageNum = Math.max(1, Number.parseInt(page, 10) || 1);
-    const limitNum = Math.min(100, Math.max(1, Number.parseInt(limit, 10) || 20));
+    const limitNum = Math.min(1000, Math.max(1, Number.parseInt(limit, 10) || 20));
     const skip = (pageNum - 1) * limitNum;
 
     const sortOptions = {};
@@ -351,7 +373,7 @@ const checkInventoryItem = async (req, res) => {
       });
     }
 
-    const { actualQuantity, notes } = req.body;
+    const { actualQuantity, notes, unit, minQuantity } = req.body;
     const numActual = Number(actualQuantity);
     if (Number.isNaN(numActual) || numActual < 0) {
       return res.status(400).json({
@@ -361,6 +383,26 @@ const checkInventoryItem = async (req, res) => {
     }
 
     item.quantity = numActual;
+    if (unit !== undefined) {
+      const normalizedUnit = String(unit).trim();
+      if (!normalizedUnit || normalizedUnit.length > 30) {
+        return res.status(400).json({
+          success: false,
+          message: "Đơn vị không được để trống và tối đa 30 ký tự",
+        });
+      }
+      item.unit = normalizedUnit;
+    }
+    if (minQuantity !== undefined) {
+      const normalizedMinQuantity = Number(minQuantity);
+      if (Number.isNaN(normalizedMinQuantity) || normalizedMinQuantity < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Mức tồn tối thiểu phải là số không âm",
+        });
+      }
+      item.minQuantity = normalizedMinQuantity;
+    }
     if (notes !== undefined) {
       item.notes = notes.trim();
     }

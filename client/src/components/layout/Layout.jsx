@@ -21,7 +21,6 @@ import {
   CommentOutlined,
   CoffeeOutlined,
   CrownOutlined,
-  DownloadOutlined,
   TrophyOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
@@ -47,7 +46,7 @@ import { useTheme } from "../../store/ThemeContext";
 
 import { getNotifications } from "../../services/notificationService";
 
-import { onOnlineProfileUpdated, onOnlineUsers, onSocketConnected, onSystemFeaturesChanged, onSystemNotificationChanged, setSocketUser } from "../../services/socket";
+import { onSocketConnected, onSystemFeaturesChanged, onSystemNotificationChanged } from "../../services/socket";
 import { getSystemStatus } from "../../services/system.service";
 import { queryClient } from "../../lib/queryClient";
 import MobileTaskbar from "./MobileTaskbar";
@@ -132,7 +131,6 @@ const Layout = () => {
   // ===================================================
 
   const [collapsed, setCollapsed] = useState(false);
-  const [installPrompt, setInstallPrompt] = useState(() => window.__yakiuoInstallPrompt || null);
 
   const [isMobile, setIsMobile] = useState(false);
 
@@ -155,33 +153,6 @@ const Layout = () => {
   }, []);
 
   useEffect(() => {
-    const showInstall = () => setInstallPrompt(window.__yakiuoInstallPrompt || null);
-    const clearInstall = () => {
-      window.__yakiuoInstallPrompt = null;
-      setInstallPrompt(null);
-    };
-
-    window.addEventListener("yakiuo:install-available", showInstall);
-    window.addEventListener("appinstalled", clearInstall);
-    return () => {
-      window.removeEventListener("yakiuo:install-available", showInstall);
-      window.removeEventListener("appinstalled", clearInstall);
-    };
-  }, []);
-
-  const installApplication = async () => {
-    if (!installPrompt) return;
-
-    await installPrompt.prompt();
-    const choice = await installPrompt.userChoice;
-    if (choice.outcome === "accepted") {
-      message.success("Đang cài Yakiuo ERP vào thiết bị của bạn.");
-    }
-    window.__yakiuoInstallPrompt = null;
-    setInstallPrompt(null);
-  };
-
-  useEffect(() => {
     let active = true;
     getSystemStatus()
       .then((response) => {
@@ -201,21 +172,6 @@ const Layout = () => {
       unsubscribe();
     };
   }, []);
-
-  // ===================================================
-  // REALTIME ONLINE COUNT
-  //
-  // QUAN TRỌNG:
-  //
-  // Không lấy User.length
-  // Không gọi API users
-  // Không tự cộng/trừ
-  //
-  // Server Socket.IO là source of truth.
-  // ===================================================
-
-  const [onlineCount, setOnlineCount] = useState(0);
-  const [onlineProfiles, setOnlineProfiles] = useState([]);
 
   // ===================================================
   // NOTIFICATION
@@ -362,9 +318,6 @@ const Layout = () => {
 
       await logout();
 
-      setOnlineCount(0);
-      setOnlineProfiles([]);
-
       message.success("Bạn đã đăng xuất an toàn");
 
       navigate("/login", {
@@ -377,67 +330,6 @@ const Layout = () => {
     }
   }, [logout, navigate, user]);
 
-  // ===================================================
-  // REALTIME PRESENCE
-  //
-  // Layout chịu trách nhiệm:
-  //
-  // USER LOGIN
-  //      ↓
-  // setSocketUser(user._id)
-  //      ↓
-  // Socket.IO
-  //      ↓
-  // user:join
-  //
-  // Server trả:
-  //
-  // users:online
-  //
-  // Layout chỉ nghe event.
-  //
-  // KHÔNG QUERY DATABASE.
-  // KHÔNG POLLING.
-  // ===================================================
-  useEffect(() => {
-    if (!user?._id) {
-      setOnlineCount(0);
-      setOnlineProfiles([]);
-      return;
-    }
-
-    console.log("👂 LISTEN REALTIME PRESENCE FOR:", user._id);
-
-    // Đảm bảo presence được join lại khi chuyển trang hoặc socket vừa reconnect.
-    setSocketUser(user._id);
-
-    const unsubscribeUsers = onOnlineUsers((payload) => {
-      console.log("👥 REALTIME ONLINE USERS:", payload);
-
-      const userIds = Array.isArray(payload?.userIds) ? payload.userIds : [];
-      const users = Array.isArray(payload?.users) ? payload.users : [];
-
-      const count = Number(payload?.count ?? userIds.length);
-
-      setOnlineCount(Number.isFinite(count) ? count : userIds.length);
-      setOnlineProfiles(users);
-    });
-    const unsubscribeProfile = onOnlineProfileUpdated((updatedProfile) => {
-      if (!updatedProfile?._id) return;
-      setOnlineProfiles((profiles) => profiles.map((profile) =>
-        String(profile._id) === String(updatedProfile._id)
-          ? { ...profile, ...updatedProfile }
-          : profile,
-      ));
-    });
-
-    return () => {
-      console.log("👋 STOP LISTENING PRESENCE:", user._id);
-
-      unsubscribeUsers();
-      unsubscribeProfile();
-    };
-  }, [user?._id]);
   // ===================================================
   // NOTIFICATION POPUP
   // ===================================================
@@ -571,7 +463,7 @@ const Layout = () => {
       try {
         setNotificationLoading(true);
 
-        const response = await getNotifications({ limit: 5 });
+        const response = await getNotifications();
         const payload = response?.data?.data ?? {};
         const data = payload.notifications || [];
 
@@ -714,8 +606,6 @@ const Layout = () => {
   // NOTIFICATION DATA
   // ===================================================
 
-  const recentNotifications = notifications.slice(0, 5);
-
   // ===================================================
   // NOTIFICATION CONTENT
   // ===================================================
@@ -784,7 +674,7 @@ const Layout = () => {
         </div>
       )}
 
-      {!notificationLoading && recentNotifications.length === 0 && (
+      {!notificationLoading && notifications.length === 0 && (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description="Chưa có thông báo"
@@ -794,7 +684,7 @@ const Layout = () => {
         />
       )}
 
-      {!notificationLoading && recentNotifications.length > 0 && (
+      {!notificationLoading && notifications.length > 0 && (
         <div
           className="erp-notification-list"
           style={{
@@ -802,7 +692,7 @@ const Layout = () => {
             overflowY: "auto",
           }}
         >
-          {recentNotifications.map((item) => {
+          {notifications.map((item) => {
             const typeConfig = getNotificationTypeConfig(item.type);
             const senderName = item.createdBy?.fullName || item.createdBy?.username || "Hệ thống Yakiuo";
 
@@ -829,13 +719,13 @@ const Layout = () => {
                   justifyContent: "center",
                 }}
               >
-                <span
-                  style={{
-                    color: typeConfig.color,
-                  }}
+                <UserAvatar
+                  user={item.createdBy}
+                  size={36}
+                  openDetail={false}
                 >
-                  {typeConfig.icon}
-                </span>
+                  {senderName.charAt(0).toUpperCase()}
+                </UserAvatar>
               </div>
 
               <div
@@ -917,22 +807,11 @@ const Layout = () => {
       label: "Tài khoản của tôi",
     },
 
-    {
-      key: "inventory",
-      icon: <ToolOutlined />,
-      label: "Kiểm kê dụng cụ",
-    },
-
-    {
+    ...(isMobile && user?.role === "admin" ? [{
       key: "users",
       icon: <TeamOutlined />,
-      label: "Nhân viên",
-    },
-
-    ...(user?.role === "admin" ? [
-      { key: "user-activity", icon: <HistoryOutlined />, label: "Lịch sử người dùng" },
-      { key: "late-feedbacks", icon: <WarningOutlined />, label: "Feedback cần rà soát" },
-    ] : []),
+      label: "Danh sách nhân viên",
+    }] : []),
 
     {
       type: "divider",
@@ -1087,54 +966,7 @@ const Layout = () => {
             ========================================= */}
 
             <Space size={16}>
-              {installPrompt && (
-                <Tooltip title="Cài Yakiuo ERP như ứng dụng">
-                  <Button
-                    type="text"
-                    className="erp-menu-button"
-                    aria-label="Cài Yakiuo ERP"
-                    icon={<DownloadOutlined />}
-                    onClick={installApplication}
-                  />
-                </Tooltip>
-              )}
-
               <ThemeToggle isDark={isDark} onChange={toggleTheme} />
-
-              {/* =======================================
-                  REALTIME ONLINE
-              ======================================= */}
-
-              <Popover
-                trigger="click"
-                placement="bottomRight"
-                title={`Đang online · ${onlineCount}`}
-                content={
-                  <div className="erp-online-popover-list">
-                    {onlineProfiles.length ? onlineProfiles.map((profile) => {
-                      const name = profile.fullName || profile.username || "Người dùng Yakiuo";
-                      return (
-                        <div className="erp-online-popover-user" key={profile._id}>
-                          <UserAvatar user={profile} size={32} openDetail={false}>{name.charAt(0).toUpperCase()}</UserAvatar>
-                          <span>{name}</span><i aria-label="Đang online" />
-                        </div>
-                      );
-                    }) : <span className="erp-online-empty">Chưa có người dùng online.</span>}
-                  </div>
-                }
-              >
-                <button type="button" className="erp-online-indicator" aria-label={`${onlineCount} người đang online`}>
-                  <span className={`erp-online-dot ${onlineCount ? "is-online" : ""}`} />
-                  <span className="erp-online-avatars">
-                    {onlineProfiles.slice(0, 2).map((profile) => {
-                      const name = profile.fullName || profile.username || "Người dùng Yakiuo";
-                      return <Tooltip title={name} key={profile._id}><span><UserAvatar user={profile} size={28} openDetail={false}>{name.charAt(0).toUpperCase()}</UserAvatar></span></Tooltip>;
-                    })}
-                  </span>
-                  {onlineCount > 2 && <b>+{onlineCount - 2}</b>}
-                  <span className="erp-online-label">online</span>
-                </button>
-              </Popover>
 
               {/* =======================================
                   NOTIFICATION
@@ -1192,17 +1024,9 @@ const Layout = () => {
                       navigate("/profile");
                     }
 
-                    if (key === "inventory") {
-                      navigate("/inventory");
-                    }
-
                     if (key === "users") {
                       navigate("/users");
                     }
-
-                    if (key === "user-activity") navigate("/admin/user-activity");
-
-                    if (key === "late-feedbacks") navigate("/admin/late-feedbacks");
 
                     if (key === "logout") {
                       handleLogout();

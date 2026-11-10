@@ -257,6 +257,17 @@ const updateMyProfile = async (req, res) => {
     const user = await userService.updateOwnProfile(req.user._id, req.body);
     broadcastProfileUpdate(req, user);
 
+    if (req.body.avatar !== undefined) {
+      await recordActivity({
+        user: user._id,
+        type: "avatar_changed",
+        oldImageUrl: req.user.avatar || "",
+        newImageUrl: user.avatar || "",
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent") || "",
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully",

@@ -5,6 +5,7 @@ import {
   Button,
   Input,
   Select,
+  DatePicker,
   Space,
   Image,
   Popconfirm,
@@ -17,10 +18,10 @@ import {
   PlusOutlined,
   SearchOutlined,
   ReloadOutlined,
-  EditOutlined,
   DeleteOutlined,
   CheckCircleOutlined,
   FileTextOutlined,
+  FilePdfOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 
@@ -38,6 +39,12 @@ import "./Inventory.css";
 
 const NO_IMAGE_PLACEHOLDER =
   "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?auto=format&fit=crop&w=160&q=80";
+
+const getInventoryStatus = (quantity, minQuantity) => {
+  if (quantity <= 0) return { className: "is-out-of-stock", label: "Hết hàng" };
+  if (quantity <= (minQuantity ?? 5)) return { className: "is-low-stock", label: "Sắp hết" };
+  return { className: "is-in-stock", label: "Còn hàng" };
+};
 
 const Inventory = () => {
   const { user } = useAuth();
@@ -63,13 +70,14 @@ const Inventory = () => {
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [sortOption, setSortOption] = useState("createdAt-desc");
+  const [selectedMonth, setSelectedMonth] = useState(() => dayjs().format("YYYY-MM"));
+  const [exportingPdf, setExportingPdf] = useState(false);
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1200,
   );
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
   const [checkModalOpen, setCheckModalOpen] = useState(false);
   const [itemToCheck, setItemToCheck] = useState(null);
 
@@ -93,6 +101,7 @@ const Inventory = () => {
           limit: pagination.limit,
           search,
           status: selectedStatus,
+          checkedMonth: selectedMonth,
           sortBy,
           sortOrder,
         });
@@ -124,12 +133,16 @@ const Inventory = () => {
         setLoading(false);
       }
     },
-    [pagination.page, pagination.limit, search, selectedStatus, sortOption],
+    [pagination.page, pagination.limit, search, selectedStatus, sortOption, selectedMonth],
   );
 
   useEffect(() => {
-    fetchInventoryData(1);
-  }, [selectedStatus, sortOption]);
+    const timeoutId = window.setTimeout(() => {
+      fetchInventoryData(1);
+    }, search ? 250 : 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [search, selectedStatus, sortOption, selectedMonth]);
 
   useEffect(() => {
     const unsubscribe = onInventoryChanged(() => {
@@ -153,18 +166,37 @@ const Inventory = () => {
   };
 
   const handleOpenAdd = () => {
-    setEditingItem(null);
-    setModalOpen(true);
-  };
-
-  const handleOpenEdit = (item) => {
-    setEditingItem(item);
     setModalOpen(true);
   };
 
   const handleOpenCheck = (item) => {
     setItemToCheck(item);
     setCheckModalOpen(true);
+  };
+
+  const handleDownloadMonthlyPdf = async () => {
+    try {
+      setExportingPdf(true);
+      const response = await getInventory({
+        page: 1,
+        limit: 1000,
+        checkedMonth: selectedMonth,
+        sortBy: "name",
+        sortOrder: "asc",
+      });
+      const monthlyItems = response.data?.items || [];
+      if (!monthlyItems.length) {
+        message.info("Không có dữ liệu kiểm kê trong tháng đã chọn");
+        return;
+      }
+      const { downloadInventoryMonthlyPdf } = await import("../../utils/inventoryPdf");
+      await downloadInventoryMonthlyPdf({ items: monthlyItems, month: selectedMonth });
+    } catch (error) {
+      console.error("Download inventory PDF failed:", error);
+      message.error("Không thể tạo báo cáo PDF");
+    } finally {
+      setExportingPdf(false);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -182,7 +214,7 @@ const Inventory = () => {
     {
       title: "STT",
       key: "stt",
-      width: 55,
+      width: 48,
       align: "center",
       render: (_, __, index) => (
         <span className="text-slate-400 font-mono text-xs">
@@ -194,13 +226,13 @@ const Inventory = () => {
       title: <span style={{ whiteSpace: "nowrap" }}>Hình ảnh</span>,
       dataIndex: "image",
       key: "image",
-      width: 90,
+      width: 68,
       align: "center",
       render: (imgUrl, record) => (
         <div className="inventory-thumb-wrap">
           <Image
-            width={44}
-            height={44}
+            width={38}
+            height={38}
             src={imgUrl || NO_IMAGE_PLACEHOLDER}
             alt={record.name}
             fallback={NO_IMAGE_PLACEHOLDER}
@@ -214,8 +246,9 @@ const Inventory = () => {
       title: <span style={{ whiteSpace: "nowrap" }}>Tên hàng hóa</span>,
       dataIndex: "name",
       key: "name",
+      width: 210,
       render: (text) => (
-        <div className="inventory-item-name">
+        <div className="inventory-item-name" title={text}>
           {text}
         </div>
       ),
@@ -224,43 +257,31 @@ const Inventory = () => {
       title: <span style={{ whiteSpace: "nowrap" }}>Vị trí</span>,
       dataIndex: "location",
       key: "location",
-      width: 140,
+      width: 155,
       render: (loc) => (
-        <span className={loc ? "inventory-item-location" : "inventory-item-location-empty"}>
+        <span className={loc ? "inventory-item-location" : "inventory-item-location-empty"} title={loc || "Chưa phân vị trí"}>
           {loc || "Chưa phân vị trí"}
         </span>
       ),
     },
     {
-      title: <span style={{ whiteSpace: "nowrap" }}>Số lượng tồn</span>,
+      title: <span style={{ whiteSpace: "nowrap" }}>Số lượng</span>,
       dataIndex: "quantity",
       key: "quantity",
-      width: 160,
-      render: (qty, record) => {
-        const isOut = qty === 0;
-        const isLow = !isOut && qty <= (record.minQuantity ?? 5);
-
-        let pillClass = "is-in-stock";
-        let statusLabel = "Còn hàng";
-
-        if (isOut) {
-          pillClass = "is-out-of-stock";
-          statusLabel = "Hết hàng";
-        } else if (isLow) {
-          pillClass = "is-low-stock";
-          statusLabel = "Sắp hết";
-        }
-
+      width: 105,
+      render: (qty, record) => <span className="inventory-item-qty">{qty} {record.unit || "cái"}</span>,
+    },
+    {
+      title: <span style={{ whiteSpace: "nowrap" }}>Trạng thái</span>,
+      key: "status",
+      width: 116,
+      render: (_, record) => {
+        const status = getInventoryStatus(record.quantity, record.minQuantity);
         return (
-          <div className="flex items-center gap-2.5">
-            <span className="inventory-item-qty">
-              {qty}
-            </span>
-            <span className={`inventory-status-pill ${pillClass}`}>
-              <span className="inventory-status-dot" />
-              <span>{statusLabel}</span>
-            </span>
-          </div>
+          <span className={`inventory-status-pill ${status.className}`}>
+            <span className="inventory-status-dot" />
+            <span>{status.label}</span>
+          </span>
         );
       },
     },
@@ -268,11 +289,12 @@ const Inventory = () => {
       title: <span style={{ whiteSpace: "nowrap" }}>Mức tối thiểu</span>,
       dataIndex: "minQuantity",
       key: "minQuantity",
-      width: 110,
+      width: 118,
       align: "center",
-      render: (minQty) => (
-        <span className="font-mono text-xs font-semibold" style={{ color: "#d97706" }}>
-          &le; {minQty ?? 5}
+      render: (minQty, record) => (
+        <span className="font-mono text-xs font-normal" style={{ color: "#a66b2f" }}>
+          &le; {minQty ?? 5} {" "}
+          <span className="font-sans font-normal">{record?.unit || "cái"}</span>
         </span>
       ),
     },
@@ -280,7 +302,7 @@ const Inventory = () => {
       title: <span style={{ whiteSpace: "nowrap" }}>Ghi chú kiểm kê</span>,
       dataIndex: "notes",
       key: "notes",
-      width: 220,
+      width: 200,
       render: (notes) => (
         notes ? (
           <div className="inventory-notes-box" title={notes}>
@@ -295,7 +317,7 @@ const Inventory = () => {
     {
       title: <span style={{ whiteSpace: "nowrap" }}>Kiểm kê gần nhất</span>,
       key: "lastChecked",
-      width: 170,
+      width: 160,
       render: (_, record) => (
         <div>
           <div className="inventory-last-checked-time">
@@ -333,14 +355,6 @@ const Inventory = () => {
 
           {isAdmin && (
             <>
-              <Tooltip title="Chỉnh sửa">
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<EditOutlined />}
-                  onClick={() => handleOpenEdit(record)}
-                />
-              </Tooltip>
               <Popconfirm
                 title="Xóa hàng hóa này?"
                 description={`Bạn có chắc muốn xóa "${record.name}" khỏi danh sách?`}
@@ -438,6 +452,14 @@ const Inventory = () => {
           </div>
 
           <div className="inventory-filter-group">
+            <DatePicker
+              picker="month"
+              allowClear={false}
+              value={dayjs(selectedMonth)}
+              onChange={(value) => setSelectedMonth(value.format("YYYY-MM"))}
+              format="MM/YYYY"
+              placeholder="Chọn tháng kiểm kê"
+            />
             <Select
               value={selectedStatus}
               onChange={setSelectedStatus}
@@ -463,6 +485,14 @@ const Inventory = () => {
                 { value: "lastCheckedAt-desc", label: "Kiểm kê gần nhất" },
               ]}
             />
+
+            <Button
+              icon={<FilePdfOutlined />}
+              loading={exportingPdf}
+              onClick={handleDownloadMonthlyPdf}
+            >
+              Tải PDF
+            </Button>
           </div>
         </div>
       </div>
@@ -495,6 +525,8 @@ const Inventory = () => {
               loading={loading}
               pagination={false}
               size={isMobile ? "small" : "middle"}
+              tableLayout="fixed"
+              scroll={{ x: 1300 }}
             />
           </div>
           <div className="px-4 py-3 flex justify-end border-t border-slate-100 dark:border-neutral-800">
@@ -517,13 +549,11 @@ const Inventory = () => {
         </Card>
       )}
 
-      {/* ADMIN ADD/EDIT MODAL */}
+      {/* ADMIN ADD MODAL */}
       <InventoryModal
         open={modalOpen}
-        editingItem={editingItem}
         onClose={() => {
           setModalOpen(false);
-          setEditingItem(null);
         }}
         onSuccess={() => fetchInventoryData()}
       />

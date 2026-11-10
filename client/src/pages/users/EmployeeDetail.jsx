@@ -52,8 +52,13 @@ const EmployeeDetail = ({ user, onBack }) => {
   const [ggMonth, setGgMonth] = useState(dayjs());
   const [onlineUserIds, setOnlineUserIds] = useState([]);
   const [downloadingGGImages, setDownloadingGGImages] = useState(false);
+  const [showcaseIndex, setShowcaseIndex] = useState(0);
 
   const currentMonth = dayjs();
+  const isAdminProfile = user?.role === "admin";
+  const showcaseImages = Array.isArray(user?.profileShowcaseImages) && user.profileShowcaseImages.length
+    ? user.profileShowcaseImages
+    : user?.profileShowcaseImage ? [user.profileShowcaseImage] : [];
 
   // =====================================================
   // LOAD COMMISSION
@@ -136,12 +141,32 @@ const EmployeeDetail = ({ user, onBack }) => {
   // =====================================================
 
   useEffect(() => {
+    if (isAdminProfile) {
+      setCommissions([]);
+      return;
+    }
     fetchCommissions();
-  }, [user?._id]);
+  }, [user?._id, isAdminProfile]);
 
   useEffect(() => {
+    if (isAdminProfile) {
+      setGgImages([]);
+      return;
+    }
     fetchGGImages();
-  }, [user?._id, ggMonth]);
+  }, [user?._id, ggMonth, isAdminProfile]);
+
+  useEffect(() => {
+    if (showcaseIndex >= showcaseImages.length) setShowcaseIndex(0);
+  }, [showcaseImages.length, showcaseIndex]);
+
+  useEffect(() => {
+    if (!isAdminProfile || showcaseImages.length < 2) return undefined;
+    const timer = window.setTimeout(() => {
+      setShowcaseIndex((current) => (current + 1) % showcaseImages.length);
+    }, 3500);
+    return () => window.clearTimeout(timer);
+  }, [isAdminProfile, showcaseImages.length, showcaseIndex]);
 
   useEffect(() => {
     const unsubscribe = onOnlineUsers((payload) => {
@@ -652,7 +677,26 @@ const EmployeeDetail = ({ user, onBack }) => {
           BODY
       ================================================= */}
 
-      <div
+      {isAdminProfile && (
+        <section className="yakiuo-admin-showcase mt-4">
+          {showcaseImages.length ? (
+            showcaseImages.map((image, index) => (
+              <img
+                key={image}
+                src={image}
+                alt="Ảnh hiển thị trang cá nhân"
+                className={`yakiuo-admin-showcase-image${index === showcaseIndex ? " is-active" : ""}`}
+              />
+            ))
+          ) : (
+            <div className="yakiuo-admin-showcase-empty">
+              Quản trị viên chưa tải ảnh hiển thị
+            </div>
+          )}
+        </section>
+      )}
+
+      {!isAdminProfile && <div
         className="
           mt-4
           grid
@@ -759,6 +803,7 @@ const EmployeeDetail = ({ user, onBack }) => {
             </div>
           </Card>
 
+          {!isAdminProfile && <>
           {/* =================================================
               COMMISSION SUMMARY
           ================================================= */}
@@ -988,16 +1033,18 @@ const EmployeeDetail = ({ user, onBack }) => {
               />
             )}
           </Card>
+          </>}
         </div>
 
         {/* =================================================
             RIGHT COLUMN
         ================================================= */}
 
+        {!isAdminProfile && <>
         <Card
           className="
             erp-section-card
-            lg:col-start-1
+            lg:col-span-2
             !rounded-2xl
             !border-slate-200
             shadow-sm
@@ -1259,7 +1306,8 @@ const EmployeeDetail = ({ user, onBack }) => {
             </div>
           )}
         </Card>
-      </div>
+          </>}
+      </div>}
     </div>
   );
 };

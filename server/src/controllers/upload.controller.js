@@ -11,7 +11,16 @@ const uploadImage = async (req, res) => {
       });
     }
 
-    const imageType = req.body?.type === "cover" ? "cover" : "avatar";
+    const imageType = ["avatar", "cover", "profile"].includes(req.body?.type)
+      ? req.body.type
+      : "avatar";
+
+    if (imageType === "profile" && req.user?.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Chỉ quản trị viên mới có thể tải ảnh hiển thị trang cá nhân",
+      });
+    }
 
     const result = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
@@ -44,9 +53,22 @@ const uploadImage = async (req, res) => {
       });
     }
 
-    const oldImageUrl = imageType === "cover" ? user.coverImage : user.avatar;
+    const oldImageUrl = imageType === "cover"
+      ? user.coverImage
+      : imageType === "profile"
+        ? user.profileShowcaseImage
+        : user.avatar;
     if (imageType === "cover") {
       user.coverImage = result.secure_url;
+    } else if (imageType === "profile") {
+      const currentImages = Array.isArray(user.profileShowcaseImages) && user.profileShowcaseImages.length
+        ? user.profileShowcaseImages
+        : user.profileShowcaseImage ? [user.profileShowcaseImage] : [];
+      if (currentImages.length >= 20) {
+        return res.status(400).json({ success: false, message: "Tối đa 20 ảnh hiển thị" });
+      }
+      user.profileShowcaseImages = [...currentImages, result.secure_url];
+      user.profileShowcaseImage = result.secure_url;
     } else {
       user.avatar = result.secure_url;
     }
@@ -62,7 +84,7 @@ const uploadImage = async (req, res) => {
     }
     await recordActivity({
       user: user._id,
-      type: imageType === "cover" ? "cover_changed" : "avatar_changed",
+      type: imageType === "cover" || imageType === "profile" ? "cover_changed" : "avatar_changed",
       imageUrl: result.secure_url,
       oldImageUrl,
       newImageUrl: result.secure_url,
@@ -72,10 +94,12 @@ const uploadImage = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: `${imageType === "cover" ? "Cover image" : "Avatar"} uploaded successfully`,
+      message: `${imageType === "avatar" ? "Avatar" : "Profile image"} uploaded successfully`,
       data: {
         avatar: user.avatar,
         coverImage: user.coverImage,
+        profileShowcaseImage: user.profileShowcaseImage,
+        profileShowcaseImages: user.profileShowcaseImages,
       },
     });
   } catch (error) {

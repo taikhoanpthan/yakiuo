@@ -4,6 +4,8 @@ import {
   Form,
   InputNumber,
   Input,
+  Row,
+  Col,
   Alert,
   message,
 } from "antd";
@@ -24,6 +26,8 @@ const InventoryCheckModal = ({ open, onClose, onSuccess, item = null }) => {
     setCurrentActual(qty);
     form.setFieldsValue({
       actualQuantity: qty,
+      unit: item.unit || "cái",
+      minQuantity: item.minQuantity ?? 5,
       notes: "",
     });
   }, [open, item, form]);
@@ -37,6 +41,8 @@ const InventoryCheckModal = ({ open, onClose, onSuccess, item = null }) => {
       setSubmitting(true);
       await checkInventoryItem(item._id, {
         actualQuantity: values.actualQuantity,
+        unit: values.unit.trim(),
+        minQuantity: Number(values.minQuantity),
         notes: values.notes ? values.notes.trim() : item.notes,
       });
       message.success(`Đã cập nhật kiểm kê cho "${item.name}"`);
@@ -100,12 +106,36 @@ const InventoryCheckModal = ({ open, onClose, onSuccess, item = null }) => {
             <div style={{ fontSize: 12, color: "#666" }}>📍 {item.location}</div>
           )}
           <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
-            Hệ thống ghi nhận: <strong style={{ color: "#1890ff" }}>{item.quantity}</strong>
+            Hệ thống ghi nhận: <strong style={{ color: "#1890ff" }}>{item.quantity} {item.unit || "cái"}</strong>
           </div>
         </div>
       </div>
 
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Row gutter={12}>
+          <Col span={12}>
+            <Form.Item
+              label="Đơn vị"
+              name="unit"
+              rules={[
+                { required: true, whitespace: true, message: "Vui lòng nhập đơn vị" },
+                { max: 30, message: "Đơn vị không quá 30 ký tự" },
+              ]}
+            >
+              <Input size="large" placeholder="Ví dụ: cái, chai, kg" />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              label="Mức tối thiểu"
+              name="minQuantity"
+              rules={[{ required: true, message: "Vui lòng nhập mức tối thiểu" }]}
+            >
+              <InputNumber size="large" min={0} style={{ width: "100%" }} />
+            </Form.Item>
+          </Col>
+        </Row>
+
         <Form.Item
           label="Số lượng thực tế bạn kiểm kê được"
           name="actualQuantity"

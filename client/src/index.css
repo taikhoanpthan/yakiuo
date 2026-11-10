@@ -215,8 +215,10 @@ button:focus-visible,
 :root[data-theme="dark"] .erp-online-popover-user span { color: #c7d3e7; }
 :root[data-theme="dark"] .yakiuo-profile-avatar { border-color: transparent !important; background-color: #1c2940; color: #aebdd3; box-shadow: 0 3px 14px rgba(0, 0, 0, 0.38); }
 :root[data-theme="dark"] .yakiuo-avatar-camera,
+:root[data-theme="dark"] .yakiuo-avatar-url,
 :root[data-theme="dark"] .yakiuo-avatar-adjust { border-color: #263956; background: #283954; color: #e6edf8; }
-:root[data-theme="dark"] .yakiuo-avatar-camera:hover { background: #344a6c; }
+:root[data-theme="dark"] .yakiuo-avatar-camera:hover,
+:root[data-theme="dark"] .yakiuo-avatar-url:hover { background: #344a6c; }
 :root[data-theme="dark"] .yakiuo-avatar-remove { border-color: #263956; }
 :root[data-theme="dark"] .yakiuo-profile-header { background: #151f33; border-color: #2a3955; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24); }
 :root[data-theme="dark"] .yakiuo-profile-name-row h1 { color: #edf3ff; }
@@ -609,8 +611,18 @@ button:focus-visible,
   overflow: hidden;
 }
 
+.erp-notification-panel {
+  display: flex;
+  max-height: min(620px, calc(100dvh - 120px));
+  flex-direction: column;
+}
+
 .erp-notification-popover .erp-notification-list {
   max-height: min(520px, calc(100dvh - 180px)) !important;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 @media (max-width: 560px) {
@@ -1675,6 +1687,124 @@ button:focus-visible,
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
 }
 
+.yakiuo-admin-cover {
+  height: min(48vw, 480px);
+  min-height: 320px;
+}
+
+.yakiuo-admin-profile-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.yakiuo-admin-profile-grid .yakiuo-profile-right {
+  width: min(100%, 760px);
+  margin: 0 auto;
+}
+
+.yakiuo-admin-profile-body {
+  display: block;
+}
+
+.yakiuo-admin-showcase {
+  position: relative;
+  height: clamp(260px, 42vw, 560px);
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background:
+    linear-gradient(#f4e9dd, #f4e9dd) padding-box,
+    linear-gradient(115deg, #ff3b30, #ffcc00, #34c759, #00c7ff, #5856d6, #ff2d55, #ff3b30) border-box;
+  background-size: 100% 100%, 300% 300%;
+  animation: yakiuo-showcase-rainbow 6s linear infinite;
+  box-shadow: 0 8px 28px rgba(65, 43, 27, .10);
+}
+
+@keyframes yakiuo-showcase-rainbow {
+  to { background-position: 0 0, 300% 300%; }
+}
+
+.yakiuo-admin-showcase-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.025);
+  transition: opacity 700ms ease, transform 900ms ease;
+}
+
+.yakiuo-admin-showcase-image.is-active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.yakiuo-admin-showcase-empty {
+  display: grid;
+  min-height: 260px;
+  place-items: center;
+  padding: 48px 20px;
+  color: var(--erp-muted);
+  font-size: 14px;
+}
+
+.yakiuo-admin-showcase-upload {
+  position: absolute !important;
+  right: 16px;
+  bottom: 16px;
+  border: 0 !important;
+  background: rgba(255, 253, 250, .92) !important;
+  box-shadow: 0 4px 14px rgba(65, 43, 27, .2);
+  z-index: 2;
+}
+
+.yakiuo-admin-showcase-url {
+  position: absolute !important;
+  right: 16px;
+  bottom: 62px;
+  border: 0 !important;
+  background: rgba(255, 253, 250, .92) !important;
+  box-shadow: 0 4px 14px rgba(65, 43, 27, .2);
+  z-index: 2;
+}
+
+.yakiuo-admin-showcase-delete {
+  position: absolute !important;
+  left: 16px;
+  bottom: 16px;
+  border: 0 !important;
+  background: rgba(255, 253, 250, .92) !important;
+  box-shadow: 0 4px 14px rgba(65, 43, 27, .2);
+  z-index: 2;
+}
+
+.yakiuo-admin-showcase-dots {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  display: flex;
+  gap: 7px;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.yakiuo-admin-showcase-dots button {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .68);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, .35);
+  cursor: pointer;
+}
+
+.yakiuo-admin-showcase-dots button.is-active {
+  width: 20px;
+  border-radius: 9px;
+  background: #fff;
+}
+
 /* =========================================================
    PROFILE INFO
 ========================================================= */
@@ -1772,6 +1902,31 @@ button:focus-visible,
 .yakiuo-avatar-camera:hover {
   background: #d8dadf;
 
+  transform: scale(1.04);
+}
+
+.yakiuo-avatar-url {
+  position: absolute;
+  left: 7px;
+  bottom: 7px;
+
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #e4e6eb;
+  color: #1c1e21;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.yakiuo-avatar-url:hover {
+  background: #d8dadf;
   transform: scale(1.04);
 }
 
@@ -2075,6 +2230,7 @@ button:focus-visible,
   gap: 16px;
 }
 
+
 /* =========================================================
    PROFILE CARD
 ========================================================= */
@@ -2118,6 +2274,84 @@ button:focus-visible,
   color: var(--erp-primary);
 
   font-size: 20px;
+}
+
+.yakiuo-admin-console {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(181, 129, 84, .22), transparent 13rem),
+    linear-gradient(135deg, #fffdfa, #f4e9dd) !important;
+}
+
+.yakiuo-admin-console-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.yakiuo-admin-console-kicker {
+  margin-bottom: 7px;
+  color: #9a6b43;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.yakiuo-admin-console-shield {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #d7b692;
+  border-radius: 13px;
+  background: rgba(255, 250, 245, .72);
+  color: #875b35;
+  font-size: 20px;
+}
+
+.yakiuo-admin-console-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 18px;
+  padding: 7px 10px;
+  border: 1px solid #ddc3a7;
+  border-radius: 999px;
+  color: #765036;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.yakiuo-admin-console-status span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #62855d;
+  box-shadow: 0 0 0 3px rgba(98, 133, 93, .12);
+}
+
+.yakiuo-admin-console-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.yakiuo-admin-console-actions .ant-btn {
+  justify-content: flex-start;
+  height: 38px;
+  border-color: #ddc3a7;
+  background: rgba(255, 253, 250, .72);
+  color: #62432d;
+  font-size: 12px;
+}
+
+.yakiuo-admin-console-actions .ant-btn:hover {
+  border-color: #b58154 !important;
+  background: #fffaf5 !important;
+  color: #754c2b !important;
 }
 
 /* =========================================================
@@ -2528,6 +2762,11 @@ button:focus-visible,
     height: 190px;
   }
 
+  .yakiuo-admin-cover {
+    height: 52vw;
+    min-height: 240px;
+  }
+
   .yakiuo-cover-brand {
     left: 16px;
     bottom: 18px;
@@ -2579,6 +2818,14 @@ button:focus-visible,
 
   .yakiuo-avatar-camera {
     right: 3px;
+    bottom: 3px;
+
+    width: 34px;
+    height: 34px;
+  }
+
+  .yakiuo-avatar-url {
+    left: 3px;
     bottom: 3px;
 
     width: 34px;
@@ -2647,6 +2894,7 @@ button:focus-visible,
 
     gap: 10px;
   }
+
 
   .yakiuo-social-card {
     border-right: 0 !important;
@@ -2738,6 +2986,11 @@ button:focus-visible,
 
   .yakiuo-cover {
     height: 160px;
+  }
+
+  .yakiuo-admin-cover {
+    height: 64vw;
+    min-height: 220px;
   }
 
   .yakiuo-profile-avatar {
@@ -3003,6 +3256,12 @@ button:focus-visible,
 :root[data-theme="dark"] .erp-section-card,
 :root[data-theme="dark"] .yakiuo-social-card,
 :root[data-theme="dark"] .erp-table-card { background: #2b211b !important; border-color: #4f4035 !important; box-shadow: 0 8px 24px rgba(0, 0, 0, .18) !important; }
+:root[data-theme="dark"] .yakiuo-admin-console { background: radial-gradient(circle at 100% 0%, rgba(190, 143, 93, .18), transparent 13rem), linear-gradient(135deg, #33251d, #261b16) !important; }
+:root[data-theme="dark"] .yakiuo-admin-console-kicker { color: #d9a976; }
+:root[data-theme="dark"] .yakiuo-admin-console-shield { border-color: #76583f; background: #382a21; color: #e0b17d; }
+:root[data-theme="dark"] .yakiuo-admin-console-status { border-color: #6a513c; color: #dbc3aa; }
+:root[data-theme="dark"] .yakiuo-admin-console-actions .ant-btn { border-color: #624a38; background: #382a21; color: #e6d4c1; }
+:root[data-theme="dark"] .yakiuo-admin-console-actions .ant-btn:hover { border-color: #aa7950 !important; background: #463326 !important; color: #f2dfcb !important; }
 :root[data-theme="dark"] .erp-stat-icon { background: #483427; color: #dbad77; }
 :root[data-theme="dark"] .erp-table-card .ant-table-thead > tr > th,
 :root[data-theme="dark"] .feedback-data-table .ant-table-thead > tr > th { background: #382b23 !important; color: #d5c2ad !important; }

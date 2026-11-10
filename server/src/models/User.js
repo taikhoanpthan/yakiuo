@@ -38,6 +38,16 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    profileShowcaseImage: {
+      type: String,
+      default: "",
+    },
+
+    profileShowcaseImages: {
+      type: [String],
+      default: [],
+    },
+
     avatarPosition: {
       x: { type: Number, default: 50, min: 0, max: 100 },
       y: { type: Number, default: 50, min: 0, max: 100 },

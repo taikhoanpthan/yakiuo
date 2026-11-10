@@ -203,7 +203,7 @@ const normalizeImagePosition = (position = {}) => ({
 const normalizeImageZoom = (zoom) => Math.min(2.5, Math.max(1, Number(zoom) || 1));
 
 // Người dùng chỉ cập nhật được hồ sơ và vị trí hiển thị ảnh của chính họ.
-const updateOwnProfile = async (userId, { username, email, fullName, phone, avatarPosition, coverPosition, avatarZoom, coverZoom }) => {
+const updateOwnProfile = async (userId, { username, email, fullName, phone, avatar, profileShowcaseImage, profileShowcaseImageToRemove, avatarPosition, coverPosition, avatarZoom, coverZoom }) => {
   const user = await User.findById(userId);
 
   if (!user) {
@@ -238,6 +238,69 @@ const updateOwnProfile = async (userId, { username, email, fullName, phone, avat
 
   if (fullName !== undefined) user.fullName = fullName.trim();
   if (phone !== undefined) user.phone = phone.trim();
+  if (avatar !== undefined) {
+    const normalizedAvatar = String(avatar).trim();
+
+    if (normalizedAvatar.length > 2048) {
+      throw new Error("Link ảnh đại diện quá dài");
+    }
+
+    let parsedAvatarUrl;
+    try {
+      parsedAvatarUrl = new URL(normalizedAvatar);
+    } catch {
+      throw new Error("Link ảnh đại diện không hợp lệ");
+    }
+
+    if (!["http:", "https:"].includes(parsedAvatarUrl.protocol)) {
+      throw new Error("Chỉ hỗ trợ link ảnh http hoặc https");
+    }
+
+    user.avatar = parsedAvatarUrl.href;
+    user.avatarPosition = { x: 50, y: 50 };
+    user.avatarZoom = 1;
+  }
+  if (profileShowcaseImage !== undefined) {
+    if (user.role !== "admin") {
+      throw new Error("Chỉ quản trị viên mới có thể cập nhật ảnh hiển thị trang cá nhân");
+    }
+
+    const normalizedImage = String(profileShowcaseImage).trim();
+    if (normalizedImage.length > 2048) {
+      throw new Error("Link ảnh hiển thị quá dài");
+    }
+
+    let parsedImageUrl;
+    try {
+      parsedImageUrl = new URL(normalizedImage);
+    } catch {
+      throw new Error("Link ảnh hiển thị không hợp lệ");
+    }
+
+    if (!["http:", "https:"].includes(parsedImageUrl.protocol)) {
+      throw new Error("Chỉ hỗ trợ link ảnh http hoặc https");
+    }
+
+    const currentImages = Array.isArray(user.profileShowcaseImages) && user.profileShowcaseImages.length
+      ? user.profileShowcaseImages
+      : user.profileShowcaseImage ? [user.profileShowcaseImage] : [];
+    if (currentImages.length >= 20) throw new Error("Tối đa 20 ảnh hiển thị");
+    user.profileShowcaseImages = [...currentImages, parsedImageUrl.href];
+    user.profileShowcaseImage = parsedImageUrl.href;
+  }
+  if (profileShowcaseImageToRemove !== undefined) {
+    if (user.role !== "admin") {
+      throw new Error("Chỉ quản trị viên mới có thể xóa ảnh hiển thị");
+    }
+    const imageToRemove = String(profileShowcaseImageToRemove);
+    const currentImages = Array.isArray(user.profileShowcaseImages) && user.profileShowcaseImages.length
+      ? user.profileShowcaseImages
+      : user.profileShowcaseImage ? [user.profileShowcaseImage] : [];
+    user.profileShowcaseImages = currentImages.filter((image) => image !== imageToRemove);
+    if (user.profileShowcaseImage === imageToRemove) {
+      user.profileShowcaseImage = user.profileShowcaseImages.at(-1) || "";
+    }
+  }
   if (avatarPosition !== undefined) user.avatarPosition = normalizeImagePosition(avatarPosition);
   if (coverPosition !== undefined) user.coverPosition = normalizeImagePosition(coverPosition);
   if (avatarZoom !== undefined) user.avatarZoom = normalizeImageZoom(avatarZoom);

@@ -41,6 +41,7 @@ const InventoryModal = ({ open, onClose, onSuccess, editingItem = null }) => {
       form.setFieldsValue({
         name: editingItem.name || "",
         quantity: editingItem.quantity ?? 0,
+        unit: editingItem.unit || "cái",
         minQuantity: editingItem.minQuantity ?? 5,
         location: editingItem.location || "",
         imageUrlInput: editingItem.image || "",
@@ -50,6 +51,7 @@ const InventoryModal = ({ open, onClose, onSuccess, editingItem = null }) => {
       form.resetFields();
       form.setFieldsValue({
         quantity: 1,
+        unit: "cái",
         minQuantity: 5,
         location: "",
       });
@@ -97,6 +99,7 @@ const InventoryModal = ({ open, onClose, onSuccess, editingItem = null }) => {
       const payload = {
         name: values.name.trim(),
         quantity: Number(values.quantity) || 0,
+        unit: values.unit.trim(),
         minQuantity: Number(values.minQuantity) || 5,
         location: values.location ? values.location.trim() : "",
         image: imageUrl || values.imageUrlInput || "",
@@ -168,7 +171,7 @@ const InventoryModal = ({ open, onClose, onSuccess, editingItem = null }) => {
           />
         </Form.Item>
 
-        {/* 2. SỐ LƯỢNG & SỐ LƯỢNG TỐI THIỂU CẢNH BÁO */}
+        {/* 2. SỐ LƯỢNG, ĐƠN VỊ & MỨC CẢNH BÁO */}
         <Row gutter={14}>
           <Col xs={24} sm={12}>
             <Form.Item
@@ -194,19 +197,32 @@ const InventoryModal = ({ open, onClose, onSuccess, editingItem = null }) => {
 
           <Col xs={24} sm={12}>
             <Form.Item
-              label="Số lượng tối thiểu (Cảnh báo)"
-              name="minQuantity"
-              tooltip="Khi số lượng thực tế bằng hoặc nhỏ hơn số này, hệ thống sẽ tự động bật cảnh báo Sắp hết hàng."
+              label="Đơn vị"
+              name="unit"
+              rules={[
+                { required: true, whitespace: true, message: "Vui lòng nhập đơn vị" },
+                { max: 30, message: "Đơn vị không quá 30 ký tự" },
+              ]}
             >
-              <InputNumber
-                style={{ width: "100%" }}
-                size="large"
-                min={0}
-                placeholder="Mặc định: 5"
-              />
+              <Input size="large" placeholder="Ví dụ: cái, chai, kg" />
             </Form.Item>
           </Col>
+
         </Row>
+
+        <Form.Item
+          label="Mức tồn tối thiểu"
+          name="minQuantity"
+          tooltip="Khi số lượng thực tế bằng hoặc nhỏ hơn số này, hệ thống sẽ tự động bật cảnh báo Sắp hết hàng."
+          style={{ maxWidth: 250 }}
+        >
+          <InputNumber
+            style={{ width: "100%" }}
+            size="large"
+            min={0}
+            placeholder="Mặc định: 5"
+          />
+        </Form.Item>
 
         {/* 3. VỊ TRÍ Ở ĐÂU */}
         <Form.Item

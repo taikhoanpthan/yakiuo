@@ -25,6 +25,7 @@ import {
   EyeInvisibleOutlined,
   EyeOutlined,
   LockOutlined,
+  LinkOutlined,
   MailOutlined,
   PhoneOutlined,
   SafetyOutlined,
@@ -107,16 +108,37 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingShowcase, setUploadingShowcase] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
 
   const [showEditForm, setShowEditForm] = useState(false);
 
   // Xem avatar
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showAvatarUrlModal, setShowAvatarUrlModal] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [showShowcaseUrlModal, setShowShowcaseUrlModal] = useState(false);
+  const [showcaseImageUrl, setShowcaseImageUrl] = useState("");
+  const [showcaseIndex, setShowcaseIndex] = useState(0);
   const [imageAdjustTarget, setImageAdjustTarget] = useState(null);
   const [imagePosition, setImagePosition] = useState({ x: 50, y: 50 });
   const [imageZoom, setImageZoom] = useState(1);
   const [savingImagePosition, setSavingImagePosition] = useState(false);
+  const showcaseImages = Array.isArray(user?.profileShowcaseImages) && user.profileShowcaseImages.length
+    ? user.profileShowcaseImages
+    : user?.profileShowcaseImage ? [user.profileShowcaseImage] : [];
+
+  useEffect(() => {
+    if (showcaseIndex >= showcaseImages.length) setShowcaseIndex(0);
+  }, [showcaseImages.length, showcaseIndex]);
+
+  useEffect(() => {
+    if (user?.role !== "admin" || showcaseImages.length < 2) return undefined;
+    const timer = window.setTimeout(() => {
+      setShowcaseIndex((current) => (current + 1) % showcaseImages.length);
+    }, 3500);
+    return () => window.clearTimeout(timer);
+  }, [user?.role, showcaseImages.length, showcaseIndex]);
 
   useEffect(() => {
     if (!user) return;
@@ -211,6 +233,38 @@ const Profile = () => {
     }
   };
 
+  const handleSaveAvatarUrl = async () => {
+    const normalizedUrl = avatarUrl.trim();
+
+    try {
+      const parsedUrl = new URL(normalizedUrl);
+      if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+        throw new Error("Chỉ hỗ trợ link ảnh http hoặc https");
+      }
+
+      setUploading(true);
+      const response = await updateMyProfile({ avatar: parsedUrl.href });
+      const updatedUser = response?.data?.user;
+
+      if (!updatedUser) {
+        throw new Error("Không nhận được dữ liệu ảnh đại diện");
+      }
+
+      syncUser(updatedUser);
+      setShowAvatarUrlModal(false);
+      setAvatarUrl("");
+      message.success("Đã cập nhật ảnh đại diện từ link");
+    } catch (error) {
+      message.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể cập nhật ảnh đại diện từ link",
+      );
+    } finally {
+      setUploading(false);
+    }
+  };
+
   // =====================================================
   // UPLOAD COVER IMAGE
   // =====================================================
@@ -251,6 +305,92 @@ const Profile = () => {
       onError?.(error);
     } finally {
       setUploadingCover(false);
+    }
+  };
+
+  const handleUploadShowcase = async ({ file, onSuccess, onError }) => {
+    try {
+      if (!file.type?.startsWith("image/")) {
+        throw new Error("Chỉ được upload file hình ảnh");
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error("Ảnh không được vượt quá 10MB");
+      }
+
+      setUploadingShowcase(true);
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("type", "profile");
+
+      const response = await api.post("/upload/image", formData);
+      const profileShowcaseImages = response?.data?.data?.profileShowcaseImages;
+
+      if (!Array.isArray(profileShowcaseImages)) {
+        throw new Error("Không nhận được URL ảnh hiển thị");
+      }
+
+      syncUser({ profileShowcaseImages, profileShowcaseImage: profileShowcaseImages.at(-1) || "" });
+      message.success("Đã cập nhật ảnh hiển thị trang cá nhân");
+      onSuccess?.(response.data);
+    } catch (error) {
+      message.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể tải ảnh hiển thị",
+      );
+      onError?.(error);
+    } finally {
+      setUploadingShowcase(false);
+    }
+  };
+
+  const handleSaveShowcaseUrl = async () => {
+    const normalizedUrl = showcaseImageUrl.trim();
+
+    try {
+      const parsedUrl = new URL(normalizedUrl);
+      if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+        throw new Error("Chỉ hỗ trợ link ảnh http hoặc https");
+      }
+
+      setUploadingShowcase(true);
+      const response = await updateMyProfile({
+        profileShowcaseImage: parsedUrl.href,
+      });
+      const updatedUser = response?.data?.user;
+
+      if (!updatedUser) {
+        throw new Error("Không nhận được dữ liệu ảnh hiển thị");
+      }
+
+      syncUser(updatedUser);
+      setShowShowcaseUrlModal(false);
+      setShowcaseImageUrl("");
+      message.success("Đã cập nhật ảnh hiển thị từ link");
+    } catch (error) {
+      message.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể cập nhật ảnh hiển thị từ link",
+      );
+    } finally {
+      setUploadingShowcase(false);
+    }
+  };
+
+  const handleRemoveShowcaseImage = async (imageUrl) => {
+    try {
+      setUploadingShowcase(true);
+      const response = await updateMyProfile({ profileShowcaseImageToRemove: imageUrl });
+      const updatedUser = response?.data?.user;
+      if (!updatedUser) throw new Error("Không nhận được dữ liệu ảnh hiển thị");
+      syncUser(updatedUser);
+      message.success("Đã xóa ảnh hiển thị");
+    } catch (error) {
+      message.error(error.response?.data?.message || error.message || "Không thể xóa ảnh hiển thị");
+    } finally {
+      setUploadingShowcase(false);
     }
   };
 
@@ -412,6 +552,7 @@ const Profile = () => {
     label: user?.role?.toUpperCase() || "USER",
     color: "default",
   };
+  const isAdmin = user?.role === "admin";
 
   // =====================================================
   // LOADING
@@ -533,6 +674,19 @@ const Profile = () => {
                   </button>
                 </Upload>
 
+                <button
+                  type="button"
+                  className="yakiuo-avatar-url"
+                  disabled={uploading}
+                  title="Dán link ảnh đại diện"
+                  onClick={() => {
+                    setAvatarUrl(user?.avatar || "");
+                    setShowAvatarUrlModal(true);
+                  }}
+                >
+                  <LinkOutlined />
+                </button>
+
               </div>
 
               {/* =================================================
@@ -597,12 +751,66 @@ const Profile = () => {
         ================================================= */}
 
         <div className="yakiuo-profile-body">
-          <div className="yakiuo-profile-grid">
+          {isAdmin && (
+            <section className="yakiuo-admin-showcase">
+              {showcaseImages.length ? (
+                showcaseImages.map((image, index) => (
+                  <img
+                    key={image}
+                    src={image}
+                    alt="Ảnh hiển thị trang cá nhân"
+                    className={`yakiuo-admin-showcase-image${index === showcaseIndex ? " is-active" : ""}`}
+                  />
+                ))
+              ) : (
+                <div className="yakiuo-admin-showcase-empty">
+                  Tải một ảnh để hiển thị trên trang cá nhân
+                </div>
+              )}
+              <Upload
+                showUploadList={false}
+                accept="image/png,image/jpeg,image/webp"
+                customRequest={handleUploadShowcase}
+              >
+                <Button
+                  className="yakiuo-admin-showcase-upload"
+                  icon={<CameraOutlined />}
+                  loading={uploadingShowcase}
+                >
+                  {showcaseImages.length ? "Thêm ảnh" : "Tải ảnh hiển thị"}
+                </Button>
+              </Upload>
+              <Button
+                className="yakiuo-admin-showcase-url"
+                icon={<LinkOutlined />}
+                onClick={() => {
+                  setShowcaseImageUrl(user?.profileShowcaseImage || "");
+                  setShowShowcaseUrlModal(true);
+                }}
+              >
+                Dán link ảnh
+              </Button>
+              {showcaseImages.length > 1 && (
+                <div className="yakiuo-admin-showcase-dots" aria-label={`Ảnh ${showcaseIndex + 1} trên ${showcaseImages.length}`}>
+                  {showcaseImages.map((image, index) => (
+                    <button key={image} type="button" className={index === showcaseIndex ? "is-active" : ""} onClick={() => setShowcaseIndex(index)} aria-label={`Xem ảnh ${index + 1}`} />
+                  ))}
+                </div>
+              )}
+              {showcaseImages.length > 0 && (
+                <Button danger className="yakiuo-admin-showcase-delete" icon={<CloseOutlined />} loading={uploadingShowcase} onClick={() => Modal.confirm({ title: "Xóa ảnh hiển thị?", content: "Ảnh này sẽ không còn xuất hiện trên trang cá nhân.", okText: "Xóa ảnh", cancelText: "Hủy", okButtonProps: { danger: true }, onOk: () => handleRemoveShowcaseImage(showcaseImages[showcaseIndex]) })}>
+                  Xóa ảnh
+                </Button>
+              )}
+            </section>
+          )}
+
+          {!isAdmin && <div className="yakiuo-profile-grid">
             {/* =================================================
                 LEFT
             ================================================= */}
 
-            <div className="yakiuo-profile-left">
+            {!isAdmin && <div className="yakiuo-profile-left">
               {/* INTRO */}
 
               <Card bordered={false} className="yakiuo-social-card">
@@ -641,6 +849,8 @@ const Profile = () => {
                   </div>
                 </div>
               </Card>
+
+              <CommissionGG />
 
               {/* EDIT PROFILE */}
 
@@ -865,38 +1075,93 @@ const Profile = () => {
                   </Form>
                 </Card>
               )}
-            </div>
+            </div>}
 
             {/* =================================================
                 RIGHT
             ================================================= */}
 
             <div className="yakiuo-profile-right">
-              {/* COMMISSION */}
+              {!isAdmin && <>
+                <Card bordered={false} className="yakiuo-social-card">
+                  <div className="yakiuo-card-heading">
+                    <div>
+                      <div className="yakiuo-card-title">Rượu / Bào Ngư</div>
+                    </div>
 
-              <Card bordered={false} className="yakiuo-social-card">
-                <div className="yakiuo-card-heading">
-                  <div>
-                    <div className="yakiuo-card-title">Rượu / Bào Ngư</div>
+                    <DollarOutlined className="yakiuo-card-icon" />
                   </div>
 
-                  <DollarOutlined className="yakiuo-card-icon" />
-                </div>
+                  <Divider />
+                  <Commission />
+                </Card>
 
-                <Divider />
-                <Commission />
-              </Card>
-
-              <CommissionGG />
-              <TrashBin />
+                <TrashBin />
+                </>}
             </div>
-          </div>
+          </div>}
         </div>
       </div>
 
       {/* =====================================================
           AVATAR VIEW MODAL
       ===================================================== */}
+
+      <Modal
+        title="Dán link ảnh hiển thị"
+        open={showShowcaseUrlModal}
+        onCancel={() => {
+          if (uploadingShowcase) return;
+          setShowShowcaseUrlModal(false);
+        }}
+        onOk={handleSaveShowcaseUrl}
+        okText="Lưu ảnh"
+        cancelText="Hủy"
+        confirmLoading={uploadingShowcase}
+        centered
+        destroyOnHidden
+      >
+        <p className="mb-3 text-sm text-slate-500">
+          Dán đường dẫn trực tiếp đến ảnh (http hoặc https).
+        </p>
+        <Input
+          autoFocus
+          value={showcaseImageUrl}
+          onChange={(event) => setShowcaseImageUrl(event.target.value)}
+          onPressEnter={handleSaveShowcaseUrl}
+          prefix={<LinkOutlined />}
+          placeholder="https://example.com/anh-hien-thi.jpg"
+          maxLength={2048}
+        />
+      </Modal>
+
+      <Modal
+        title="Dán link ảnh đại diện"
+        open={showAvatarUrlModal}
+        onCancel={() => {
+          if (uploading) return;
+          setShowAvatarUrlModal(false);
+        }}
+        onOk={handleSaveAvatarUrl}
+        okText="Lưu ảnh"
+        cancelText="Hủy"
+        confirmLoading={uploading}
+        centered
+        destroyOnHidden
+      >
+        <p className="mb-3 text-sm text-slate-500">
+          Dán đường dẫn trực tiếp đến ảnh (http hoặc https).
+        </p>
+        <Input
+          autoFocus
+          value={avatarUrl}
+          onChange={(event) => setAvatarUrl(event.target.value)}
+          onPressEnter={handleSaveAvatarUrl}
+          prefix={<LinkOutlined />}
+          placeholder="https://example.com/avatar.jpg"
+          maxLength={2048}
+        />
+      </Modal>
 
       <Modal
         className="yakiuo-avatar-preview-modal"

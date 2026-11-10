@@ -24,6 +24,11 @@ const ROLE_PERMISSIONS = {
     "notifications.create",
     "notifications.update",
     "notifications.delete",
+
+    "inventory.read",
+    "inventory.create",
+    "inventory.update",
+    "inventory.delete",
   ],
 
   manager: [
@@ -48,6 +53,9 @@ const ROLE_PERMISSIONS = {
     "commission.delete",
 
     "reports.read",
+
+    "inventory.read",
+    "inventory.update",
   ],
 
   employee: [
@@ -59,6 +67,9 @@ const ROLE_PERMISSIONS = {
 
     "commission.read",
     "commission.create",
+
+    "inventory.read",
+    "inventory.update",
   ],
 
   premium: [
@@ -71,6 +82,9 @@ const ROLE_PERMISSIONS = {
 
     "commission.read",
     "commission.create",
+
+    "inventory.read",
+    "inventory.update",
   ],
 };
 

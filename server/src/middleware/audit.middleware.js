@@ -12,6 +12,7 @@ const resourceLabels = {
   cfs: "CFS",
   system: "cài đặt hệ thống",
   upload: "tệp đính kèm",
+  inventory: "công cụ dụng cụ",
 };
 
 const getAuditTarget = (req) => {
@@ -33,6 +34,7 @@ const getAuditTarget = (req) => {
     commissions: body.month || body.date || "",
     "work-schedule": body.date || body.workDate || "",
     "feedback-tags": body.label || body.name || "",
+    inventory: body.name || "",
   }[resourceKey] || "";
 
   const suffix = context || identifier;

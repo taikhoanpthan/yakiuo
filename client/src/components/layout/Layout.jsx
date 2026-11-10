@@ -31,6 +31,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   TeamOutlined,
+  ToolOutlined,
   UserOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
@@ -255,6 +256,12 @@ const Layout = () => {
         shortLabel: "Todo",
         icon: <CheckSquareOutlined />,
       },
+      {
+        key: "/inventory",
+        label: "Kiểm kê dụng cụ",
+        shortLabel: "Dụng cụ",
+        icon: <ToolOutlined />,
+      },
     ];
 
     if (features.caro && ["admin", "employee", "premium"].includes(user?.role)) {
@@ -307,7 +314,7 @@ const Layout = () => {
   const mobileMenuItems = useMemo(() => {
     // Các trang quản trị (như Nhân viên) nằm trong menu tài khoản trên header
     // để taskbar điện thoại luôn gọn và dễ bấm.
-    const keys = ["/dashboard", "/feedback", ...(features.cfs ? ["/cfs"] : []), "/todos"];
+    const keys = ["/dashboard", "/feedback", ...(features.cfs ? ["/cfs"] : []), "/todos", "/inventory"];
 
     if (features.caro && ["admin", "employee", "premium"].includes(user?.role)) keys.push("/caro");
     if (features.chess && ["admin", "employee", "premium"].includes(user?.role)) keys.push("/chess");
@@ -911,6 +918,12 @@ const Layout = () => {
     },
 
     {
+      key: "inventory",
+      icon: <ToolOutlined />,
+      label: "Kiểm kê dụng cụ",
+    },
+
+    {
       key: "users",
       icon: <TeamOutlined />,
       label: "Nhân viên",
@@ -1177,6 +1190,10 @@ const Layout = () => {
                   onClick: ({ key }) => {
                     if (key === "profile") {
                       navigate("/profile");
+                    }
+
+                    if (key === "inventory") {
+                      navigate("/inventory");
                     }
 
                     if (key === "users") {

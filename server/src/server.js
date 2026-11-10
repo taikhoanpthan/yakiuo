@@ -42,6 +42,7 @@ const cfsRoutes = require("./routes/cfs.routes");
 const trashRoutes = require("./routes/trash.routes");
 const caroRoutes = require("./routes/caro.routes");
 const chessRoutes = require("./routes/chess.routes");
+const inventoryRoutes = require("./routes/inventory.routes");
 const { startTrashCleanup } = require("./services/trashCleanup.service");
 const { auditMutations } = require("./middleware/audit.middleware");
 // =========================
@@ -199,6 +200,7 @@ app.use("/api/cfs", cfsRoutes);
 app.use("/api/trash", trashRoutes);
 app.use("/api/caro", caroRoutes);
 app.use("/api/chess", chessRoutes);
+app.use("/api/inventory", inventoryRoutes);
 // =========================
 // CLOUDINARY TEST
 // =========================

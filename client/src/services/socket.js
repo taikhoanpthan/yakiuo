@@ -376,6 +376,26 @@ export const onSystemFeaturesChanged = (callback) => {
   return () => currentSocket.off("system:features-changed", callback);
 };
 
+export const onInventoryChanged = (callback) => {
+  const currentSocket = createSocket();
+  const handleCreated = (item) => callback({ type: "created", item });
+  const handleUpdated = (item) => callback({ type: "updated", item });
+  const handleChecked = (item) => callback({ type: "checked", item });
+  const handleDeleted = (data) => callback({ type: "deleted", data });
+
+  currentSocket.on("inventory:created", handleCreated);
+  currentSocket.on("inventory:updated", handleUpdated);
+  currentSocket.on("inventory:checked", handleChecked);
+  currentSocket.on("inventory:deleted", handleDeleted);
+
+  return () => {
+    currentSocket.off("inventory:created", handleCreated);
+    currentSocket.off("inventory:updated", handleUpdated);
+    currentSocket.off("inventory:checked", handleChecked);
+    currentSocket.off("inventory:deleted", handleDeleted);
+  };
+};
+
 // =====================================================
 // ONLINE COUNT
 // =====================================================
@@ -465,6 +485,7 @@ export default {
   onCfsNotification,
   onSystemNotificationChanged,
   onSystemFeaturesChanged,
+  onInventoryChanged,
   onOnlineCount,
   onUserOnline,
   onUserOffline,

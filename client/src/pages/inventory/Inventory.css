@@ -1,0 +1,465 @@
+/* =====================================================
+   YAKIUO ERP - PROFESSIONAL INVENTORY STYLING
+   ===================================================== */
+
+.inventory-page-container {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 4px 0 32px 0;
+  min-width: 0;
+}
+
+/* ================= HEADER ================= */
+.inventory-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.inventory-header-title {
+  font-size: 24px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--erp-text, #2b211b);
+}
+
+:root[data-theme="dark"] .inventory-header-title {
+  color: #f0e7dc;
+}
+
+.inventory-header-desc {
+  font-size: 13px;
+  color: var(--erp-muted, #78695d);
+  margin: 3px 0 0 0;
+}
+
+:root[data-theme="dark"] .inventory-header-desc {
+  color: #cbbba9;
+}
+
+/* ================= SUMMARY METRICS BAR ================= */
+.inventory-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--erp-border, #e5dcce);
+  background: var(--erp-card, #fffdfa);
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+:root[data-theme="dark"] .inventory-summary-bar {
+  background: #2b211b;
+  border-color: #4f4035;
+}
+
+.inventory-summary-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.025);
+  font-size: 13px;
+  color: var(--erp-text, #3f3025);
+}
+
+:root[data-theme="dark"] .inventory-summary-pill {
+  background: rgba(255, 255, 255, 0.04);
+  color: #d5c4b2;
+}
+
+.inventory-summary-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.inventory-summary-label {
+  font-weight: 500;
+  color: var(--erp-muted, #78695d);
+}
+
+:root[data-theme="dark"] .inventory-summary-label {
+  color: #a89a8c;
+}
+
+.inventory-summary-num {
+  font-weight: 750;
+  font-size: 15px;
+  color: var(--erp-text, #2b211b);
+}
+
+:root[data-theme="dark"] .inventory-summary-num {
+  color: #f0e7dc;
+}
+
+/* ================= FILTER TOOLBAR ================= */
+.inventory-toolbar {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--erp-border, #e5dcce);
+  background: var(--erp-card, #fffdfa);
+  margin-bottom: 16px;
+}
+
+:root[data-theme="dark"] .inventory-toolbar {
+  background: #2b211b;
+  border-color: #4f4035;
+}
+
+.inventory-toolbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.inventory-search-input {
+  flex: 1 1 280px;
+  max-width: 440px;
+}
+
+.inventory-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ================= TABLE CARD & TABLE ================= */
+.inventory-table-card {
+  border-radius: 14px !important;
+  border: 1px solid var(--erp-border, #e5dcce) !important;
+  background: var(--erp-card, #fffdfa) !important;
+  box-shadow: 0 4px 18px rgba(43, 33, 27, 0.03) !important;
+  overflow: hidden;
+}
+
+:root[data-theme="dark"] .inventory-table-card {
+  background: #2b211b !important;
+  border-color: #4f4035 !important;
+  box-shadow: none !important;
+}
+
+.inventory-table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Modern slim scrollbar */
+.inventory-table-container::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.inventory-table-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 99px;
+}
+
+.inventory-table-container::-webkit-scrollbar-thumb {
+  background: #d4c5b5;
+  border-radius: 99px;
+}
+
+:root[data-theme="dark"] .inventory-table-container::-webkit-scrollbar-thumb {
+  background: #5c4b3f;
+}
+
+/* Table Headers */
+.inventory-table-container .ant-table-thead > tr > th {
+  background: #f7f2eb !important;
+  color: #5c493c !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  padding: 13px 14px !important;
+  border-bottom: 1px solid var(--erp-border, #e5dcce) !important;
+}
+
+:root[data-theme="dark"] .inventory-table-container .ant-table-thead > tr > th {
+  background: #231a15 !important;
+  color: #cbbba9 !important;
+  border-bottom-color: #4f4035 !important;
+}
+
+/* Table Rows */
+.inventory-table-container .ant-table-tbody > tr > td {
+  padding: 12px 14px !important;
+  vertical-align: middle !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+  transition: background 0.15s ease;
+}
+
+:root[data-theme="dark"] .inventory-table-container .ant-table-tbody > tr > td {
+  border-bottom-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.inventory-table-container .ant-table-tbody > tr:hover > td {
+  background: #fcf9f5 !important;
+}
+
+:root[data-theme="dark"] .inventory-table-container .ant-table-tbody > tr:hover > td {
+  background: #33271f !important;
+}
+
+/* Image thumbnail */
+.inventory-thumb-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inventory-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--erp-border, #dfd1c1);
+  display: block;
+  background: #fdfaf6;
+}
+
+:root[data-theme="dark"] .inventory-thumb {
+  border-color: #4f4035;
+  background: #231a15;
+}
+
+/* Item Name: Sharp Black in Light Mode, Sharp White in Dark Mode */
+.inventory-item-name {
+  font-weight: 750;
+  font-size: 14px;
+  line-height: 1.35;
+  color: #172033 !important;
+}
+
+:root[data-theme="dark"] .inventory-item-name {
+  color: #f8fafc !important;
+}
+
+/* Location */
+.inventory-item-location {
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+}
+
+:root[data-theme="dark"] .inventory-item-location {
+  color: #cbd5e1;
+}
+
+.inventory-item-location-empty {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+:root[data-theme="dark"] .inventory-item-location-empty {
+  color: #64748b;
+}
+
+/* Quantity */
+.inventory-item-qty {
+  font-weight: 850;
+  font-size: 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #172033;
+}
+
+:root[data-theme="dark"] .inventory-item-qty {
+  color: #f8fafc;
+}
+
+/* Status Pill */
+.inventory-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.inventory-status-pill.is-in-stock {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+:root[data-theme="dark"] .inventory-status-pill.is-in-stock {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.inventory-status-pill.is-low-stock {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+:root[data-theme="dark"] .inventory-status-pill.is-low-stock {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.inventory-status-pill.is-out-of-stock {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+:root[data-theme="dark"] .inventory-status-pill.is-out-of-stock {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.inventory-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.inventory-status-pill.is-in-stock .inventory-status-dot {
+  background: #16a34a;
+}
+
+:root[data-theme="dark"] .inventory-status-pill.is-in-stock .inventory-status-dot {
+  background: #4ade80;
+}
+
+.inventory-status-pill.is-low-stock .inventory-status-dot {
+  background: #d97706;
+}
+
+:root[data-theme="dark"] .inventory-status-pill.is-low-stock .inventory-status-dot {
+  background: #fbbf24;
+}
+
+.inventory-status-pill.is-out-of-stock .inventory-status-dot {
+  background: #dc2626;
+}
+
+:root[data-theme="dark"] .inventory-status-pill.is-out-of-stock .inventory-status-dot {
+  background: #f87171;
+}
+
+/* Notes display */
+.inventory-notes-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.025);
+  border: 1px dashed rgba(0, 0, 0, 0.08);
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.4;
+  max-width: 260px;
+}
+
+:root[data-theme="dark"] .inventory-notes-box {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+.inventory-notes-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Last checked */
+.inventory-last-checked-time {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+:root[data-theme="dark"] .inventory-last-checked-time {
+  color: #e2e8f0;
+}
+
+.inventory-last-checked-user {
+  font-size: 11px;
+  color: #64748b;
+}
+
+:root[data-theme="dark"] .inventory-last-checked-user {
+  color: #a89a8c;
+}
+
+/* Modal styling */
+.inventory-responsive-modal .ant-modal-content {
+  border-radius: 14px !important;
+  padding: 20px 22px !important;
+}
+
+.inventory-responsive-modal .ant-modal-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.inventory-responsive-modal .ant-form-item-label > label {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .inventory-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .inventory-header-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .inventory-header-actions .ant-btn {
+    flex: 1;
+  }
+
+  .inventory-summary-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .inventory-search-input {
+    max-width: 100%;
+  }
+
+  .inventory-filter-group {
+    width: 100%;
+  }
+
+  .inventory-filter-group .ant-select {
+    flex: 1;
+  }
+}

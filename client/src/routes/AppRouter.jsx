@@ -17,6 +17,7 @@ const Cfs = lazy(() => import("../pages/cfs/Cfs"));
 const Maintenance = lazy(() => import("../pages/maintenance/Maintenance"));
 const Caro = lazy(() => import("../pages/caro/Caro"));
 const Chess = lazy(() => import("../pages/chess/Chess"));
+const Inventory = lazy(() => import("../pages/inventory/Inventory"));
 
 const PageLoader = () => <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-400">Đang tải...</div>;
 const page = (Page) => <Suspense fallback={<PageLoader />}><Page /></Suspense>;
@@ -34,6 +35,7 @@ const AppRouter = () => (
       <Route path="/notifications" element={page(Notifications)} />
       <Route path="/profile" element={page(Profile)} />
       <Route path="/todos" element={page(Todos)} />
+      <Route path="/inventory" element={page(Inventory)} />
       <Route path="/admin/user-activity" element={<ProtectedRoute roles={["admin"]}>{page(UserActivityHistory)}</ProtectedRoute>} />
       <Route path="/admin/late-feedbacks" element={<ProtectedRoute roles={["admin"]}>{page(LateFeedbackEntries)}</ProtectedRoute>} />
       <Route path="/cfs" element={featurePage(Cfs, "cfs")} />

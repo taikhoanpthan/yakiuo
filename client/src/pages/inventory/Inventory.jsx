@@ -346,6 +346,7 @@ const Inventory = () => {
               size="small"
               type="primary"
               ghost
+              className="inventory-check-button"
               icon={<CheckCircleOutlined />}
               onClick={() => handleOpenCheck(record)}
             >

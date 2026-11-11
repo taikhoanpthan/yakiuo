@@ -3285,3 +3285,206 @@ button:focus-visible,
   :root[data-theme="dark"] .erp-section-card:hover,
   :root[data-theme="dark"] .yakiuo-social-card:hover { border-color: #6a513c !important; box-shadow: 0 10px 25px rgba(0, 0, 0, .18) !important; }
 }
+
+/* =========================================================
+   COHESIVE EARTHEN PALETTE
+   One surface system for desktop, tablet and mobile.
+========================================================= */
+
+:root {
+  --erp-bg: #f3f0ec;
+  --erp-card: #fffdf9;
+  --erp-sidebar: #51443a;
+  --erp-sidebar-text: #f0e6dc;
+  --erp-primary: #927052;
+  --erp-primary-soft: rgba(146, 112, 82, .12);
+  --erp-border: #ded5ca;
+  --erp-text: #352d27;
+  --erp-muted: #776b61;
+  --erp-accent: #a77c5a;
+}
+
+body {
+  background:
+    radial-gradient(circle at 92% -10%, rgba(187, 159, 131, .16), transparent 28rem),
+    linear-gradient(135deg, #f7f4f0 0%, var(--erp-bg) 55%, #eee9e2 100%);
+}
+
+.erp-shell,
+.erp-workspace,
+.erp-content { background: transparent !important; }
+
+/* Navigation is deliberately a mid-tone taupe, not near-black. */
+.erp-sider {
+  background: linear-gradient(180deg, #5b4d42 0%, #493d34 100%) !important;
+  box-shadow: 4px 0 22px rgba(69, 54, 42, .16), 1px 0 0 rgba(255, 255, 255, .12);
+}
+
+.erp-brand,
+.erp-side-bottom { border-color: rgba(255, 247, 238, .15); }
+.erp-brand strong { color: #fffaf5; }
+.erp-brand span,
+.erp-nav-label,
+.erp-side-help { color: #d4c2b1; }
+.erp-nav-item,
+.erp-logout { color: #eee3d8; }
+.erp-nav-icon { color: #d6c0ad; }
+.erp-nav-item:hover,
+.erp-nav-item:focus-visible,
+.erp-nav-item.is-active {
+  background: rgba(255, 248, 240, .14) !important;
+  color: #fffdfa !important;
+}
+.erp-nav-item::before { background: #e0b68b !important; }
+.erp-nav-item:hover .erp-nav-icon,
+.erp-nav-item:focus-visible .erp-nav-icon,
+.erp-nav-item.is-active .erp-nav-icon { color: #f1c79f !important; }
+.erp-logout { color: #f2c1af; }
+.erp-logout:hover,
+.erp-logout:focus-visible { background: rgba(193, 94, 72, .17) !important; color: #ffd1c2 !important; }
+
+.erp-header {
+  background: rgba(255, 253, 249, .88) !important;
+  border-bottom-color: rgba(214, 202, 190, .9) !important;
+  box-shadow: 0 3px 16px rgba(80, 62, 47, .035);
+}
+.erp-menu-button { color: #6c5a4b !important; }
+.erp-menu-button:hover,
+.erp-user-menu:hover { background: #f0e9e1 !important; color: #805d42 !important; }
+.erp-user-copy strong,
+.erp-header-context strong { color: #44372d; }
+.erp-user-copy small,
+.erp-header-context span { color: #867567; }
+.erp-avatar { background: linear-gradient(135deg, #c69c74, #876144) !important; }
+
+.erp-section-card,
+.yakiuo-social-card,
+.erp-table-card {
+  background: rgba(255, 253, 249, .9) !important;
+  border-color: #ded5ca !important;
+  box-shadow: 0 8px 24px rgba(71, 53, 38, .055) !important;
+}
+.erp-table-card .ant-table-thead > tr > th,
+.feedback-data-table .ant-table-thead > tr > th { background: #f3ede6 !important; color: #66564a !important; }
+.erp-table-card .ant-table-tbody > tr > td { border-bottom-color: #ebe2d8; }
+.erp-table-card .ant-table-tbody > tr:hover > td,
+.feedback-data-table .ant-table-tbody > tr:hover > td { background: #faf5ef !important; }
+
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector,
+.ant-picker,
+.ant-input-number,
+.ant-modal-content,
+.ant-modal-header,
+.ant-drawer-content,
+.ant-dropdown-menu,
+.ant-popover-inner {
+  border-color: #ded5ca !important;
+}
+.ant-modal-content,
+.ant-modal-header,
+.ant-drawer-content,
+.ant-dropdown-menu,
+.ant-popover-inner { background: #fffdf9 !important; }
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector,
+.ant-picker,
+.ant-input-number { background: #fffefa !important; }
+.ant-btn-primary { background: #927052 !important; box-shadow: none !important; }
+.ant-btn-primary:hover { background: #805e43 !important; }
+
+@media (max-width: 991px) {
+  .erp-mobile-taskbar {
+    border-color: rgba(212, 198, 184, .94) !important;
+    background: rgba(255, 253, 249, .92) !important;
+    box-shadow: 0 10px 26px rgba(76, 58, 44, .16) !important;
+    backdrop-filter: blur(16px);
+  }
+
+  .erp-mobile-task-item { color: #807164 !important; }
+  .erp-mobile-task-item.is-active { color: #8b6547 !important; }
+  .erp-mobile-task-active { background: #9b7352 !important; }
+}
+
+:root[data-theme="dark"] {
+  --erp-bg: #28231f;
+  --erp-card: #342d28;
+  --erp-sidebar: #41372f;
+  --erp-sidebar-text: #ede2d7;
+  --erp-primary: #d0a174;
+  --erp-primary-soft: rgba(208, 161, 116, .14);
+  --erp-border: #554940;
+  --erp-text: #f3eae2;
+  --erp-muted: #c4b5a8;
+  --erp-accent: #e0b286;
+}
+
+:root[data-theme="dark"] body {
+  background:
+    radial-gradient(circle at 92% -10%, rgba(187, 142, 103, .16), transparent 28rem),
+    linear-gradient(135deg, #2b2622 0%, var(--erp-bg) 55%, #231f1b 100%);
+}
+
+:root[data-theme="dark"] .erp-sider {
+  background: linear-gradient(180deg, #4c4037 0%, #3d342d 100%) !important;
+  box-shadow: 4px 0 22px rgba(0, 0, 0, .2), 1px 0 0 rgba(255, 255, 255, .06);
+}
+:root[data-theme="dark"] .erp-brand,
+:root[data-theme="dark"] .erp-side-bottom { border-color: rgba(255, 244, 233, .12); }
+:root[data-theme="dark"] .erp-brand span,
+:root[data-theme="dark"] .erp-nav-label,
+:root[data-theme="dark"] .erp-side-help { color: #cdb9a7; }
+:root[data-theme="dark"] .erp-nav-item,
+:root[data-theme="dark"] .erp-logout { color: #eee2d6; }
+:root[data-theme="dark"] .erp-nav-icon { color: #cfb8a4; }
+:root[data-theme="dark"] .erp-nav-item:hover,
+:root[data-theme="dark"] .erp-nav-item:focus-visible,
+:root[data-theme="dark"] .erp-nav-item.is-active { background: rgba(255, 247, 239, .12) !important; }
+
+:root[data-theme="dark"] .erp-header {
+  background: rgba(52, 45, 40, .9) !important;
+  border-bottom-color: #554940 !important;
+  box-shadow: 0 3px 16px rgba(0, 0, 0, .1);
+}
+:root[data-theme="dark"] .erp-menu-button { color: #dfd0c2 !important; }
+:root[data-theme="dark"] .erp-menu-button:hover,
+:root[data-theme="dark"] .erp-user-menu:hover { background: #473c34 !important; color: #f0c79f !important; }
+:root[data-theme="dark"] .erp-user-copy strong,
+:root[data-theme="dark"] .erp-header-context strong { color: #f5ece4; }
+:root[data-theme="dark"] .erp-user-copy small,
+:root[data-theme="dark"] .erp-header-context span { color: #c9baad; }
+
+:root[data-theme="dark"] .erp-section-card,
+:root[data-theme="dark"] .yakiuo-social-card,
+:root[data-theme="dark"] .erp-table-card {
+  background: rgba(52, 45, 40, .94) !important;
+  border-color: #554940 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .14) !important;
+}
+:root[data-theme="dark"] .erp-table-card .ant-table-thead > tr > th,
+:root[data-theme="dark"] .feedback-data-table .ant-table-thead > tr > th { background: #433930 !important; color: #decdbd !important; }
+:root[data-theme="dark"] .erp-table-card .ant-table-tbody > tr > td { border-bottom-color: #4d423a; color: #f0e7de !important; }
+:root[data-theme="dark"] .erp-table-card .ant-table-tbody > tr:hover > td,
+:root[data-theme="dark"] .feedback-data-table .ant-table-tbody > tr:hover > td { background: #40362f !important; }
+
+:root[data-theme="dark"] .ant-modal-content,
+:root[data-theme="dark"] .ant-modal-header,
+:root[data-theme="dark"] .ant-drawer-content,
+:root[data-theme="dark"] .ant-dropdown-menu,
+:root[data-theme="dark"] .ant-popover-inner { background: #342d28 !important; border-color: #554940 !important; }
+:root[data-theme="dark"] .ant-input,
+:root[data-theme="dark"] .ant-input-affix-wrapper,
+:root[data-theme="dark"] .ant-select-selector,
+:root[data-theme="dark"] .ant-picker,
+:root[data-theme="dark"] .ant-input-number { background: #2d2723 !important; border-color: #5a4c42 !important; color: #f3eae2 !important; }
+:root[data-theme="dark"] .ant-btn-primary { background: #bd8b61 !important; }
+:root[data-theme="dark"] .ant-btn-primary:hover { background: #d29f73 !important; }
+
+@media (max-width: 991px) {
+  :root[data-theme="dark"] .erp-mobile-taskbar { background: rgba(52, 45, 40, .94) !important; border-color: #5a4c42 !important; }
+  :root[data-theme="dark"] .erp-mobile-task-item { color: #cfc0b2 !important; }
+  :root[data-theme="dark"] .erp-mobile-task-item.is-active { color: #f0c79f !important; }
+  :root[data-theme="dark"] .erp-mobile-task-active { background: #b9845c !important; }
+}

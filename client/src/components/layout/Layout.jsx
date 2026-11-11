@@ -807,7 +807,7 @@ const Layout = () => {
       label: "Tài khoản của tôi",
     },
 
-    ...(isMobile && user?.role === "admin" ? [{
+    ...(["admin", "employee"].includes(user?.role) ? [{
       key: "users",
       icon: <TeamOutlined />,
       label: "Danh sách nhân viên",

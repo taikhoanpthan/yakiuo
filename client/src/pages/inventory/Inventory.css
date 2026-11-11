@@ -435,6 +435,25 @@
   white-space: nowrap;
 }
 
+/* Keep the table action readable on both themes. */
+.inventory-check-button.ant-btn {
+  border-color: #96704f !important;
+  background: #fffdfa !important;
+  color: #805b3f !important;
+  font-weight: 650;
+  box-shadow: none !important;
+}
+
+.inventory-check-button.ant-btn:hover,
+.inventory-check-button.ant-btn:focus-visible {
+  border-color: #795037 !important;
+  background: #f6ecdf !important;
+  color: #68412c !important;
+}
+
+.inventory-check-button.ant-btn .anticon,
+.inventory-check-button.ant-btn svg { color: currentColor !important; }
+
 /* Modal styling */
 .inventory-responsive-modal .ant-modal-content {
   border-radius: 14px !important;

@@ -46,8 +46,8 @@ import { useTheme } from "../../store/ThemeContext";
 
 import { getNotifications } from "../../services/notificationService";
 
-import { onSocketConnected, onSystemFeaturesChanged, onSystemNotificationChanged } from "../../services/socket";
-import { getSystemStatus } from "../../services/system.service";
+import { onSocketConnected, onSystemFeaturesChanged, onSystemNotificationChanged, onSystemPermissionsChanged } from "../../services/socket";
+import { getMyPermissions, getSystemStatus } from "../../services/system.service";
 import { queryClient } from "../../lib/queryClient";
 import MobileTaskbar from "./MobileTaskbar";
 import DesktopSidebar from "./DesktopSidebar";
@@ -141,6 +141,7 @@ const Layout = () => {
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [features, setFeatures] = useState({ cfs: true, caro: true, chess: true });
+  const [permissions, setPermissions] = useState([]);
   const lastNotificationAccountRef = useRef(null);
 
   useEffect(() => {
@@ -151,6 +152,16 @@ const Layout = () => {
     window.addEventListener("user:open-detail", openUserDetail);
     return () => window.removeEventListener("user:open-detail", openUserDetail);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadPermissions = () => getMyPermissions()
+      .then((response) => { if (active) setPermissions(response.data?.data?.permissions || []); })
+      .catch(() => { if (active) setPermissions([]); });
+    void loadPermissions();
+    const unsubscribe = onSystemPermissionsChanged(loadPermissions);
+    return () => { active = false; unsubscribe(); };
+  }, [user?._id, user?.role]);
 
   useEffect(() => {
     let active = true;
@@ -185,6 +196,7 @@ const Layout = () => {
   // ===================================================
 
   const menuItems = useMemo(() => {
+    const can = (permission) => permissions.includes(permission);
     const items = [
       {
         key: "/dashboard",
@@ -193,12 +205,12 @@ const Layout = () => {
         icon: <AppstoreOutlined />,
       },
 
-      {
+      ...(can("feedback.read") ? [{
         key: "/feedback",
         label: "Feedback",
         shortLabel: "Feedback",
         icon: <CommentOutlined />,
-      },
+      }] : []),
       ...(features.cfs ? [{
         key: "/cfs",
         label: "Yakiuo CFS",
@@ -212,12 +224,12 @@ const Layout = () => {
         shortLabel: "Todo",
         icon: <CheckSquareOutlined />,
       },
-      {
+      ...(can("inventory.read") ? [{
         key: "/inventory",
         label: "Kiểm kê dụng cụ",
         shortLabel: "Dụng cụ",
         icon: <ToolOutlined />,
-      },
+      }] : []),
     ];
 
     if (features.caro && ["admin", "employee", "premium"].includes(user?.role)) {
@@ -238,7 +250,7 @@ const Layout = () => {
     }
 
     // Mọi tài khoản đã đăng nhập đều có thể xem hồ sơ nhân viên.
-    items.splice(1, 0, {
+    if (can("users.read")) items.splice(1, 0, {
       key: "/users",
       label: "Nhân viên",
       shortLabel: "Nhân viên",
@@ -246,7 +258,7 @@ const Layout = () => {
     });
 
     // Chỉ admin và manager có quyền quản lý thông báo.
-    if (["admin", "manager"].includes(user?.role)) {
+    if (can("notifications.read")) {
       items.push({
         key: "/notifications",
         label: user?.role === "admin" ? "Quản trị hệ thống" : "Thông báo",
@@ -261,7 +273,7 @@ const Layout = () => {
     }
 
     return items;
-  }, [features.caro, features.chess, features.cfs, user?.role]);
+  }, [features.caro, features.chess, features.cfs, permissions, user?.role]);
 
   // ===================================================
   // MOBILE MENU
@@ -270,19 +282,19 @@ const Layout = () => {
   const mobileMenuItems = useMemo(() => {
     // Các trang quản trị (như Nhân viên) nằm trong menu tài khoản trên header
     // để taskbar điện thoại luôn gọn và dễ bấm.
-    const keys = ["/dashboard", "/feedback", ...(features.cfs ? ["/cfs"] : []), "/todos", "/inventory"];
+    const keys = ["/dashboard", ...(permissions.includes("feedback.read") ? ["/feedback"] : []), ...(features.cfs ? ["/cfs"] : []), "/todos", ...(permissions.includes("inventory.read") ? ["/inventory"] : [])];
 
     if (features.caro && ["admin", "employee", "premium"].includes(user?.role)) keys.push("/caro");
     if (features.chess && ["admin", "employee", "premium"].includes(user?.role)) keys.push("/chess");
 
-    if (["admin", "manager"].includes(user?.role)) {
+    if (permissions.includes("notifications.read")) {
       keys.push("/notifications");
     }
 
     return keys
       .map((key) => menuItems.find((item) => item.key === key))
       .filter(Boolean);
-  }, [features.caro, features.chess, features.cfs, menuItems, user?.role]);
+  }, [features.caro, features.chess, features.cfs, menuItems, permissions, user?.role]);
 
   const mobileTaskbarItems = useMemo(
     () => [

@@ -3,7 +3,7 @@ const {
 } = require("../config/permissions");
 
 const requirePermission = (permission) => {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({
         success: false,
@@ -11,7 +11,7 @@ const requirePermission = (permission) => {
       });
     }
 
-    const allowed = hasPermission(
+    const allowed = await hasPermission(
       req.user.role,
       permission
     );

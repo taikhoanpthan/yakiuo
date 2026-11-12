@@ -35,6 +35,7 @@ import InventoryCheckModal from "./InventoryCheckModal";
 import UserAvatar from "../../components/common/UserAvatar";
 import HamsterLoader from "../../components/common/HamsterLoader";
 import { onInventoryChanged } from "../../services/socket";
+import { usePermissions } from "../../hooks/usePermissions";
 import "./Inventory.css";
 
 const NO_IMAGE_PLACEHOLDER =
@@ -48,7 +49,10 @@ const getInventoryStatus = (quantity, minQuantity) => {
 
 const Inventory = () => {
   const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const { can } = usePermissions(user);
+  const canCreateInventory = can("inventory.create");
+  const canUpdateInventory = can("inventory.update");
+  const canDeleteInventory = can("inventory.delete");
 
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
@@ -354,7 +358,7 @@ const Inventory = () => {
             </Button>
           </Tooltip>
 
-          {isAdmin && (
+          {canUpdateInventory && (
             <>
               <Popconfirm
                 title="Xóa hàng hóa này?"
@@ -400,7 +404,7 @@ const Inventory = () => {
             Làm mới
           </Button>
 
-          {isAdmin && (
+          {canDeleteInventory && (
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -509,7 +513,7 @@ const Inventory = () => {
             description="Chưa có dữ liệu hàng hóa phù hợp"
             className="py-12"
           >
-            {isAdmin && (
+            {canCreateInventory && (
               <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenAdd}>
                 Thêm hàng hóa đầu tiên
               </Button>

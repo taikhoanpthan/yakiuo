@@ -201,13 +201,6 @@ const getInventoryItemById = async (req, res) => {
 
 const createInventoryItem = async (req, res) => {
   try {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Chỉ quản trị viên (Admin) mới có quyền thêm hàng hóa / công cụ",
-      });
-    }
-
     const {
       name,
       quantity,
@@ -278,13 +271,6 @@ const createInventoryItem = async (req, res) => {
 
 const updateInventoryItem = async (req, res) => {
   try {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Chỉ quản trị viên (Admin) mới có quyền cập nhật thông tin hàng hóa",
-      });
-    }
-
     const item = await InventoryItem.findById(req.params.id);
     if (!item) {
       return res.status(404).json({
@@ -435,13 +421,6 @@ const checkInventoryItem = async (req, res) => {
 
 const deleteInventoryItem = async (req, res) => {
   try {
-    if (req.user?.role !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Chỉ quản trị viên (Admin) mới có quyền xóa hàng hóa / công cụ",
-      });
-    }
-
     const item = await InventoryItem.findByIdAndDelete(req.params.id);
     if (!item) {
       return res.status(404).json({

@@ -376,6 +376,12 @@ export const onSystemFeaturesChanged = (callback) => {
   return () => currentSocket.off("system:features-changed", callback);
 };
 
+export const onSystemPermissionsChanged = (callback) => {
+  const currentSocket = createSocket();
+  currentSocket.on("system:permissions-changed", callback);
+  return () => currentSocket.off("system:permissions-changed", callback);
+};
+
 export const onInventoryChanged = (callback) => {
   const currentSocket = createSocket();
   const handleCreated = (item) => callback({ type: "created", item });
@@ -485,6 +491,7 @@ export default {
   onCfsNotification,
   onSystemNotificationChanged,
   onSystemFeaturesChanged,
+  onSystemPermissionsChanged,
   onInventoryChanged,
   onOnlineCount,
   onUserOnline,

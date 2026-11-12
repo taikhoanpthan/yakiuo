@@ -14,6 +14,7 @@ const {
 } = require("../controllers/commission.controller");
 
 const { authenticate } = require("../middleware/auth.middleware");
+const { requirePermission } = require("../middleware/permission.middleware");
 
 // =====================================================
 // MY COMMISSIONS
@@ -22,6 +23,7 @@ const { authenticate } = require("../middleware/auth.middleware");
 router.get(
   "/my",
   authenticate,
+  requirePermission("commission.read"),
   getMyCommissions,
 );
 
@@ -29,6 +31,7 @@ router.get(
 router.delete(
   "/my/month",
   authenticate,
+  requirePermission("commission.delete"),
   deleteMyCommissionsByMonth,
 );
 
@@ -39,6 +42,7 @@ router.delete(
 router.get(
   "/user/:userId",
   authenticate,
+  requirePermission("commission.read"),
   getCommissionsByUser,
 );
 
@@ -49,6 +53,7 @@ router.get(
 router.post(
   "/",
   authenticate,
+  requirePermission("commission.create"),
   createCommission,
 );
 
@@ -59,6 +64,7 @@ router.post(
 router.get(
   "/:id",
   authenticate,
+  requirePermission("commission.read"),
   getCommissionById,
 );
 
@@ -69,10 +75,11 @@ router.get(
 router.put(
   "/:id",
   authenticate,
+  requirePermission("commission.update"),
   updateCommission,
 );
 
-router.patch("/:id/bill-collected", authenticate, toggleBillCollected);
+router.patch("/:id/bill-collected", authenticate, requirePermission("commission.update"), toggleBillCollected);
 
 // =====================================================
 // DELETE ONE
@@ -81,6 +88,7 @@ router.patch("/:id/bill-collected", authenticate, toggleBillCollected);
 router.delete(
   "/:id",
   authenticate,
+  requirePermission("commission.delete"),
   deleteCommission,
 );
 

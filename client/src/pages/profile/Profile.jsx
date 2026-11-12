@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../store/AuthContext";
 
@@ -7,6 +7,7 @@ import {
   Card,
   Divider,
   Form,
+  Image,
   Input,
   Modal,
   Slider,
@@ -19,6 +20,7 @@ import {
   CameraOutlined,
   CheckCircleFilled,
   CloseOutlined,
+  DeleteOutlined,
   DollarOutlined,
   DragOutlined,
   EditOutlined,
@@ -120,6 +122,11 @@ const Profile = () => {
   const [showShowcaseUrlModal, setShowShowcaseUrlModal] = useState(false);
   const [showcaseImageUrl, setShowcaseImageUrl] = useState("");
   const [showcaseIndex, setShowcaseIndex] = useState(0);
+  const [draggedShowcaseIndex, setDraggedShowcaseIndex] = useState(null);
+  const [dragOverShowcaseIndex, setDragOverShowcaseIndex] = useState(null);
+  const [showcaseDragPreview, setShowcaseDragPreview] = useState(null);
+  const dragOverShowcaseIndexRef = useRef(null);
+  const showcaseUploadQueueRef = useRef(Promise.resolve());
   const [imageAdjustTarget, setImageAdjustTarget] = useState(null);
   const [imagePosition, setImagePosition] = useState({ x: 50, y: 50 });
   const [imageZoom, setImageZoom] = useState(1);
@@ -308,7 +315,7 @@ const Profile = () => {
     }
   };
 
-  const handleUploadShowcase = async ({ file, onSuccess, onError }) => {
+  const uploadShowcaseFile = async ({ file, onSuccess, onError }) => {
     try {
       if (!file.type?.startsWith("image/")) {
         throw new Error("Chỉ được upload file hình ảnh");
@@ -343,6 +350,12 @@ const Profile = () => {
     } finally {
       setUploadingShowcase(false);
     }
+  };
+
+  const handleUploadShowcase = (request) => {
+    const queuedUpload = showcaseUploadQueueRef.current.then(() => uploadShowcaseFile(request));
+    showcaseUploadQueueRef.current = queuedUpload.catch(() => undefined);
+    return queuedUpload;
   };
 
   const handleSaveShowcaseUrl = async () => {
@@ -392,6 +405,34 @@ const Profile = () => {
     } finally {
       setUploadingShowcase(false);
     }
+  };
+
+  const handleReorderShowcaseImages = async (fromIndex, toIndex) => {
+    if (fromIndex === toIndex || fromIndex === null || toIndex === null) return;
+
+    const reorderedImages = [...showcaseImages];
+    const [movedImage] = reorderedImages.splice(fromIndex, 1);
+    reorderedImages.splice(toIndex, 0, movedImage);
+
+    try {
+      setUploadingShowcase(true);
+      const response = await updateMyProfile({ profileShowcaseImages: reorderedImages });
+      const updatedUser = response?.data?.user;
+      if (!updatedUser) throw new Error("Không nhận được thứ tự ảnh mới");
+      syncUser(updatedUser);
+      setShowcaseIndex(toIndex);
+      message.success("Đã thay đổi thứ tự ảnh hiển thị");
+    } catch (error) {
+      message.error(error.response?.data?.message || error.message || "Không thể đổi vị trí ảnh");
+    } finally {
+      setUploadingShowcase(false);
+    }
+  };
+
+  const getShowcaseDropIndex = (clientX, clientY) => {
+    const target = document.elementFromPoint(clientX, clientY)?.closest("[data-showcase-sort-index]");
+    const nextIndex = Number(target?.dataset.showcaseSortIndex);
+    return Number.isInteger(nextIndex) ? nextIndex : null;
   };
 
   // =====================================================
@@ -767,29 +808,6 @@ const Profile = () => {
                   Tải một ảnh để hiển thị trên trang cá nhân
                 </div>
               )}
-              <Upload
-                showUploadList={false}
-                accept="image/png,image/jpeg,image/webp"
-                customRequest={handleUploadShowcase}
-              >
-                <Button
-                  className="yakiuo-admin-showcase-upload"
-                  icon={<CameraOutlined />}
-                  loading={uploadingShowcase}
-                >
-                  {showcaseImages.length ? "Thêm ảnh" : "Tải ảnh hiển thị"}
-                </Button>
-              </Upload>
-              <Button
-                className="yakiuo-admin-showcase-url"
-                icon={<LinkOutlined />}
-                onClick={() => {
-                  setShowcaseImageUrl(user?.profileShowcaseImage || "");
-                  setShowShowcaseUrlModal(true);
-                }}
-              >
-                Dán link ảnh
-              </Button>
               {showcaseImages.length > 1 && (
                 <div className="yakiuo-admin-showcase-dots" aria-label={`Ảnh ${showcaseIndex + 1} trên ${showcaseImages.length}`}>
                   {showcaseImages.map((image, index) => (
@@ -797,10 +815,117 @@ const Profile = () => {
                   ))}
                 </div>
               )}
-              {showcaseImages.length > 0 && (
-                <Button danger className="yakiuo-admin-showcase-delete" icon={<CloseOutlined />} loading={uploadingShowcase} onClick={() => Modal.confirm({ title: "Xóa ảnh hiển thị?", content: "Ảnh này sẽ không còn xuất hiện trên trang cá nhân.", okText: "Xóa ảnh", cancelText: "Hủy", okButtonProps: { danger: true }, onOk: () => handleRemoveShowcaseImage(showcaseImages[showcaseIndex]) })}>
-                  Xóa ảnh
-                </Button>
+            </section>
+          )}
+
+          {isAdmin && (
+            <section className="yakiuo-admin-showcase-manager" aria-label="Quản lý ảnh hiển thị">
+              <div className="yakiuo-admin-showcase-manager-head">
+                <div>
+                  <h2>Quản lý ảnh hiển thị</h2>
+                  <p>{showcaseImages.length}/20 ảnh đang hiển thị trên trang cá nhân.</p>
+                </div>
+                <div className="yakiuo-admin-showcase-manager-actions">
+                  <Upload
+                    showUploadList={false}
+                    accept="image/png,image/jpeg,image/webp"
+                    multiple
+                    customRequest={handleUploadShowcase}
+                  >
+                    <Button icon={<CameraOutlined />} loading={uploadingShowcase}>
+                      Thêm ảnh
+                    </Button>
+                  </Upload>
+                  <Button
+                    icon={<LinkOutlined />}
+                    onClick={() => {
+                      setShowcaseImageUrl("");
+                      setShowShowcaseUrlModal(true);
+                    }}
+                  >
+                    Thêm từ link
+                  </Button>
+                </div>
+              </div>
+
+              {showcaseImages.length ? (
+                <div className="yakiuo-admin-showcase-manager-grid">
+                  {showcaseImages.map((image, index) => (
+                    <div
+                      className={`yakiuo-admin-showcase-manager-item${index === showcaseIndex ? " is-active" : ""}${index === draggedShowcaseIndex ? " is-dragging" : ""}${draggedShowcaseIndex !== null && index !== draggedShowcaseIndex ? " is-reordering" : ""}${index === dragOverShowcaseIndex && index !== draggedShowcaseIndex ? " is-drop-target" : ""}`}
+                      key={image}
+                      data-showcase-sort-index={index}
+                      onPointerDown={(event) => { if (uploadingShowcase || event.button > 0) return; event.currentTarget.setPointerCapture?.(event.pointerId); setDraggedShowcaseIndex(index); setDragOverShowcaseIndex(index); dragOverShowcaseIndexRef.current = index; setShowcaseDragPreview({ image, x: event.clientX, y: event.clientY }); }}
+                      onPointerMove={(event) => { if (draggedShowcaseIndex === null) return; setShowcaseDragPreview((current) => current ? { ...current, x: event.clientX, y: event.clientY } : current); const nextIndex = getShowcaseDropIndex(event.clientX, event.clientY); if (nextIndex !== null && nextIndex !== dragOverShowcaseIndexRef.current) { dragOverShowcaseIndexRef.current = nextIndex; setDragOverShowcaseIndex(nextIndex); } }}
+                      onPointerUp={(event) => { if (draggedShowcaseIndex === null) return; event.currentTarget.releasePointerCapture?.(event.pointerId); handleReorderShowcaseImages(draggedShowcaseIndex, dragOverShowcaseIndexRef.current); setDraggedShowcaseIndex(null); setDragOverShowcaseIndex(null); dragOverShowcaseIndexRef.current = null; setShowcaseDragPreview(null); }}
+                      onPointerCancel={() => { setDraggedShowcaseIndex(null); setDragOverShowcaseIndex(null); dragOverShowcaseIndexRef.current = null; setShowcaseDragPreview(null); }}
+                    >
+                      <div className="yakiuo-admin-showcase-manager-preview" onClick={() => setShowcaseIndex(index)} role="button" tabIndex={0} aria-label={`Xem ảnh ${index + 1}`}>
+                        <Image src={image} alt={`Ảnh hiển thị ${index + 1}`} preview={{ mask: "Xem ảnh" }} />
+                        {index === showcaseIndex && <span>Đang hiển thị</span>}
+                      </div>
+                      <span
+                        className="yakiuo-admin-showcase-manager-order"
+                        onPointerDown={(event) => {
+                          if (uploadingShowcase || event.button > 0) return;
+                          event.currentTarget.setPointerCapture?.(event.pointerId);
+                          setDraggedShowcaseIndex(index);
+                          setDragOverShowcaseIndex(index);
+                          dragOverShowcaseIndexRef.current = index;
+                          setShowcaseDragPreview({ image, x: event.clientX, y: event.clientY });
+                        }}
+                        onPointerMove={(event) => {
+                          if (draggedShowcaseIndex === null) return;
+                          setShowcaseDragPreview((current) => current ? { ...current, x: event.clientX, y: event.clientY } : current);
+                          const nextIndex = getShowcaseDropIndex(event.clientX, event.clientY);
+                          if (nextIndex !== null && nextIndex !== dragOverShowcaseIndexRef.current) {
+                            dragOverShowcaseIndexRef.current = nextIndex;
+                            setDragOverShowcaseIndex(nextIndex);
+                          }
+                        }}
+                        onPointerUp={(event) => {
+                          if (draggedShowcaseIndex === null) return;
+                          event.currentTarget.releasePointerCapture?.(event.pointerId);
+                          handleReorderShowcaseImages(draggedShowcaseIndex, dragOverShowcaseIndexRef.current);
+                          setDraggedShowcaseIndex(null);
+                          setDragOverShowcaseIndex(null);
+                          dragOverShowcaseIndexRef.current = null;
+                          setShowcaseDragPreview(null);
+                        }}
+                        onPointerCancel={() => {
+                          setDraggedShowcaseIndex(null);
+                          setDragOverShowcaseIndex(null);
+                          dragOverShowcaseIndexRef.current = null;
+                          setShowcaseDragPreview(null);
+                        }}
+                      />
+                      <Button
+                        danger
+                        type="text"
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        aria-label={`Xóa ảnh ${index + 1}`}
+                        loading={uploadingShowcase}
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onClick={() => Modal.confirm({
+                          title: "Xóa ảnh hiển thị?",
+                          content: "Ảnh này sẽ không còn xuất hiện trên trang cá nhân.",
+                          okText: "Xóa ảnh",
+                          cancelText: "Hủy",
+                          okButtonProps: { danger: true },
+                          onOk: () => handleRemoveShowcaseImage(image),
+                        })}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="yakiuo-admin-showcase-manager-empty">Chưa có ảnh nào. Thêm ảnh từ máy hoặc từ một đường link.</div>
+              )}
+              {showcaseDragPreview && (
+                <div className="erp-image-drag-preview" style={{ left: showcaseDragPreview.x, top: showcaseDragPreview.y }} aria-hidden="true">
+                  <img src={showcaseDragPreview.image} alt="" />
+                </div>
               )}
             </section>
           )}

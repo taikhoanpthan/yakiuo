@@ -80,15 +80,6 @@ const createNotification = async (
       });
     }
 
-    // Admin và manager có thể quản lý thông báo.
-    if (!["admin", "manager"].includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Only admin or manager can create notifications",
-      });
-    }
-
     const {
       title,
       content,
@@ -162,14 +153,6 @@ const updateNotification = async (
       });
     }
 
-    if (!["admin", "manager"].includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Only admin or manager can update notifications",
-      });
-    }
-
     const notification =
       await notificationService.updateNotification(
         req.params.id,
@@ -212,14 +195,6 @@ const deleteNotification = async (
         success: false,
         message:
           "Authentication required",
-      });
-    }
-
-    if (!["admin", "manager"].includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Only admin or manager can delete notifications",
       });
     }
 

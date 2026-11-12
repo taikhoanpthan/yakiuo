@@ -99,6 +99,10 @@ const createUser = async (req, res) => {
       });
     }
 
+    // Các role không phải admin chỉ được tạo tài khoản nhân viên thường,
+    // dù đã được cấp quyền users.create trong bảng phân quyền.
+    const assignedRole = req.user?.role === "admin" ? role : "employee";
+
     const user = await userService.createUser({
       username,
       email,
@@ -106,7 +110,7 @@ const createUser = async (req, res) => {
       fullName,
       avatar,
       phone,
-      role,
+      role: assignedRole,
       status,
     });
 
@@ -127,13 +131,13 @@ const createUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
-    if (req.user.role === "manager") {
+    if (req.user.role !== "admin") {
       const targetUser = await userService.getUserById(req.params.id);
 
       if (targetUser.role !== "employee") {
         return res.status(403).json({
           success: false,
-          message: "Manager chỉ có thể quản lý tài khoản nhân viên",
+          message: "Chỉ có thể quản lý tài khoản nhân viên",
         });
       }
 
@@ -141,7 +145,7 @@ const updateUser = async (req, res) => {
       if (restrictedFields.some((field) => req.body[field] !== undefined)) {
         return res.status(403).json({
           success: false,
-          message: "Manager chỉ được cập nhật họ tên, số điện thoại và ảnh đại diện",
+          message: "Chỉ được cập nhật họ tên, số điện thoại và ảnh đại diện",
         });
       }
     }
@@ -187,13 +191,13 @@ const updateUserStatus = async (req, res) => {
       });
     }
 
-    if (req.user.role === "manager") {
+    if (req.user.role !== "admin") {
       const targetUser = await userService.getUserById(req.params.id);
 
       if (targetUser.role !== "employee") {
         return res.status(403).json({
           success: false,
-          message: "Manager chỉ có thể thay đổi trạng thái tài khoản nhân viên",
+          message: "Chỉ có thể thay đổi trạng thái tài khoản nhân viên",
         });
       }
     }

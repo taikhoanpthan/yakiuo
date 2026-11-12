@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
@@ -47,13 +47,15 @@ import {
   deleteNotification,
 } from "../../services/notificationService";
 import {
+  getWorkSchedules,
   getWorkSchedule,
   deleteWorkSchedule,
+  reorderWorkSchedules,
+  createDashboardSlide,
   updateWorkSchedule,
 } from "../../services/workSchedule.service";
-import { createFeedbackTag, deleteFeedbackTag, getFeedbackTags } from "../../services/feedbackTag.service";
 import { useAuth } from "../../store/AuthContext";
-import { getSystemStatus, setFeatureVisibility, setMaintenanceMode } from "../../services/system.service";
+import { getRolePermissions, getSystemStatus, setFeatureVisibility, setMaintenanceMode, setRolePermissions } from "../../services/system.service";
 import { onSystemNotificationChanged } from "../../services/socket";
 
 const AdminToggle = ({ checked, loading = false, onChange, label }) => (
@@ -94,12 +96,20 @@ const Notifications = () => {
   const [visibilitySavingId, setVisibilitySavingId] = useState(null);
 
   const [workSchedule, setWorkSchedule] = useState(null);
+  const [workSchedules, setWorkSchedules] = useState([]);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleUploading, setScheduleUploading] = useState(false);
   const [scheduleDeleting, setScheduleDeleting] = useState(false);
-  const [feedbackTags, setFeedbackTags] = useState([]);
-  const [newFeedbackTag, setNewFeedbackTag] = useState("");
-  const [tagSaving, setTagSaving] = useState(false);
+  const [scheduleReordering, setScheduleReordering] = useState(false);
+  const [draggedScheduleIndex, setDraggedScheduleIndex] = useState(null);
+  const [dragOverScheduleIndex, setDragOverScheduleIndex] = useState(null);
+  const [scheduleDragPreview, setScheduleDragPreview] = useState(null);
+  const dragOverScheduleIndexRef = useRef(null);
+  const schedulePointerRef = useRef(null);
+  const suppressScheduleClickRef = useRef(false);
+  const [permissionConfig, setPermissionConfig] = useState(null);
+  const [permissionSaving, setPermissionSaving] = useState(null);
+  const [expandedPermissionGroup, setExpandedPermissionGroup] = useState("Nhân viên");
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
   const [maintenanceSaving, setMaintenanceSaving] = useState(false);
   const [features, setFeatures] = useState({ cfs: true, caro: true, chess: true });
@@ -124,6 +134,10 @@ const Notifications = () => {
   const displayedNotifications = isNotificationManager && notificationScope === "priority"
     ? notifications.filter((item) => ["warning", "error"].includes(item.type))
     : notifications;
+  const permissionGroups = (permissionConfig?.permissions || []).reduce((groups, permission) => {
+    (groups[permission.group] ||= []).push(permission);
+    return groups;
+  }, {});
   const loading = notificationsQuery.isFetching;
   const setNotifications = (updater) => queryClient.setQueryData(["notifications"], (current = []) => typeof updater === "function" ? updater(current) : updater);
   const loadNotifications = notificationsQuery.refetch;
@@ -131,13 +145,11 @@ const Notifications = () => {
     try {
       setScheduleLoading(true);
 
-      const response = await getWorkSchedule();
-
-      console.log("WORK SCHEDULE RESPONSE:", response);
-
-      const data = response?.data?.data ?? response?.data ?? null;
-
-      setWorkSchedule(data);
+      const [scheduleResponse, slidesResponse] = await Promise.all([getWorkSchedule(), getWorkSchedules()]);
+      const scheduleData = scheduleResponse?.data?.data ?? scheduleResponse?.data ?? null;
+      const slidesData = slidesResponse?.data?.data ?? slidesResponse?.data ?? [];
+      setWorkSchedule(scheduleData);
+      setWorkSchedules(Array.isArray(slidesData) ? slidesData : []);
     } catch (error) {
       console.error("Load work schedule error:", error);
 
@@ -149,31 +161,21 @@ const Notifications = () => {
     }
   }, []);
 
-  const loadFeedbackTags = useCallback(async () => {
-    if (user?.role !== "admin") return;
-
-    try {
-      const response = await getFeedbackTags();
-      setFeedbackTags(Array.isArray(response?.data) ? response.data : []);
-    } catch {
-      setFeedbackTags([]);
-    }
-  }, [user?.role]);
   const loadMaintenance = useCallback(async () => {
     if (user?.role !== "admin") return;
     try {
-      const response = await getSystemStatus();
+      const [response, permissionsResponse] = await Promise.all([getSystemStatus(), getRolePermissions()]);
       const status = response.data?.data || {};
       setMaintenanceModeState(Boolean(status.maintenanceMode));
       setFeatures((current) => ({ ...current, ...(status.features || {}) }));
+      setPermissionConfig(permissionsResponse.data?.data || null);
     } catch {}
   }, [user?.role]);
 
   useEffect(() => {
     void loadWorkSchedule();
-    void loadFeedbackTags();
     void loadMaintenance();
-  }, [loadNotifications, loadWorkSchedule, loadFeedbackTags, loadMaintenance]);
+  }, [loadNotifications, loadWorkSchedule, loadMaintenance]);
   useEffect(() => onSystemNotificationChanged(loadNotifications), [loadNotifications]);
   const changeMaintenance = async (checked) => { try { setMaintenanceSaving(true); await setMaintenanceMode(checked); setMaintenanceModeState(checked); message.success(checked ? "Đã bật chế độ bảo trì" : "Đã tắt chế độ bảo trì"); } catch (error) { message.error(error.response?.data?.message || "Không thể cập nhật chế độ bảo trì"); } finally { setMaintenanceSaving(false); } };
   const changeFeature = async (feature, enabled) => {
@@ -189,30 +191,19 @@ const Notifications = () => {
     }
   };
 
-  const handleCreateFeedbackTag = async () => {
-    const label = newFeedbackTag.trim();
-    if (!label) return;
-
+  const changeRolePermission = async (role, permission, enabled) => {
+    if (!permissionConfig || permissionSaving) return;
+    const next = Object.fromEntries((permissionConfig.roles || []).map(({ key }) => [key, [...(permissionConfig.rolePermissions?.[key] || [])]]));
+    next[role] = enabled ? [...new Set([...next[role], permission])] : next[role].filter((item) => item !== permission);
     try {
-      setTagSaving(true);
-      const response = await createFeedbackTag(label);
-      setFeedbackTags((prev) => [...prev, response.data].sort((a, b) => a.label.localeCompare(b.label, "vi")));
-      setNewFeedbackTag("");
-      message.success("Đã tạo nhãn Feedback");
+      setPermissionSaving(`${role}:${permission}`);
+      const response = await setRolePermissions(next);
+      setPermissionConfig((current) => current ? { ...current, rolePermissions: response.data?.data?.rolePermissions || next } : current);
+      message.success("Đã cập nhật phân quyền");
     } catch (error) {
-      message.error(error?.response?.data?.message || "Không thể tạo nhãn Feedback");
+      message.error(error.response?.data?.message || "Không thể cập nhật phân quyền");
     } finally {
-      setTagSaving(false);
-    }
-  };
-
-  const handleDeleteFeedbackTag = async (id) => {
-    try {
-      await deleteFeedbackTag(id);
-      setFeedbackTags((prev) => prev.filter((tag) => tag._id !== id));
-      message.success("Đã xóa nhãn Feedback");
-    } catch (error) {
-      message.error(error?.response?.data?.message || "Không thể xóa nhãn Feedback");
+      setPermissionSaving(null);
     }
   };
 
@@ -252,7 +243,6 @@ const Notifications = () => {
       // Upload ảnh mới lên Cloudinary
       const cloudinaryData = await uploadScheduleToCloudinary(file);
 
-      // Update record hiện tại
       const response = await updateWorkSchedule({
         imageUrl: cloudinaryData.secure_url,
         publicId: cloudinaryData.public_id,
@@ -279,47 +269,116 @@ const Notifications = () => {
       setScheduleUploading(false);
     }
   };
-  const handleScheduleRequest = ({ file, onSuccess, onError }) => {
-    if (!workSchedule?.imageUrl) {
-      void handleScheduleUpload({
-        file,
-        onSuccess,
-        onError,
-      });
 
-      return;
+  const handleSlideUpload = async ({ file, onSuccess, onError }) => {
+    try {
+      setScheduleUploading(true);
+      const cloudinaryData = await uploadScheduleToCloudinary(file);
+      const response = await createDashboardSlide({ imageUrl: cloudinaryData.secure_url, publicId: cloudinaryData.public_id });
+      const newSlide = response.data?.data;
+      if (!newSlide) throw new Error("Không nhận được ảnh trình chiếu");
+      setWorkSchedules((current) => [newSlide, ...current]);
+      message.success("Đã thêm ảnh trình chiếu");
+      onSuccess?.();
+    } catch (error) {
+      message.error(error.response?.data?.message || error.message || "Không thể thêm ảnh trình chiếu");
+      onError?.(error);
+    } finally {
+      setScheduleUploading(false);
     }
-
-    Modal.confirm({
-      title: "Thay thế lịch làm việc?",
-      icon: <ExclamationCircleOutlined />,
-      content:
-        "Lịch làm việc hiện tại sẽ được thay bằng ảnh mới. Bạn có chắc chắn muốn tiếp tục?",
-      okText: "Thay thế",
-      cancelText: "Hủy",
-      okButtonProps: {
-        danger: true,
-      },
-      onOk: () =>
-        handleScheduleUpload({
-          file,
-          onSuccess,
-          onError,
-        }),
-    });
   };
 
-  const handleDeleteWorkSchedule = async () => {
+  const handleScheduleRequest = ({ file, onSuccess, onError }) => {
+    if (!workSchedule?.imageUrl) return handleScheduleUpload({ file, onSuccess, onError });
+    Modal.confirm({
+      title: "Cập nhật lịch làm việc?",
+      content: "Lịch cũ vẫn được lưu để có thể xem lại tuần trước.",
+      okText: "Cập nhật lịch",
+      cancelText: "Hủy",
+      onOk: () => handleScheduleUpload({ file, onSuccess, onError }),
+    });
+  };
+  const handleDeleteWorkSchedule = async (scheduleId) => {
     try {
       setScheduleDeleting(true);
-      const response = await deleteWorkSchedule();
-      setWorkSchedule(response.data?.data ?? null);
-      message.success("Đã xóa lịch làm việc");
+      await deleteWorkSchedule(scheduleId);
+      if (scheduleId) setWorkSchedules((current) => current.filter((schedule) => schedule._id !== scheduleId));
+      else await loadWorkSchedule();
+      message.success(scheduleId ? "Đã xóa ảnh trình chiếu" : "Đã xóa lịch làm việc");
     } catch (error) {
       message.error(error.response?.data?.message || "Không thể xóa lịch làm việc");
     } finally {
       setScheduleDeleting(false);
     }
+  };
+
+  const handleReorderWorkSchedules = async (fromIndex, toIndex) => {
+    if (fromIndex === toIndex || fromIndex === null || toIndex === null) return;
+    const reorderedSchedules = [...workSchedules];
+    const [movedSchedule] = reorderedSchedules.splice(fromIndex, 1);
+    reorderedSchedules.splice(toIndex, 0, movedSchedule);
+
+    try {
+      setScheduleReordering(true);
+      const response = await reorderWorkSchedules(reorderedSchedules.map((schedule) => schedule._id));
+      const updatedSchedules = response.data?.data;
+      setWorkSchedules(Array.isArray(updatedSchedules) ? updatedSchedules : reorderedSchedules);
+      message.success("Đã thay đổi thứ tự ảnh lịch");
+    } catch (error) {
+      message.error(error.response?.data?.message || "Không thể đổi vị trí ảnh lịch");
+    } finally {
+      setScheduleReordering(false);
+    }
+  };
+
+  const getScheduleDropIndex = (clientX, clientY) => {
+    const target = document.elementFromPoint(clientX, clientY)?.closest("[data-schedule-sort-index]");
+    const nextIndex = Number(target?.dataset.scheduleSortIndex);
+    return Number.isInteger(nextIndex) ? nextIndex : null;
+  };
+
+  const startSchedulePointer = (event, schedule, index) => {
+    if (scheduleReordering || scheduleDeleting || event.button > 0 || event.target.closest("button")) return;
+    schedulePointerRef.current = { index, pointerId: event.pointerId, x: event.clientX, y: event.clientY, image: schedule.imageUrl, dragging: false };
+  };
+  const moveSchedulePointer = (event) => {
+    const pointer = schedulePointerRef.current;
+    if (!pointer || pointer.pointerId !== event.pointerId) return;
+    const hasMoved = Math.hypot(event.clientX - pointer.x, event.clientY - pointer.y) >= 8;
+    if (!pointer.dragging && !hasMoved) return;
+    if (!pointer.dragging) {
+      pointer.dragging = true;
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+      setDraggedScheduleIndex(pointer.index);
+      setDragOverScheduleIndex(pointer.index);
+      dragOverScheduleIndexRef.current = pointer.index;
+    }
+    event.preventDefault();
+    setScheduleDragPreview({ image: pointer.image, x: event.clientX, y: event.clientY });
+    const nextIndex = getScheduleDropIndex(event.clientX, event.clientY);
+    if (nextIndex !== null && nextIndex !== dragOverScheduleIndexRef.current) {
+      dragOverScheduleIndexRef.current = nextIndex;
+      setDragOverScheduleIndex(nextIndex);
+    }
+  };
+  const endSchedulePointer = (event) => {
+    const pointer = schedulePointerRef.current;
+    if (!pointer || pointer.pointerId !== event.pointerId) return;
+    schedulePointerRef.current = null;
+    if (!pointer.dragging) return;
+    suppressScheduleClickRef.current = true;
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    handleReorderWorkSchedules(pointer.index, dragOverScheduleIndexRef.current);
+    setDraggedScheduleIndex(null);
+    setDragOverScheduleIndex(null);
+    dragOverScheduleIndexRef.current = null;
+    setScheduleDragPreview(null);
+  };
+  const cancelSchedulePointer = () => {
+    schedulePointerRef.current = null;
+    setDraggedScheduleIndex(null); setDragOverScheduleIndex(null); dragOverScheduleIndexRef.current = null; setScheduleDragPreview(null);
   };
 
   // =========================
@@ -683,7 +742,6 @@ const Notifications = () => {
             onClick={() => {
               void loadNotifications();
               void loadWorkSchedule();
-              void loadFeedbackTags();
               void loadMaintenance();
             }}
           >
@@ -739,6 +797,26 @@ const Notifications = () => {
       )}
       {/* ================= WORK SCHEDULE ================= */}
 
+      <Card className="erp-section-card overflow-hidden">
+        <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-xl text-purple-600"><CalendarOutlined /></div>
+            <div>
+              <h2 className="m-0 text-base font-semibold text-slate-800">Lịch làm việc tuần này</h2>
+              <p className="mb-0 mt-1 text-sm text-slate-400">Cập nhật lịch mới, lịch cũ vẫn giữ để Dashboard xem tuần trước.</p>
+            </div>
+          </div>
+          <Upload accept="image/*" showUploadList={false} customRequest={handleScheduleRequest} disabled={scheduleUploading}>
+            <Button type="primary" icon={<CloudUploadOutlined />} loading={scheduleUploading}>{workSchedule ? "Cập nhật lịch" : "Thêm lịch"}</Button>
+          </Upload>
+        </div>
+        <div className="p-5">
+          {scheduleLoading ? <div className="py-8 text-center text-sm text-slate-400">Đang tải lịch làm việc...</div> : workSchedule?.imageUrl ? (
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50"><Image src={workSchedule.imageUrl} alt="Lịch làm việc tuần này" className="block w-full" preview={{ mask: "Xem lịch" }} /></div>
+          ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Chưa có lịch làm việc" />}
+        </div>
+      </Card>
+
       <Card
         className="erp-section-card overflow-hidden"
         styles={{
@@ -756,11 +834,11 @@ const Notifications = () => {
 
               <div>
                 <h2 className="text-base font-semibold text-slate-800">
-                  Lịch làm việc
+                  Ảnh trình chiếu Dashboard
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-400">
-                  Lịch làm việc hiện tại của nhân viên.
+                  Kéo để sắp xếp ảnh trình chiếu; hai ảnh vệ sinh cố định vẫn được giữ nguyên.
                 </p>
               </div>
             </div>
@@ -768,7 +846,8 @@ const Notifications = () => {
             <Upload
               accept="image/*"
               showUploadList={false}
-              customRequest={handleScheduleRequest}
+              multiple
+              customRequest={handleSlideUpload}
               disabled={scheduleUploading}
             >
               <Button
@@ -776,72 +855,72 @@ const Notifications = () => {
                 icon={<CloudUploadOutlined />}
                 loading={scheduleUploading}
               >
-                {workSchedule ? "Cập nhật lịch" : "Thêm lịch"}
+                Thêm ảnh trình chiếu
               </Button>
             </Upload>
-
-            {workSchedule && (
-              <Popconfirm
-                title="Xóa lịch làm việc?"
-                description="Ảnh lịch hiện tại sẽ bị xóa. Lịch gần nhất trước đó sẽ được dùng lại nếu có."
-                okText="Xóa lịch"
-                cancelText="Hủy"
-                okButtonProps={{ danger: true }}
-                onConfirm={handleDeleteWorkSchedule}
-              >
-                <Button danger icon={<DeleteOutlined />} loading={scheduleDeleting}>
-                  Xóa lịch
-                </Button>
-              </Popconfirm>
-            )}
           </div>
         </div>
 
         <div className="p-5">
           {scheduleLoading ? (
-            <div className="flex min-h-[250px] items-center justify-center">
+            <div className="flex min-h-[160px] items-center justify-center">
               <div className="text-sm text-slate-400">
-                Đang tải lịch làm việc...
+                Đang tải ảnh trình chiếu...
               </div>
             </div>
-          ) : workSchedule?.imageUrl ? (
-            <div>
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-                <Image
-                  src={workSchedule.imageUrl}
-                  alt="Lịch làm việc"
-                  className="block w-full"
-                  preview={{
-                    mask: "Xem lịch",
+          ) : workSchedules.length ? (
+            <div className="schedule-image-manager-grid">
+              {workSchedules.map((schedule, index) => (
+                <div
+                  key={schedule._id}
+                  data-schedule-sort-index={index}
+                  className={`schedule-image-manager-item${index === draggedScheduleIndex ? " is-dragging" : ""}${draggedScheduleIndex !== null && index !== draggedScheduleIndex ? " is-reordering" : ""}${index === dragOverScheduleIndex && index !== draggedScheduleIndex ? " is-drop-target" : ""}`}
+                  onPointerDown={(event) => startSchedulePointer(event, schedule, index)}
+                  onPointerMove={moveSchedulePointer}
+                  onPointerUp={endSchedulePointer}
+                  onPointerCancel={cancelSchedulePointer}
+                  onClickCapture={(event) => {
+                    if (!suppressScheduleClickRef.current) return;
+                    suppressScheduleClickRef.current = false;
+                    event.preventDefault();
+                    event.stopPropagation();
                   }}
-                />
-              </div>
-
-              <div className="mt-4 flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-slate-400">
-                  Cập nhật lần cuối:
-                  <span className="ml-1 font-medium text-slate-600">
-                    {workSchedule.updatedAt
-                      ? dayjs(workSchedule.updatedAt).format("DD/MM/YYYY HH:mm")
-                      : "—"}
-                  </span>
+                >
+                  <Image
+                    src={schedule.imageUrl}
+                    alt={`Ảnh lịch ${index + 1}`}
+                    className="schedule-image-manager-preview"
+                    preview={{ mask: "Xem lịch" }}
+                  />
+                  <div className="schedule-image-manager-meta">
+                    <span>{schedule.updatedAt ? dayjs(schedule.updatedAt).format("DD/MM/YYYY HH:mm") : "—"}</span>
+                    <Popconfirm
+                      title="Xóa ảnh trình chiếu này?"
+                      description="Ảnh sẽ không còn xuất hiện ở Dashboard."
+                      okText="Xóa ảnh"
+                      cancelText="Hủy"
+                      okButtonProps={{ danger: true }}
+                      onConfirm={() => handleDeleteWorkSchedule(schedule._id)}
+                    >
+                      <Button danger type="text" size="small" icon={<DeleteOutlined />} loading={scheduleDeleting} onPointerDown={(event) => event.stopPropagation()}>
+                        Xóa
+                      </Button>
+                    </Popconfirm>
+                  </div>
                 </div>
-
-                <Tag color="success" className="w-fit rounded-full px-3">
-                  Lịch hiện tại
-                </Tag>
-              </div>
+              ))}
             </div>
           ) : (
-            <div className="flex min-h-[250px] items-center justify-center">
+            <div className="flex min-h-[160px] items-center justify-center">
               <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="Chưa có lịch làm việc"
+                description="Chưa có ảnh trình chiếu nào"
               >
                 <Upload
                   accept="image/*"
                   showUploadList={false}
-                  customRequest={handleScheduleRequest}
+                  multiple
+                  customRequest={handleSlideUpload}
                   disabled={scheduleUploading}
                 >
                   <Button
@@ -849,42 +928,59 @@ const Notifications = () => {
                     icon={<CloudUploadOutlined />}
                     loading={scheduleUploading}
                   >
-                    Thêm lịch làm việc
+                    Thêm ảnh trình chiếu
                   </Button>
                 </Upload>
               </Empty>
             </div>
           )}
+          {scheduleDragPreview && (
+            <div className="erp-image-drag-preview" style={{ left: scheduleDragPreview.x, top: scheduleDragPreview.y }} aria-hidden="true">
+              <img src={scheduleDragPreview.image} alt="" />
+            </div>
+          )}
         </div>
       </Card>
 
-      {user?.role === "admin" && (
-        <Card className="erp-section-card">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="m-0 text-base font-semibold text-slate-800">Nhãn Feedback cho Premium</h2>
-              <p className="mb-0 mt-1 text-sm text-slate-400">Premium sẽ nhìn thấy các nhãn này khi thêm feedback.</p>
-            </div>
-            <div className="flex gap-2 sm:w-[360px]">
-              <Input
-                value={newFeedbackTag}
-                onChange={(event) => setNewFeedbackTag(event.target.value)}
-                onPressEnter={handleCreateFeedbackTag}
-                placeholder="Ví dụ: Đồ ăn ngon"
-                maxLength={60}
-              />
-              <Button type="primary" icon={<PlusOutlined />} loading={tagSaving} onClick={handleCreateFeedbackTag}>
-                Thêm
-              </Button>
-            </div>
+      {user?.role === "admin" && permissionConfig && (
+        <Card className="erp-section-card overflow-hidden" styles={{ body: { padding: 0 } }}>
+          <div className="border-b border-slate-100 px-5 py-4">
+            <h2 className="m-0 text-base font-semibold text-slate-800">Phân quyền hệ thống</h2>
+            <p className="mb-0 mt-1 text-sm text-slate-400">Bật hoặc tắt từng quyền theo vai trò. Thay đổi có hiệu lực ngay.</p>
           </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {feedbackTags.length ? feedbackTags.map((tag) => (
-              <Tag key={tag._id} closable onClose={(event) => { event.preventDefault(); handleDeleteFeedbackTag(tag._id); }}>
-                {tag.label}
-              </Tag>
-            )) : <span className="text-sm text-slate-400">Chưa có nhãn nào.</span>}
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr><th className="px-5 py-3 font-semibold">Chức năng</th>{permissionConfig.roles?.map((role) => <th key={role.key} className="px-4 py-3 text-center font-semibold">{role.label}</th>)}</tr>
+              </thead>
+              <tbody>
+                {Object.entries(permissionGroups).map(([group, permissions]) => {
+                  const expanded = expandedPermissionGroup === group;
+                  return (
+                    <Fragment key={group}>
+                      <tr className="border-t border-slate-100 bg-stone-50/70">
+                        <td colSpan={(permissionConfig.roles?.length || 0) + 1} className="p-0">
+                          <button type="button" className="flex w-full items-center justify-between px-5 py-3 text-left" onClick={() => setExpandedPermissionGroup(expanded ? null : group)}>
+                            <span className="font-semibold text-slate-700">{group}<span className="ml-2 text-xs font-normal text-slate-400">{permissions.length} quyền</span></span>
+                            <span className="text-xs text-amber-700">{expanded ? "Thu gọn" : "Thiết lập"}</span>
+                          </button>
+                        </td>
+                      </tr>
+                      {expanded && permissions.map((permission) => (
+                        <tr key={permission.key} className="border-t border-slate-100">
+                          <td className="px-5 py-2.5 pl-8 text-slate-600">{permission.action}</td>
+                          {permissionConfig.roles?.map((role) => (
+                            <td key={role.key} className="px-4 py-2.5 text-center">
+                              <input aria-label={`${group} ${permission.action} - ${role.label}`} type="checkbox" className="h-4 w-4 cursor-pointer accent-amber-700" checked={permissionConfig.rolePermissions?.[role.key]?.includes(permission.key) || false} disabled={Boolean(permissionSaving)} onChange={(event) => changeRolePermission(role.key, permission.key, event.target.checked)} />
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </Card>
       )}

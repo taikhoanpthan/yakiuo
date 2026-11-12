@@ -1,5 +1,6 @@
 const express = require("express");
 const { authenticate } = require("../middleware/auth.middleware");
+const { requirePermission } = require("../middleware/permission.middleware");
 const upload = require("../middleware/upload.middleware");
 const {
   getInventory,
@@ -15,12 +16,12 @@ const router = express.Router();
 
 router.use(authenticate);
 
-router.get("/", getInventory);
-router.get("/:id", getInventoryItemById);
-router.post("/", upload.single("imageFile"), createInventoryItem);
-router.post("/upload", upload.single("image"), uploadInventoryImage);
-router.put("/:id", upload.single("imageFile"), updateInventoryItem);
-router.patch("/:id/check", checkInventoryItem);
-router.delete("/:id", deleteInventoryItem);
+router.get("/", requirePermission("inventory.read"), getInventory);
+router.get("/:id", requirePermission("inventory.read"), getInventoryItemById);
+router.post("/", requirePermission("inventory.create"), upload.single("imageFile"), createInventoryItem);
+router.post("/upload", requirePermission("inventory.create"), upload.single("image"), uploadInventoryImage);
+router.put("/:id", requirePermission("inventory.update"), upload.single("imageFile"), updateInventoryItem);
+router.patch("/:id/check", requirePermission("inventory.update"), checkInventoryItem);
+router.delete("/:id", requirePermission("inventory.delete"), deleteInventoryItem);
 
 module.exports = router;

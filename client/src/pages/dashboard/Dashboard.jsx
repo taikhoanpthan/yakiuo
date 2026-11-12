@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Button, Card, Empty, Image, Modal, message } from "antd";
+import { Button, Card, Carousel, Image, Modal, message } from "antd";
 
 import {
   CalendarOutlined,
@@ -11,7 +11,7 @@ import {
 
 import dayjs from "dayjs";
 
-import { getPreviousWorkSchedule, getWorkSchedule } from "../../services/workSchedule.service";
+import { getPreviousWorkSchedule, getWorkSchedule, getWorkSchedules } from "../../services/workSchedule.service";
 import { connectSocket, onSocketConnected } from "../../services/socket";
 import weeklyCleaningMonThuImage from "../../assets/dashboard/weekly-cleaning-mon-thu.jpg";
 import weeklyCleaningFriSunImage from "../../assets/dashboard/weekly-cleaning-fri-sun.jpg";
@@ -41,11 +41,13 @@ const Dashboard = () => {
   // =========================
 
   const queryClient = useQueryClient();
-  const { data: workSchedule = null, isLoading: loading } = useQuery({
-    queryKey: ["work-schedule", "current"],
+  const { data: dashboardData = { schedule: null, slides: [] }, isLoading: loading } = useQuery({
+    queryKey: ["dashboard", "schedule-and-slides"],
     queryFn: async () => {
-      const response = await getWorkSchedule();
-      return response.data?.data ?? response.data ?? null;
+      const [scheduleResponse, slidesResponse] = await Promise.all([getWorkSchedule(), getWorkSchedules()]);
+      const schedule = scheduleResponse.data?.data ?? scheduleResponse.data ?? null;
+      const slides = slidesResponse.data?.data ?? slidesResponse.data ?? [];
+      return { schedule, slides: Array.isArray(slides) ? slides : [] };
     },
   });
 
@@ -53,21 +55,24 @@ const Dashboard = () => {
   useEffect(() => {
     const socket = connectSocket();
 
-    const handleWorkScheduleUpdated = (payload = {}) => {
-      queryClient.setQueryData(["work-schedule", "current"], payload.data ?? payload ?? null);
-    };
+    const handleWorkScheduleUpdated = () => queryClient.invalidateQueries({
+      queryKey: ["dashboard", "schedule-and-slides"],
+      refetchType: "active",
+    });
 
     socket.on("work-schedule:updated", handleWorkScheduleUpdated);
+    socket.on("dashboard-slides:updated", handleWorkScheduleUpdated);
 
     const unsubscribeConnected = onSocketConnected(() => {
       queryClient.invalidateQueries({
-        queryKey: ["work-schedule", "current"],
+        queryKey: ["dashboard", "schedule-and-slides"],
         refetchType: "active",
       });
     });
 
     return () => {
       socket.off("work-schedule:updated", handleWorkScheduleUpdated);
+      socket.off("dashboard-slides:updated", handleWorkScheduleUpdated);
       unsubscribeConnected();
     };
   }, [queryClient]);
@@ -98,6 +103,40 @@ const Dashboard = () => {
       </div>
     );
   }
+
+  const latestSchedule = dashboardData.schedule;
+  const dashboardImages = dashboardData.slides;
+
+  const dashboardSlides = [
+    ...(latestSchedule?.imageUrl ? [{
+      src: latestSchedule.imageUrl,
+      alt: "Lịch làm việc tuần này",
+      title: "Lịch làm việc tuần này",
+      description: latestSchedule.updatedAt
+        ? `Cập nhật ${dayjs(latestSchedule.updatedAt).format("DD/MM/YYYY HH:mm")}`
+        : "Lịch làm việc hiện tại",
+    }] : []),
+    ...dashboardImages.map((schedule, index) => ({
+      src: schedule.imageUrl,
+      // alt: `Ảnh trình chiếu ${index + 1}`,
+      // title: `Ảnh trình chiếu ${index + 1}`,
+      description: schedule.updatedAt
+        ? `Cập nhật ${dayjs(schedule.updatedAt).format("DD/MM/YYYY HH:mm")}`
+        : "Ảnh Dashboard",
+    })),
+    {
+      src: weeklyCleaningMonThuImage,
+      alt: "Lịch vệ sinh tuần từ thứ 2 đến thứ 5",
+      title: "Công việc thứ 2 – thứ 5",
+      description: "Lịch vệ sinh đầu tuần",
+    },
+    {
+      src: weeklyCleaningFriSunImage,
+      alt: "Lịch vệ sinh tuần từ thứ 6 đến Chủ Nhật",
+      title: "Công việc thứ 6 – Chủ Nhật",
+      description: "Lịch vệ sinh cuối tuần",
+    },
+  ];
 
   return (
     <div className="pb-8">
@@ -189,11 +228,11 @@ const Dashboard = () => {
       Xem tuần trước
     </Button>
 
-    {workSchedule?.updatedAt && (
+    {latestSchedule?.updatedAt && (
       <div className="text-xs text-slate-400">
         Cập nhật:{" "}
         <span className="font-medium text-slate-600">
-          {dayjs(workSchedule.updatedAt).format(
+          {dayjs(latestSchedule.updatedAt).format(
             "DD/MM/YYYY HH:mm"
           )}
         </span>
@@ -203,73 +242,27 @@ const Dashboard = () => {
 
   {/* CONTENT */}
 
-  {workSchedule?.imageUrl ? (
-    <div className="bg-slate-50 p-4 md:p-6">
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <Image
-          src={workSchedule.imageUrl}
-          alt="Lịch làm việc tuần này"
-          width="100%"
-          className="block"
-          preview={{
-            mask: (
-              <div className="text-sm font-medium">
-                Xem lịch lớn
-              </div>
-            ),
-          }}
-        />
-      </div>
-    </div>
-  ) : (
-    <div className="px-6 py-16">
-      <Empty
-        image={Empty.PRESENTED_IMAGE_SIMPLE}
-        description={
-          <div>
-            <div className="font-medium text-slate-600">
-              Chưa có lịch làm việc
-            </div>
-
-            <div className="mt-1 text-xs text-slate-400">
-              Quản trị viên chưa cập nhật lịch làm việc.
+  <div className="erp-dashboard-slider bg-slate-50 p-4 md:p-6">
+    <h3 className="mb-3 text-base font-bold text-slate-800">Coi cái này đi</h3>
+    <Carousel autoplay autoplaySpeed={4200} effect="fade" pauseOnHover className="erp-dashboard-slider-carousel">
+      {dashboardSlides.map((slide) => (
+        <div key={slide.src}>
+          <div className="erp-dashboard-slide overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <Image
+              src={slide.src}
+              alt={slide.alt}
+              width="100%"
+              className="block"
+              preview={{ mask: <div className="text-sm font-medium">Xem ảnh lớn</div> }}
+            />
+            <div className="erp-dashboard-slide-copy">
+              <strong>{slide.title}</strong>
+              <span>{slide.description}</span>
             </div>
           </div>
-        }
-      />
-    </div>
-  )}
-
-  <div className="border-t border-slate-100 bg-slate-50 p-4 md:p-6">
-    <h3 className="mb-4 text-base font-bold text-slate-800">
-      Công việc hàng tuần
-    </h3>
-
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <Image
-          src={weeklyCleaningMonThuImage}
-          alt="Lịch vệ sinh tuần từ thứ 2 đến thứ 5"
-          width="100%"
-          className="block"
-          preview={{
-            mask: <div className="text-sm font-medium">Xem ảnh lớn</div>,
-          }}
-        />
-      </div>
-
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <Image
-          src={weeklyCleaningFriSunImage}
-          alt="Lịch vệ sinh tuần từ thứ 6 đến Chủ Nhật"
-          width="100%"
-          className="block"
-          preview={{
-            mask: <div className="text-sm font-medium">Xem ảnh lớn</div>,
-          }}
-        />
-      </div>
-    </div>
+        </div>
+      ))}
+    </Carousel>
   </div>
 </Card>
 

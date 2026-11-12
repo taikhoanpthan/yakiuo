@@ -31,12 +31,17 @@ import {
 } from "../../services/user.service";
 import EmployeeDetail from "./EmployeeDetail";
 import { useAuth } from "../../store/AuthContext";
-import { onOnlineUsers } from "../../services/socket";
+import { onOnlineUsers, onSystemPermissionsChanged } from "../../services/socket";
 import UserAvatar from "../../components/common/UserAvatar";
+import { getMyPermissions } from "../../services/system.service";
 
 const Users = () => {
   const { user: currentUser } = useAuth();
-  const canManageUsers = ["admin", "manager"].includes(currentUser?.role);
+  const [permissions, setPermissions] = useState([]);
+  const canCreateUsers = permissions.includes("users.create");
+  const canUpdateUsers = permissions.includes("users.update");
+  const canDeleteUsers = permissions.includes("users.delete");
+  const canManageUsers = canCreateUsers || canUpdateUsers || canDeleteUsers;
   const canManageRoles = currentUser?.role === "admin";
   const [search, setSearch] = useState("");
   const [role, setRole] = useState(undefined);
@@ -49,6 +54,15 @@ const Users = () => {
   const [onlineUserIds, setOnlineUserIds] = useState([]);
 
   useEffect(() => onOnlineUsers(({ userIds }) => setOnlineUserIds(userIds)), []);
+  useEffect(() => {
+    let active = true;
+    const loadPermissions = () => getMyPermissions().then((response) => {
+      if (active) setPermissions(response.data?.data?.permissions || []);
+    }).catch(() => { if (active) setPermissions([]); });
+    void loadPermissions();
+    const unsubscribe = onSystemPermissionsChanged(loadPermissions);
+    return () => { active = false; unsubscribe(); };
+  }, [currentUser?._id, currentUser?.role]);
 
   const usersQuery = useQuery({
     queryKey: ["users", { role, status }],
@@ -215,7 +229,7 @@ const Users = () => {
       render: (_, record) => (
         <Space>
           {/* CHỈNH SỬA */}
-          {(canManageRoles || record.role === "employee") && (
+          {canUpdateUsers && (
             <Button
               icon={<EditOutlined />}
               onClick={() => {
@@ -226,7 +240,7 @@ const Users = () => {
           )}
 
           {/* KHÓA / MỞ KHÓA */}
-          {(canManageRoles || record.role === "employee") && (
+          {canUpdateUsers && (
             <Button
               danger={record.status === "active"}
               type={record.status === "active" ? "default" : "primary"}
@@ -242,7 +256,7 @@ const Users = () => {
           )}
 
           {/* XÓA */}
-          {canManageRoles && (
+          {canDeleteUsers && (
             <Popconfirm
               title="Xóa tài khoản?"
               description={`Bạn có chắc muốn xóa tài khoản "${record.username}"?`}
@@ -281,7 +295,7 @@ const Users = () => {
           <h1 className="erp-page-title">Nhân viên</h1>
         </div>
 
-        {canManageRoles && (
+        {canCreateUsers && (
           <Button
             type="primary"
             icon={<PlusOutlined />}

@@ -180,7 +180,7 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null, canManageRole
                 <Input placeholder="0900000000" />
               </Form.Item>
 
-              <Form.Item
+              {canManageRoles ? <Form.Item
             label="Vai trò"
             name="role"
             rules={[
@@ -211,7 +211,7 @@ const UserModal = ({ open, onClose, onSuccess, editingUser = null, canManageRole
                 },
               ]}
                 />
-              </Form.Item>
+              </Form.Item> : <Form.Item label="Vai trò" name="role"><Input disabled /></Form.Item>}
             </div>
           </>
         )}

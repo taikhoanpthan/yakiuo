@@ -11,6 +11,17 @@ const workScheduleSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
+    sortOrder: {
+      type: Number,
+      default: 0,
+    },
+
+    category: {
+      type: String,
+      enum: ["schedule", "slide"],
+      default: "schedule",
+    },
   },
   {
     timestamps: true,

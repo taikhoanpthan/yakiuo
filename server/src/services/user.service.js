@@ -203,7 +203,7 @@ const normalizeImagePosition = (position = {}) => ({
 const normalizeImageZoom = (zoom) => Math.min(2.5, Math.max(1, Number(zoom) || 1));
 
 // Người dùng chỉ cập nhật được hồ sơ và vị trí hiển thị ảnh của chính họ.
-const updateOwnProfile = async (userId, { username, email, fullName, phone, avatar, profileShowcaseImage, profileShowcaseImageToRemove, avatarPosition, coverPosition, avatarZoom, coverZoom }) => {
+const updateOwnProfile = async (userId, { username, email, fullName, phone, avatar, profileShowcaseImage, profileShowcaseImageToRemove, profileShowcaseImages, avatarPosition, coverPosition, avatarZoom, coverZoom }) => {
   const user = await User.findById(userId);
 
   if (!user) {
@@ -299,6 +299,30 @@ const updateOwnProfile = async (userId, { username, email, fullName, phone, avat
     user.profileShowcaseImages = currentImages.filter((image) => image !== imageToRemove);
     if (user.profileShowcaseImage === imageToRemove) {
       user.profileShowcaseImage = user.profileShowcaseImages.at(-1) || "";
+    }
+  }
+  if (profileShowcaseImages !== undefined) {
+    if (user.role !== "admin") {
+      throw new Error("Chỉ quản trị viên mới có thể sắp xếp ảnh hiển thị");
+    }
+    if (!Array.isArray(profileShowcaseImages)) {
+      throw new Error("Danh sách ảnh hiển thị không hợp lệ");
+    }
+
+    const currentImages = Array.isArray(user.profileShowcaseImages) && user.profileShowcaseImages.length
+      ? user.profileShowcaseImages
+      : user.profileShowcaseImage ? [user.profileShowcaseImage] : [];
+    const nextImages = profileShowcaseImages.map((image) => String(image));
+    const hasSameImages = nextImages.length === currentImages.length
+      && [...nextImages].sort().join("\u0000") === [...currentImages].sort().join("\u0000");
+
+    if (!hasSameImages) {
+      throw new Error("Chỉ có thể thay đổi thứ tự các ảnh đang có");
+    }
+
+    user.profileShowcaseImages = nextImages;
+    if (!nextImages.includes(user.profileShowcaseImage)) {
+      user.profileShowcaseImage = nextImages.at(-1) || "";
     }
   }
   if (avatarPosition !== undefined) user.avatarPosition = normalizeImagePosition(avatarPosition);

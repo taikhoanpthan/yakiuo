@@ -60,6 +60,14 @@ const setupChessSocket = require("./sockets/chess.socket");
 const app = express();
 app.set("trust proxy", 1);
 
+// Render health check: must stay independent of authentication and MongoDB.
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Yakiuo backend is running",
+  });
+});
+
 // Tạo HTTP server từ Express
 // Socket.IO sẽ chạy trên server này
 const server = http.createServer(app);
@@ -290,20 +298,10 @@ const PORT = process.env.PORT || 4000;
 // START SERVER
 // =========================
 
-const startServer = async () => {
-  try {
-    // =========================
-    // DATABASE
-    // =========================
-
-    await connectDB();
-    startTrashCleanup();
-
-    // =========================
-    // HTTP + SOCKET SERVER
-    // =========================
-
-    server.listen(PORT, "0.0.0.0", () => {
+const startServer = () => {
+  // Start accepting requests before connecting to MongoDB so Render can always
+  // reach /health while the database is starting or temporarily unavailable.
+  server.listen(PORT, "0.0.0.0", () => {
       console.log("");
       console.log("====================================");
       console.log("🚀 YAKIUO ERP SERVER");
@@ -329,7 +327,7 @@ const startServer = async () => {
         }`,
       );
 
-      console.log(`🗄️ MongoDB: connected`);
+      console.log(`🗄️ MongoDB: connecting`);
 
       console.log(
         `🌍 Frontend: ${process.env.FRONTEND_URL || "http://localhost:5173"}`,
@@ -337,12 +335,17 @@ const startServer = async () => {
 
       console.log("====================================");
       console.log("");
-    });
-  } catch (error) {
-    console.error("❌ MongoDB connection failed:", error.message);
+  });
 
-    process.exit(1);
-  }
+  connectDB()
+    .then(() => {
+      startTrashCleanup();
+    })
+    .catch((error) => {
+      // Keep the process alive so the health check remains available. Existing
+      // MongoDB-backed endpoints are unchanged and will recover on restart.
+      console.error("❌ MongoDB connection failed:", error.message);
+    });
 };
 
 // =========================

@@ -29,6 +29,7 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  ReloadOutlined,
   TeamOutlined,
   ToolOutlined,
   UserOutlined,
@@ -136,6 +137,7 @@ const Layout = () => {
 
   const [notifications, setNotifications] = useState([]);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [expandedNotificationIds, setExpandedNotificationIds] = useState(() => new Set());
 
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
@@ -475,13 +477,16 @@ const Layout = () => {
       try {
         setNotificationLoading(true);
 
-        const response = await getNotifications();
+        // Request a bounded list so the API also returns its authoritative
+        // total; otherwise total is null and the badge can silently fall back.
+        const response = await getNotifications({ limit: 50 });
         const payload = response?.data?.data ?? {};
         const data = payload.notifications || [];
 
         const list = Array.isArray(data) ? data : [];
 
         setNotifications(list);
+        setExpandedNotificationIds(new Set());
         setNotificationCount(
           Number.isFinite(Number(payload.total))
             ? Number(payload.total)
@@ -707,6 +712,12 @@ const Layout = () => {
           {notifications.map((item) => {
             const typeConfig = getNotificationTypeConfig(item.type);
             const senderName = item.createdBy?.fullName || item.createdBy?.username || "Hệ thống Yakiuo";
+            const isExpanded = expandedNotificationIds.has(item._id);
+            const hasLongContent = (item.content || "").trim().length > 100;
+            const content = (item.content || "").trim();
+            const collapsedContent = content.length > 100
+              ? `${content.slice(0, 100).trimEnd()}...`
+              : content;
 
             return (
                 <div
@@ -766,13 +777,25 @@ const Layout = () => {
                     fontSize: 12,
                     color: "#64748b",
                     marginTop: 4,
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
+                    display: "block",
+                    overflowWrap: "anywhere",
                   }}
                 >
-                  {item.content || ""}
+                  {isExpanded ? content : collapsedContent}
+                  {hasLongContent && (
+                  <button
+                    type="button"
+                    className="erp-notification-show-more erp-notification-show-more--inline"
+                    onClick={() => setExpandedNotificationIds((current) => {
+                      const next = new Set(current);
+                      if (next.has(item._id)) next.delete(item._id);
+                      else next.add(item._id);
+                      return next;
+                    })}
+                  >
+                    {isExpanded ? "Thu gọn" : "Xem thêm"}
+                  </button>
+                  )}
                 </div>
 
                 <div className="erp-notification-panel-item-sender" style={{ marginTop: 6, color: "#475467", fontSize: 11 }}>
@@ -979,6 +1002,16 @@ const Layout = () => {
 
             <Space size={16}>
               <ThemeToggle isDark={isDark} onChange={toggleTheme} />
+
+              <Tooltip title="Tải lại trang">
+                <Button
+                  type="text"
+                  className="erp-menu-button"
+                  aria-label="Tải lại trang"
+                  icon={<ReloadOutlined />}
+                  onClick={() => window.location.reload()}
+                />
+              </Tooltip>
 
               {/* =======================================
                   NOTIFICATION

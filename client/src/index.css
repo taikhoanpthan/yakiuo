@@ -479,6 +479,20 @@ button:focus-visible,
 :root[data-theme="dark"] .erp-mobile-notification-drawer .ant-drawer-close,
 :root[data-theme="dark"] .erp-notification-panel-icon { color: #b9c8df !important; }
 :root[data-theme="dark"] .erp-notification-panel-header { border-bottom-color: #2a3955 !important; }
+
+.erp-notification-show-more {
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+}
+.erp-notification-show-more:hover { color: #1d4ed8; text-decoration: underline; }
+.erp-notification-show-more--inline { display: inline; margin: 0 0 0 4px; }
+:root[data-theme="dark"] .erp-notification-show-more { color: #93c5fd; }
 :root[data-theme="dark"] .erp-notification-panel-subtitle,
 :root[data-theme="dark"] .erp-notification-panel-item-content,
 :root[data-theme="dark"] .erp-notification-panel-item-sender,

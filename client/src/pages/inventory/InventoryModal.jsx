@@ -40,7 +40,6 @@ const InventoryModal = ({ open, onClose, onSuccess, editingItem = null }) => {
     if (editingItem) {
       form.setFieldsValue({
         name: editingItem.name || "",
-        quantity: editingItem.quantity ?? 0,
         unit: editingItem.unit || "cái",
         minQuantity: editingItem.minQuantity ?? 5,
         location: editingItem.location || "",
@@ -98,7 +97,6 @@ const InventoryModal = ({ open, onClose, onSuccess, editingItem = null }) => {
 
       const payload = {
         name: values.name.trim(),
-        quantity: Number(values.quantity) || 0,
         unit: values.unit.trim(),
         minQuantity: Number(values.minQuantity) || 5,
         location: values.location ? values.location.trim() : "",
@@ -109,6 +107,7 @@ const InventoryModal = ({ open, onClose, onSuccess, editingItem = null }) => {
         await updateInventoryItem(editingItem._id, payload);
         message.success("Cập nhật hàng hóa thành công");
       } else {
+        payload.quantity = Number(values.quantity) || 0;
         await createInventoryItem(payload);
         message.success("Thêm hàng hóa mới thành công");
       }
@@ -173,9 +172,10 @@ const InventoryModal = ({ open, onClose, onSuccess, editingItem = null }) => {
 
         {/* 2. SỐ LƯỢNG, ĐƠN VỊ & MỨC CẢNH BÁO */}
         <Row gutter={14}>
+          {!isEdit && (
           <Col xs={24} sm={12}>
             <Form.Item
-              label="Số lượng hiện có"
+              label="Số lượng ban đầu"
               name="quantity"
               rules={[
                 { required: true, message: "Vui lòng nhập số lượng" },
@@ -194,8 +194,9 @@ const InventoryModal = ({ open, onClose, onSuccess, editingItem = null }) => {
               />
             </Form.Item>
           </Col>
+          )}
 
-          <Col xs={24} sm={12}>
+          <Col xs={24} sm={isEdit ? 24 : 12}>
             <Form.Item
               label="Đơn vị"
               name="unit"

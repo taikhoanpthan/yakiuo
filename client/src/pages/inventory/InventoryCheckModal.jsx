@@ -7,6 +7,7 @@ import {
   Row,
   Col,
   Alert,
+  Divider,
   message,
 } from "antd";
 import { CheckCircleOutlined } from "@ant-design/icons";
@@ -34,7 +35,13 @@ const InventoryCheckModal = ({ open, onClose, onSuccess, item = null }) => {
 
   if (!item) return null;
 
-  const diff = currentActual - (item.quantity ?? 0);
+  const currentQuantity = item.quantity ?? 0;
+  const initialQuantity = item.initialQuantity ?? currentQuantity;
+  const diff = currentActual - currentQuantity;
+  const initialDiff = currentActual - initialQuantity;
+  const stockHistory = [...(item.stockHistory || [])]
+    .sort((a, b) => new Date(b.performedAt) - new Date(a.performedAt))
+    .slice(0, 30);
 
   const handleSubmit = async (values) => {
     try {
@@ -71,11 +78,13 @@ const InventoryCheckModal = ({ open, onClose, onSuccess, item = null }) => {
       onOk={() => form.submit()}
       onCancel={onClose}
       className="inventory-responsive-modal"
-      width="min(480px, calc(100vw - 20px))"
+      width="min(560px, calc(100vw - 20px))"
       centered
       destroyOnClose
+      styles={{ body: { maxHeight: "calc(100dvh - 170px)", overflowY: "auto", overflowX: "hidden" } }}
     >
       <div
+        className="inventory-check-summary"
         style={{
           display: "flex",
           gap: 14,
@@ -106,7 +115,10 @@ const InventoryCheckModal = ({ open, onClose, onSuccess, item = null }) => {
             <div style={{ fontSize: 12, color: "#666" }}>📍 {item.location}</div>
           )}
           <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
-            Hệ thống ghi nhận: <strong style={{ color: "#1890ff" }}>{item.quantity} {item.unit || "cái"}</strong>
+            Số lượng ban đầu: <strong>{initialQuantity} {item.unit || "cái"}</strong>
+          </div>
+          <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
+            Số lượng hiện tại: <strong style={{ color: "#1890ff" }}>{currentQuantity} {item.unit || "cái"}</strong>
           </div>
         </div>
       </div>
@@ -174,6 +186,15 @@ const InventoryCheckModal = ({ open, onClose, onSuccess, item = null }) => {
           )}
         </div>
 
+        <Alert
+          type={initialDiff === 0 ? "success" : "info"}
+          showIcon
+          message={initialDiff === 0
+            ? "Số lượng thực tế khớp với số lượng ban đầu."
+            : `So với số lượng ban đầu: ${initialDiff > 0 ? "thừa" : "thiếu"} ${Math.abs(initialDiff)}.`}
+          style={{ marginBottom: 16 }}
+        />
+
         <Form.Item label="Ghi chú khi kiểm kê (Tùy chọn)" name="notes">
           <Input.TextArea
             rows={2}
@@ -181,6 +202,35 @@ const InventoryCheckModal = ({ open, onClose, onSuccess, item = null }) => {
           />
         </Form.Item>
       </Form>
+
+      <Divider className="inventory-history-divider" orientation="left" plain>Lịch sử sử dụng & kiểm kê</Divider>
+      {stockHistory.length ? (
+        <div className="inventory-history-list">
+          {stockHistory.map((entry) => {
+            const isStocktake = entry.action === "stocktake";
+            const actor = entry.performedBy?.fullName || entry.performedBy?.username || "Nhân viên";
+            const amountLabel = isStocktake
+              ? `${entry.amount > 0 ? "+" : ""}${entry.amount}`
+              : `-${entry.amount}`;
+            return (
+              <div key={entry._id || `${entry.performedAt}-${entry.amount}`} className={`inventory-history-entry ${isStocktake ? "is-stocktake" : "is-decrement"}`}>
+                <div className="inventory-history-entry-head">
+                  <strong>{isStocktake ? "Kiểm kê thực tế" : "Nhân viên sử dụng"}</strong>
+                  <strong className="inventory-history-amount">{amountLabel} {item.unit || "cái"}</strong>
+                </div>
+                <div className="inventory-history-meta">
+                  <span title={actor}>{actor}</span>
+                  <span>{entry.previousQuantity} → {entry.resultingQuantity}</span>
+                  <span>{entry.performedAt ? new Date(entry.performedAt).toLocaleString("vi-VN") : ""}</span>
+                </div>
+                {entry.notes && <div className="inventory-history-notes">Ghi chú: {entry.notes}</div>}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="inventory-history-empty">Chưa có lịch sử sử dụng hoặc kiểm kê.</div>
+      )}
     </Modal>
   );
 };

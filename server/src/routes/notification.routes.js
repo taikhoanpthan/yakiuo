@@ -19,14 +19,12 @@ const router = express.Router();
 router.get(
   "/",
   authenticate,
-  requirePermission("notifications.read"),
   getNotifications
 );
 
 router.get(
   "/:id",
   authenticate,
-  requirePermission("notifications.read"),
   getNotificationById
 );
 

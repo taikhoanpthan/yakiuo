@@ -471,6 +471,63 @@
   font-size: 13px;
 }
 
+.inventory-check-summary {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+}
+
+.inventory-history-divider.ant-divider { margin: 18px 0 10px; }
+.inventory-history-list {
+  display: grid;
+  gap: 8px;
+  max-height: 184px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.inventory-history-entry {
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid #e2e8f0;
+  border-left-width: 3px;
+  border-radius: 10px;
+  background: #fff;
+}
+.inventory-history-entry.is-stocktake { border-left-color: #16a34a; }
+.inventory-history-entry.is-decrement { border-left-color: #ea580c; }
+.inventory-history-entry-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
+.inventory-history-amount { flex: none; color: #475569; white-space: nowrap; }
+.inventory-history-entry.is-stocktake .inventory-history-amount { color: #15803d; }
+.inventory-history-entry.is-decrement .inventory-history-amount { color: #c2410c; }
+.inventory-history-meta { display: flex; flex-wrap: wrap; gap: 3px 8px; margin-top: 5px; color: #64748b; font-size: 12px; line-height: 1.4; }
+.inventory-history-meta span:first-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inventory-history-notes { margin-top: 4px; overflow-wrap: anywhere; color: #475569; font-size: 12px; }
+.inventory-history-empty { padding: 10px 0; color: #94a3b8; font-size: 13px; }
+
+:root[data-theme="dark"] .inventory-check-summary { background: #273442 !important; border-color: #465568; color: #edf3ff; }
+:root[data-theme="dark"] .inventory-check-summary div { color: #b9c8df !important; }
+:root[data-theme="dark"] .inventory-history-entry { border-color: #435064; background: #202b38; color: #e6edf8; }
+:root[data-theme="dark"] .inventory-history-entry.is-stocktake { border-left-color: #4ade80; }
+:root[data-theme="dark"] .inventory-history-entry.is-decrement { border-left-color: #fb923c; }
+:root[data-theme="dark"] .inventory-history-meta { color: #aebdd3; }
+:root[data-theme="dark"] .inventory-history-notes { color: #c7d3e7; }
+
+@media (max-width: 480px) {
+  .inventory-responsive-modal .ant-modal-content { padding: 14px 16px !important; }
+  .inventory-responsive-modal .ant-modal-header { margin-bottom: 9px; padding-bottom: 8px; }
+  .inventory-responsive-modal .ant-form-item { margin-bottom: 10px; }
+  .inventory-responsive-modal .ant-alert { padding: 8px 10px; font-size: 12px; }
+  .inventory-check-summary { gap: 10px !important; padding: 9px !important; margin-bottom: 10px !important; }
+  .inventory-check-summary img { width: 54px !important; height: 54px !important; }
+  .inventory-history-divider.ant-divider { margin: 11px 0 7px; }
+  .inventory-history-list { max-height: 86px; }
+  .inventory-history-entry { padding: 7px 8px; }
+  .inventory-history-entry-head { font-size: 12px; }
+  .inventory-history-meta { font-size: 11px; }
+  .inventory-history-meta { display: grid; gap: 2px; }
+}
+
 @media (max-width: 640px) {
   .inventory-header {
     flex-direction: column;

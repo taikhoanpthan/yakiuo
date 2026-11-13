@@ -41,6 +41,11 @@ export const checkInventoryItem = async (id, data) => {
   return response.data;
 };
 
+export const decrementInventoryItem = async (id, amount) => {
+  const response = await api.patch(`/inventory/${id}/decrement`, { amount });
+  return response.data;
+};
+
 export const deleteInventoryItem = async (id) => {
   const response = await api.delete(`/inventory/${id}`);
   return response.data;

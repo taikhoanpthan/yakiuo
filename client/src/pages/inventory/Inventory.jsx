@@ -4,6 +4,7 @@ import {
   Table,
   Button,
   Input,
+  InputNumber,
   Select,
   DatePicker,
   Space,
@@ -12,6 +13,7 @@ import {
   Tooltip,
   Pagination,
   Empty,
+  Modal,
   message,
 } from "antd";
 import {
@@ -20,6 +22,8 @@ import {
   ReloadOutlined,
   DeleteOutlined,
   CheckCircleOutlined,
+  EditOutlined,
+  MinusOutlined,
   FileTextOutlined,
   FilePdfOutlined,
 } from "@ant-design/icons";
@@ -29,6 +33,7 @@ import { useAuth } from "../../store/AuthContext";
 import {
   getInventory,
   deleteInventoryItem,
+  decrementInventoryItem,
 } from "../../services/inventory.service";
 import InventoryModal from "./InventoryModal";
 import InventoryCheckModal from "./InventoryCheckModal";
@@ -53,6 +58,7 @@ const Inventory = () => {
   const canCreateInventory = can("inventory.create");
   const canUpdateInventory = can("inventory.update");
   const canDeleteInventory = can("inventory.delete");
+  const isAdmin = user?.role === "admin";
 
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
@@ -65,7 +71,7 @@ const Inventory = () => {
   });
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 15,
+    limit: 10,
     total: 0,
     totalPages: 1,
   });
@@ -84,6 +90,7 @@ const Inventory = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [checkModalOpen, setCheckModalOpen] = useState(false);
   const [itemToCheck, setItemToCheck] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -178,6 +185,27 @@ const Inventory = () => {
     setCheckModalOpen(true);
   };
 
+  const handleOpenEdit = (item) => {
+    setEditingItem(item);
+    setModalOpen(true);
+  };
+
+  const handleDecrement = (item) => {
+    let amount = 1;
+    Modal.confirm({
+      title: `Trừ số lượng: ${item.name}`,
+      content: <InputNumber min={1} max={item.quantity} defaultValue={1} autoFocus style={{ width: "100%", marginTop: 12 }} onChange={(value) => { amount = Number(value) || 0; }} />,
+      okText: "Trừ số lượng",
+      okButtonProps: { danger: true },
+      cancelText: "Hủy",
+      onOk: async () => {
+        await decrementInventoryItem(item._id, amount);
+        message.success(`Đã trừ ${amount} ${item.unit || "cái"} khỏi "${item.name}"`);
+        await fetchInventoryData();
+      },
+    });
+  };
+
   const handleDownloadMonthlyPdf = async () => {
     try {
       setExportingPdf(true);
@@ -269,7 +297,14 @@ const Inventory = () => {
       ),
     },
     {
-      title: <span style={{ whiteSpace: "nowrap" }}>Số lượng</span>,
+      title: <span style={{ whiteSpace: "nowrap" }}>Số lượng ban đầu</span>,
+      dataIndex: "initialQuantity",
+      key: "initialQuantity",
+      width: 130,
+      render: (qty, record) => <span className="inventory-item-qty">{qty ?? record.quantity} {record.unit || "cái"}</span>,
+    },
+    {
+      title: <span style={{ whiteSpace: "nowrap" }}>Số lượng hiện tại</span>,
       dataIndex: "quantity",
       key: "quantity",
       width: 105,
@@ -339,12 +374,13 @@ const Inventory = () => {
       ),
     },
     {
-      title: <span style={{ whiteSpace: "nowrap" }}>Thao tác</span>,
+      title: <span style={{ whiteSpace: "nowrap" }}>Chỉnh sửa</span>,
       key: "actions",
-      width: 120,
+      width: 170,
       align: "center",
       render: (_, record) => (
         <Space size={6}>
+          {isAdmin && canUpdateInventory && (
           <Tooltip title="Kiểm kê số lượng thực tế">
             <Button
               size="small"
@@ -357,9 +393,27 @@ const Inventory = () => {
               Kiểm kê
             </Button>
           </Tooltip>
+          )}
 
-          {canUpdateInventory && (
+          {canUpdateInventory && !isAdmin && (
+            <Tooltip title="Trừ số lượng đã sử dụng">
+              <Button
+                size="small"
+                danger
+                icon={<MinusOutlined />}
+                disabled={record.quantity <= 0}
+                onClick={() => handleDecrement(record)}
+              >
+                Trừ
+              </Button>
+            </Tooltip>
+          )}
+
+          {isAdmin && canUpdateInventory && canDeleteInventory && (
             <>
+              <Tooltip title="Chỉnh sửa thông tin hàng hóa">
+                <Button type="text" size="small" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)} />
+              </Tooltip>
               <Popconfirm
                 title="Xóa hàng hóa này?"
                 description={`Bạn có chắc muốn xóa "${record.name}" khỏi danh sách?`}
@@ -404,7 +458,7 @@ const Inventory = () => {
             Làm mới
           </Button>
 
-          {canDeleteInventory && (
+          {canCreateInventory && isAdmin && (
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -513,7 +567,7 @@ const Inventory = () => {
             description="Chưa có dữ liệu hàng hóa phù hợp"
             className="py-12"
           >
-            {canCreateInventory && (
+            {canCreateInventory && isAdmin && (
               <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenAdd}>
                 Thêm hàng hóa đầu tiên
               </Button>
@@ -548,7 +602,7 @@ const Inventory = () => {
               }
               onChange={handlePageChange}
               showSizeChanger={!isMobile}
-              pageSizeOptions={["15", "30", "50"]}
+              pageSizeOptions={["10", "20", "50"]}
             />
           </div>
         </Card>
@@ -559,8 +613,10 @@ const Inventory = () => {
         open={modalOpen}
         onClose={() => {
           setModalOpen(false);
+          setEditingItem(null);
         }}
         onSuccess={() => fetchInventoryData()}
+        editingItem={editingItem}
       />
 
       {/* STAFF CHECK MODAL */}

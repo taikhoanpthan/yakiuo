@@ -1,13 +1,74 @@
 const InventoryItem = require("../models/InventoryItem");
 const cloudinary = require("../config/cloudinary");
 
-const getCheckedMonthRange = (checkedMonth) => {
-  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(checkedMonth)) return null;
+const getCurrentInventoryMonth = () => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${values.year}-${values.month}`;
+};
 
-  const start = new Date(`${checkedMonth}-01T00:00:00+07:00`);
-  const end = new Date(start);
-  end.setUTCMonth(end.getUTCMonth() + 1);
-  return { start, end };
+const isValidMonth = (month) => /^\d{4}-(0[1-9]|1[0-2])$/.test(month);
+
+const syncMonthlyBalance = (item) => {
+  const month = item.baselineMonth || getCurrentInventoryMonth();
+  item.baselineMonth = month;
+  const balance = item.monthlyBalances?.find((entry) => entry.month === month);
+  if (balance) {
+    balance.currentQuantity = item.quantity;
+    balance.updatedAt = new Date();
+  } else {
+    item.monthlyBalances.push({ month, initialQuantity: item.initialQuantity ?? item.quantity, currentQuantity: item.quantity });
+  }
+};
+
+const resetMonthlyInventoryBaselines = async () => {
+  const baselineMonth = getCurrentInventoryMonth();
+  // Reset only the comparison baseline: the live balance and its history stay intact.
+  // Do not use an aggregation-pipeline update here: older MongoDB deployments
+  // used by this app reject update arrays and return a 500 response.
+  const itemsToReset = await InventoryItem.find({
+    $or: [
+      { baselineMonth: { $ne: baselineMonth } },
+      { "monthlyBalances.month": { $ne: baselineMonth } },
+    ],
+  })
+    .select("_id quantity initialQuantity baselineMonth monthlyBalances")
+    .lean();
+  if (itemsToReset.length) {
+    await InventoryItem.bulkWrite(itemsToReset.map((item) => {
+      const months = new Set((item.monthlyBalances || []).map((entry) => entry.month));
+      const balances = [];
+      if (isValidMonth(item.baselineMonth) && !months.has(item.baselineMonth)) {
+        balances.push({ month: item.baselineMonth, initialQuantity: item.initialQuantity ?? item.quantity, currentQuantity: item.quantity });
+      }
+      if (!months.has(baselineMonth)) balances.push({ month: baselineMonth, initialQuantity: item.quantity, currentQuantity: item.quantity });
+      return { updateOne: { filter: { _id: item._id }, update: {
+        $set: { initialQuantity: item.quantity, baselineMonth },
+        ...(balances.length ? { $push: { monthlyBalances: { $each: balances } } } : {}),
+      } } };
+    }));
+  }
+  return baselineMonth;
+};
+
+const createSelectedMonthSnapshots = async (month, currentMonth) => {
+  // A future month starts with the latest live balance. Past months must never
+  // be fabricated: if there is no snapshot, that month has no inventory data.
+  if (month <= currentMonth) return;
+  const items = await InventoryItem.find({ "monthlyBalances.month": { $ne: month } })
+    .select("_id quantity")
+    .lean();
+  if (!items.length) return;
+  await InventoryItem.bulkWrite(items.map((item) => ({
+    updateOne: {
+      filter: { _id: item._id },
+      update: { $push: { monthlyBalances: { month, initialQuantity: item.quantity, currentQuantity: item.quantity } } },
+    },
+  })));
 };
 
 const uploadToCloudinary = async (fileBuffer, folder = "yakiuo-erp/inventory") => {
@@ -44,6 +105,7 @@ const processImageUpload = async (file) => {
 
 const getInventory = async (req, res) => {
   try {
+    const currentMonth = await resetMonthlyInventoryBaselines();
     const {
       search = "",
       category = "",
@@ -54,6 +116,12 @@ const getInventory = async (req, res) => {
       page = 1,
       limit = 20,
     } = req.query;
+
+    if (checkedMonth && !isValidMonth(checkedMonth)) {
+      return res.status(400).json({ success: false, message: "Tháng kiểm kê không hợp lệ" });
+    }
+    const displayMonth = checkedMonth || currentMonth;
+    await createSelectedMonthSnapshots(displayMonth, currentMonth);
 
     const query = {};
 
@@ -75,16 +143,15 @@ const getInventory = async (req, res) => {
       query.status = status;
     }
 
+    // A month only shows items that actually have a snapshot for that month.
+    // Thus switching to a month before inventory was created returns no data.
     if (checkedMonth) {
-      const monthRange = getCheckedMonthRange(checkedMonth);
-      if (!monthRange) {
-        return res.status(400).json({
-          success: false,
-          message: "Tháng kiểm kê không hợp lệ",
-        });
-      }
-      query.lastCheckedAt = { $gte: monthRange.start, $lt: monthRange.end };
+      query["monthlyBalances.month"] = displayMonth;
     }
+
+    // Inventory is a running balance, not a monthly record.  Do not hide an
+    // item's last known balance simply because a new month has started. The
+    // selected month is still used as the label of the PDF report client-side.
 
     const pageNum = Math.max(1, Number.parseInt(page, 10) || 1);
     const limitNum = Math.min(1000, Math.max(1, Number.parseInt(limit, 10) || 20));
@@ -95,29 +162,45 @@ const getInventory = async (req, res) => {
     const sortField = validSortFields.includes(sortBy) ? sortBy : "createdAt";
     sortOptions[sortField] = sortOrder === "asc" ? 1 : -1;
 
-    const [items, total, allStats, distinctCategories] = await Promise.all([
+    const [rawItems, total, allStats, distinctCategories] = await Promise.all([
       InventoryItem.find(query)
         .populate("lastCheckedBy", "fullName username avatar")
         .populate("createdBy", "fullName username avatar")
         .populate("updatedBy", "fullName username avatar")
+        .populate("stockHistory.performedBy", "fullName username avatar")
         .sort(sortOptions)
         .skip(skip)
         .limit(limitNum)
         .lean(),
       InventoryItem.countDocuments(query),
       InventoryItem.aggregate([
+        { $match: query },
+        {
+          $set: {
+            selectedBalance: {
+              $arrayElemAt: [{
+                $filter: {
+                  input: "$monthlyBalances",
+                  as: "balance",
+                  cond: { $eq: ["$$balance.month", displayMonth] },
+                },
+              }, 0],
+            },
+          },
+        },
+        { $set: { displayedQuantity: { $ifNull: ["$selectedBalance.currentQuantity", "$quantity"] } } },
         {
           $group: {
             _id: null,
             totalItems: { $sum: 1 },
-            totalQuantity: { $sum: "$quantity" },
+            totalQuantity: { $sum: "$displayedQuantity" },
             lowStockCount: {
               $sum: {
                 $cond: [
                   {
                     $and: [
-                      { $gt: ["$quantity", 0] },
-                      { $lte: ["$quantity", "$minQuantity"] },
+                      { $gt: ["$displayedQuantity", 0] },
+                      { $lte: ["$displayedQuantity", "$minQuantity"] },
                     ],
                   },
                   1,
@@ -127,12 +210,12 @@ const getInventory = async (req, res) => {
             },
             outOfStockCount: {
               $sum: {
-                $cond: [{ $lte: ["$quantity", 0] }, 1, 0],
+                $cond: [{ $lte: ["$displayedQuantity", 0] }, 1, 0],
               },
             },
             inStockCount: {
               $sum: {
-                $cond: [{ $gt: ["$quantity", "$minQuantity"] }, 1, 0],
+                $cond: [{ $gt: ["$displayedQuantity", "$minQuantity"] }, 1, 0],
               },
             },
           },
@@ -140,6 +223,13 @@ const getInventory = async (req, res) => {
       ]),
       InventoryItem.distinct("category"),
     ]);
+
+    const items = rawItems.map((item) => {
+      const balance = item.monthlyBalances?.find((entry) => entry.month === displayMonth);
+      return balance
+        ? { ...item, initialQuantity: balance.initialQuantity, quantity: balance.currentQuantity }
+        : item;
+    });
 
     const stats = allStats[0] || {
       totalItems: 0,
@@ -178,6 +268,7 @@ const getInventoryItemById = async (req, res) => {
       .populate("lastCheckedBy", "fullName username avatar")
       .populate("createdBy", "fullName username avatar")
       .populate("updatedBy", "fullName username avatar");
+
 
     if (!item) {
       return res.status(404).json({
@@ -234,6 +325,9 @@ const createInventoryItem = async (req, res) => {
     const newItem = new InventoryItem({
       name: name.trim(),
       quantity: numQuantity,
+      initialQuantity: numQuantity,
+      baselineMonth: getCurrentInventoryMonth(),
+      monthlyBalances: [{ month: getCurrentInventoryMonth(), initialQuantity: numQuantity, currentQuantity: numQuantity }],
       unit: (unit || "cái").trim(),
       category: (category || "Dụng cụ chung").trim(),
       image: imageUrl.trim(),
@@ -251,6 +345,7 @@ const createInventoryItem = async (req, res) => {
       { path: "lastCheckedBy", select: "fullName username avatar" },
       { path: "createdBy", select: "fullName username avatar" },
       { path: "updatedBy", select: "fullName username avatar" },
+      { path: "stockHistory.performedBy", select: "fullName username avatar" },
     ]);
 
     req.app.get("io")?.emit("inventory:created", newItem);
@@ -299,16 +394,8 @@ const updateInventoryItem = async (req, res) => {
       item.name = name.trim();
     }
 
-    if (quantity !== undefined) {
-      const numQuantity = Number(quantity);
-      if (Number.isNaN(numQuantity) || numQuantity < 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Số lượng hàng hóa phải là số hợp lệ >= 0",
-        });
-      }
-      item.quantity = numQuantity;
-    }
+    // The live balance is changed through stocktake or the decrement action;
+    // editing item details must not overwrite it accidentally.
 
     if (unit !== undefined) item.unit = unit.trim();
     if (category !== undefined) item.category = category.trim();
@@ -323,14 +410,12 @@ const updateInventoryItem = async (req, res) => {
     }
 
     item.updatedBy = req.user._id;
-    item.lastCheckedAt = new Date();
-    item.lastCheckedBy = req.user._id;
-
     await item.save();
     await item.populate([
       { path: "lastCheckedBy", select: "fullName username avatar" },
       { path: "createdBy", select: "fullName username avatar" },
       { path: "updatedBy", select: "fullName username avatar" },
+      { path: "stockHistory.performedBy", select: "fullName username avatar" },
     ]);
 
     req.app.get("io")?.emit("inventory:updated", item);
@@ -351,6 +436,12 @@ const updateInventoryItem = async (req, res) => {
 
 const checkInventoryItem = async (req, res) => {
   try {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Chỉ quản trị viên mới được kiểm kê hàng hóa",
+      });
+    }
     const item = await InventoryItem.findById(req.params.id);
     if (!item) {
       return res.status(404).json({
@@ -368,7 +459,13 @@ const checkInventoryItem = async (req, res) => {
       });
     }
 
+    const previousQuantity = item.quantity;
     item.quantity = numActual;
+    if (item.initialQuantity === undefined || item.initialQuantity === null) {
+      item.initialQuantity = previousQuantity;
+    }
+    if (!item.baselineMonth) item.baselineMonth = getCurrentInventoryMonth();
+    syncMonthlyBalance(item);
     if (unit !== undefined) {
       const normalizedUnit = String(unit).trim();
       if (!normalizedUnit || normalizedUnit.length > 30) {
@@ -395,12 +492,22 @@ const checkInventoryItem = async (req, res) => {
     item.lastCheckedAt = new Date();
     item.lastCheckedBy = req.user._id;
     item.updatedBy = req.user._id;
+    item.stockHistory.push({
+      action: "stocktake",
+      amount: numActual - previousQuantity,
+      previousQuantity,
+      resultingQuantity: numActual,
+      performedBy: req.user._id,
+      performedAt: new Date(),
+      notes: notes !== undefined ? String(notes).trim() : "",
+    });
 
     await item.save();
     await item.populate([
       { path: "lastCheckedBy", select: "fullName username avatar" },
       { path: "createdBy", select: "fullName username avatar" },
       { path: "updatedBy", select: "fullName username avatar" },
+      { path: "stockHistory.performedBy", select: "fullName username avatar" },
     ]);
 
     req.app.get("io")?.emit("inventory:checked", item);
@@ -416,6 +523,50 @@ const checkInventoryItem = async (req, res) => {
       success: false,
       message: "Không thể lưu kết quả kiểm kê",
     });
+  }
+};
+
+const decrementInventoryItem = async (req, res) => {
+  try {
+    const item = await InventoryItem.findById(req.params.id);
+    if (!item) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy hàng hóa / công cụ" });
+    }
+
+    const amount = Number(req.body?.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ success: false, message: "Số lượng trừ phải lớn hơn 0" });
+    }
+    if (amount > item.quantity) {
+      return res.status(400).json({ success: false, message: "Số lượng trừ không thể lớn hơn số lượng hiện tại" });
+    }
+
+    if (item.initialQuantity === undefined || item.initialQuantity === null) item.initialQuantity = item.quantity;
+    if (!item.baselineMonth) item.baselineMonth = getCurrentInventoryMonth();
+    const previousQuantity = item.quantity;
+    item.quantity -= amount;
+    syncMonthlyBalance(item);
+    item.updatedBy = req.user._id;
+    item.stockHistory.push({
+      action: "decrement",
+      amount,
+      previousQuantity,
+      resultingQuantity: item.quantity,
+      performedBy: req.user._id,
+      performedAt: new Date(),
+    });
+    await item.save();
+    await item.populate([
+      { path: "lastCheckedBy", select: "fullName username avatar" },
+      { path: "createdBy", select: "fullName username avatar" },
+      { path: "updatedBy", select: "fullName username avatar" },
+      { path: "stockHistory.performedBy", select: "fullName username avatar" },
+    ]);
+    req.app.get("io")?.emit("inventory:updated", item);
+    return res.status(200).json({ success: true, message: "Đã trừ số lượng hàng hóa", data: item });
+  } catch (error) {
+    console.error("Decrement inventory item failed:", error);
+    return res.status(500).json({ success: false, message: "Không thể trừ số lượng hàng hóa" });
   }
 };
 
@@ -476,6 +627,7 @@ module.exports = {
   createInventoryItem,
   updateInventoryItem,
   checkInventoryItem,
+  decrementInventoryItem,
   deleteInventoryItem,
   uploadInventoryImage,
 };
